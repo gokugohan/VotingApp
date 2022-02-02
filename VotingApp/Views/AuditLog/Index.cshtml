@@ -1,0 +1,78 @@
+﻿@model IEnumerable<VotingApp.Data.Audit>
+
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<header class="text-center text-white mb-5">
+    <h1 class="display-4">@ViewData["Title"]</h1>
+    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+</header>
+
+<div class="card rounded shadow border-0">
+    <div class="card-body p-5 bg-white rounded">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.UserId)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Type)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.TableName)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.DateTime)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.OldValues)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.NewValues)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.AffectedColumns)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.PrimaryKey)
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.UserId)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Type)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.TableName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.DateTime)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.OldValues)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.NewValues)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.AffectedColumns)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.PrimaryKey)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

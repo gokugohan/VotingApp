@@ -1,0 +1,117 @@
+﻿@model VotingApp.Models.EditPollingStationArea
+
+@{
+    ViewData["Title"] = "Edit";
+}
+<div class="container">
+
+    <h1>Edit</h1>
+
+    <h4>VotingArea</h4>
+    <hr />
+    <div class="row">
+        <div class="col-md-4">
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <div class="form-group">
+                    <label for="AreaMunicipality" class="control-label"></label>
+                    <select id="AreaMunicipality" class="form-control" asp-items="ViewBag.Municipalities"></select>
+                </div>
+                <div class="form-group">
+                    <label for="AdministrativePost" class="control-label"></label>
+                    <select id="AdministrativePost" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="AreaId" class="control-label"></label>
+                    <select asp-for="AreaId" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label asp-for="StationName" class="control-label"></label>
+                    <input asp-for="StationName" class="form-control" />
+                    <span asp-validation-for="StationName" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Save" class="btn btn-primary" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div>
+        <a asp-action="Index">Back to List</a>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+<script>
+        $(document).ready(function () {
+            $("#AreaMunicipality").on("change", function (e) {
+                var id = $(this).val();
+                getPostAdministratives(id);
+            })
+
+            $("#AdministrativePost").on("change", function (e) {
+                var id = $(this).val();
+                getVillages(id);
+            })
+
+            $("#AreaId").append("<option value='@Model.AreaId'>@Model.Area.Name</option>");
+
+            $("#AreaMunicipality").val("@ViewBag.municipality.Id");
+            getPostAdministratives("@ViewBag.municipality.Id");
+
+
+            function getPostAdministratives(municipalityID) {
+                $.ajax({
+                    url: "/VotingAreas/GetPostAdministratives/" + municipalityID,
+                    method: "get",
+                    success: function (response) {
+                        console.log(response);
+                        var select = $("#AdministrativePost");
+                        select.html("");
+                        console.log("@Model.Area.ParentId");
+                        select.append("<option value=''>Select Administrative Post</option>");
+                        for (var i = 0; i < response.length; i++) {
+                            var item = response[i];
+
+                            if ("@Model.Area.ParentId"== item.id) {
+                                select.append("<option value='" + item.id + "' selected>" + item.name + "</option>");
+                            } else {
+                                select.append("<option value='" + item.id + "'>" + item.name + "</option>");
+                            }
+
+                        }
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                })
+            }
+
+            function getVillages(administrativePostId) {
+                $.ajax({
+                    url: "/VotingAreas/GetVillages/" + administrativePostId,
+                    method: "get",
+                    success: function (response) {
+                        console.log(response);
+                        var select = $("#AreaId");
+                        select.html("");
+                        select.append("<option value=''>Select Village</option>");
+                        for (var i = 0; i < response.length; i++) {
+                            var item = response[i];
+                            select.append("<option value='" + item.id + "'>" + item.name + "</option>");
+                        }
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                })
+            }
+
+
+
+        })
+</script>
+}

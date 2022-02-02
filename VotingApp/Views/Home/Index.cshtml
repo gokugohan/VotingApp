@@ -1,0 +1,497 @@
+﻿@model IEnumerable<VotingApp.Data.Area>
+@{
+    ViewData["Title"] = "REALTIME PRESIDENTIAL ELECTION DEMO";
+}
+
+
+
+@section css{
+    <style>
+        #canvas {
+            width: 100%;
+            min-height: 500px;
+            margin: 1em auto;
+        }
+
+        #canvas-graph-candidate-municipality {
+            /*min-width: 310px;*/
+            /*max-width: 1200px;*/
+            min-height: 600px;
+            margin: 0 auto;
+        }
+
+        .btn-candidate.active {
+            color: #17a2b8 !important;
+            background-color: white !important;
+        }
+
+        .btn-view-candidate-votes:hover, .btn-view-candidate-votes:hover span, .btn-view-candidate-votes:hover i {
+            cursor: pointer;
+            color: #45b649;
+            background: #fff;
+        }
+    </style>
+}
+
+
+
+<header class="text-center text-white mb-5">
+    <h1 class="display-4">@ViewData["Title"]</h1>
+    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+</header>
+
+<div class="p-5 mb-5">
+    <!-- Lined tabs-->
+    <ul id="tab-graph-municipality-candidate-vote" role="tablist" class="nav nav-tabs nav-pills flex-column flex-sm-row text-center border-0 rounded-nav">
+        <li class="nav-item flex-sm-fill">
+            <a id="municipality-tab" data-toggle="tab" href="#municipality-content" role="tab" aria-controls="municipality" aria-selected="true" 
+               class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0 active">VOTINGS MUNICIPALITY/CANDIDATE VOTES IN MUNICIPALITIES</a>
+        </li>
+        <li class="nav-item flex-sm-fill">
+            <a id="candidate-voting-tab" data-toggle="tab" href="#candidate-voting-content" role="tab" aria-controls="candidate-voting" 
+               aria-selected="false" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0">CANDIDATE VOTES </a>
+        </li>
+    </ul>
+    <div id="myTab2Content" class="tab-content">
+        <div id="municipality-content" role="tabpanel" aria-labelledby="home-tab" class="tab-pane fade px-4 py-5 show active">
+
+            <div class="row">
+                <div class="col-lg-2">
+                    <div class="nav flex-column nav-pills nav-pills-custom button-list-of-candidates" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    </div>
+                </div>
+                <div class="col-lg-10">
+                    <div id="canvas-graph-candidate-municipality"></div>
+                </div>
+            </div>
+        </div>
+        <div id="candidate-voting-content" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5">
+            <div id="canvas-municipality-candidate-votes"></div>
+        </div>
+    </div>
+    <!-- End lined tabs -->
+</div>
+
+
+
+<div class="separator"></div>
+
+
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card border-0 shadow-sm rounded">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-4">
+                        <div class="table-responsive">
+                            <table id="table-votes" class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Votes</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+
+                        <div id="table-chart"></div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@*</div>
+    </div>*@
+
+
+<input type="hidden" value="@ViewBag.TotalVote" id="TotalVote" />
+
+@section scripts{
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+   
+    <script>
+        $(document).ready(function () {
+
+
+            connection.on("OnbroadcastVotingDataListener", function (message) {
+                GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
+                display_table_candidates_votings();
+                get_candidate_voting_municipalities();
+            });
+
+
+            display_table_candidates_votings();
+
+            var candidate_ids = [];
+            $.ajax({
+                url: "/Candidates/GetCandidadesAjax",
+                type: "get",
+                success: function (response) {
+                    var li = "";
+                    li += '<a class="nav-link mb-3 p-3 shadow btn-view-candidate-votes" id="btn-view-all-votes" data-display-all="1" data-name="Voting by Municipality"><i class="fa fa-user-circle-o mr-2"></i>';
+                    li += '<span class="font-weight-bold small text-uppercase">All by Municipality</span></a>';
+                    candidate_ids.push("btn-view-all-votes");
+                    $.each(response, function (i, v) {
+                        candidate_ids.push(v.id);
+                        li += '<a class="nav-link mb-3 p-3 shadow btn-view-candidate-votes" data-name="' + v.name + '" id="' + v.id + '"><i class="fa fa-user-circle-o mr-2"></i>';
+                        li += '<span class="font-weight-bold small text-uppercase">' + v.name + '</span></a>';
+                    })
+
+                    $(".button-list-of-candidates").html(li);
+                    addEvenListenerToCandidatesButtoncandidates(candidate_ids);
+                }
+            })
+
+            function addEvenListenerToCandidatesButtoncandidates(candidate_ids) {
+                candidate_ids.forEach(function (id) {
+
+                    $("body").on("click", "#" + id, function () {
+                        $(".btn-view-candidate-votes").removeClass("active");
+                        var title = $(this).data("name");
+                        $(this).toggleClass("active");
+
+                        if ($(this).data("display-all") == "1") {
+                            GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
+                        } else {
+                            GetVotesMunicipalityByCandidate(id, title);
+                        }
+
+                    })
+
+                });
+            }
+
+            function graphByMunicipality(dataList, title) {
+                var categories = [];
+                var series_data = [];
+                //console.log(dataList);
+
+                $.each(dataList, function (i, v) {
+                    categories.push(v.areaName);
+                    if (v.data != null) {
+                        series_data.push({
+                            name: v.municipality,
+                            y: v.data.totalVote,
+                            data: [v.data.totalVote]
+                        });
+                    } else {
+                        series_data.push({
+                            name: v.municipality,
+                            y: 0,
+                            data: [0]
+                        });
+                    }
+
+                })
+
+                Highcharts.chart('canvas-graph-candidate-municipality', {
+                    //colors: ['#FF0000', '#00FF00', '#0000FF', '#550000', '#005500', '#543445', '#325215', '#554433', '#223344'
+                    //    , '#af505a', '#0a003f', '#0ff055', '#569055'],
+
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: title
+                    },
+                    subtitle: {
+                        text: 'Presidential Election 2022'
+                    },
+                    accessibility: {
+                        announceNewData: {
+                            enabled: true
+                        }
+                    },
+                    xAxis: {
+                        type: 'category'
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Total votes'
+                        }
+
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        series: {
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.y} votes'
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}</b> votes<br/>'
+                    },
+
+                    series: [
+                        {
+                            name: "Votes",
+                            colorByPoint: true,
+                            data: series_data
+                        }
+                    ],
+                    credits: {
+                        enabled: false
+                    },
+                });
+            }
+
+
+            function display_table_candidates_votings() {
+                showPreLoader();
+                $.ajax({
+                    url: "/Votings/GetTotalVoteOfCandidates",
+                    type: "get",
+                    success: function (response) {
+                        var tbody = "";
+                        //console.log("GetTotalVoteOfCandidates");
+                        //console.log(response);
+                        var totalVote = parseInt($("#TotalVote").val());
+                        $.each(response, function (index, value) {
+                            tbody += "<tr>";
+                            tbody += "<td>" + index + "</t>";
+                            tbody += "<td>" + value + "</t>";
+                            tbody += "<td>" + ((value / totalVote)*100).toFixed(2) + "%</t>";
+                            tbody += "</tr>";
+                        });
+
+                        $("#table-votes tbody").html(tbody);
+
+                        render_chart_from_table();
+                    },
+                    error: function (err) {
+                        toastr.error(err);
+                    }
+                }).done(function (e) {
+                    hidePreLoader();
+                })
+
+            }
+
+            function render_chart_from_table() {
+                Highcharts.chart("table-chart", {
+                    data: {
+                        table: "table-votes",
+                        startRow: 0,
+                        startColumn: 0,
+                        endColumn: 1
+                    },
+                    chart: {
+                        type: "pie",
+                        options3d: {
+                            enabled: true,
+                            alpha: 45,
+                            beta: 0
+                        }
+                    },
+                    title: {
+                        text: "Presidential Election 2022"
+                    },
+
+                    subtitle: {
+                        text: "Total votes : " + $("#TotalVote").val()
+                    },
+
+                    yAxis: {
+                        title: {
+                            text: "Total Votes"
+                        }
+                    },
+                    legend: {
+                        enabled: true
+                    },
+                    xAxis: {
+                        title: {
+                            text: null
+                        }
+                    },
+                    tooltip: {
+                        pointFormat: "Total votes: <b>{point.y} votes</b>"
+                    },
+                    plotOptions: {
+                        pie: {
+                            allowPointSelect: true,
+                            cursor: 'pointer',
+                            dataLabels: {
+                                formatter: function () {
+                                    var totalVote = parseInt($("#TotalVote").val());
+                                    var vote = parseInt(this.point.y);
+
+                                    var percentageAoTotal = (parseFloat(vote / totalVote) * 100);
+
+                                    return '<b>' + this.point.name + ' : ' + this.point.y + '<b> (' + percentageAoTotal.toFixed(2) + ')%';
+                                    //enabled: true,
+                                    //format: '<b>{point.name}</b>: {point.percentage:.1f} %  - ' + (point.name/$("#TotalVote").val())
+                                }
+                            }
+                        }
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                });
+            }
+
+
+            GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
+
+            function GetVotesMunicipalityByCandidate(id, title) {
+                showPreLoader();
+                var url = "/Votings/ListVotingInMunicipality";
+                if (id != null) {
+                    url = "/Votings/ListVotingInMunicipality/" + id;
+                }
+                $.ajax({
+                    url: url,
+                    method: "get",
+                    success: function (response) {
+                        let dataList = [];
+                        //console.log(response);
+                        $.each(response, function (i, v) {
+                            dataList.push({
+                                municipality: v.key,
+                                data: v.value
+                            });
+                        });
+
+                        graphByMunicipality(dataList, title);
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                }).done(function (e) {
+                    hidePreLoader();
+                })
+            }
+
+
+            get_candidate_voting_municipalities();
+
+
+            // Get municipalities, then get the vote of candidates in the selected municipality
+            // and the list all in the list of municipalities.
+            // ie: 1 municipality contains all candidates and the related votes
+
+            // Query > municipality id
+
+            function get_candidate_voting_municipalities() {
+                let categories = [];
+                let data = [];
+
+                @foreach (var d in Model)
+                {
+                    @:categories.push("@d.Name");
+                }
+                let candidates = [];
+
+                @foreach (var c in ViewBag.candidates)
+                {
+                    @:candidates.push("@c.Id");
+                }
+
+                $.ajax({
+                    url: "/Votings/GetCandidateMunicipalitVotes",
+                    method: "get",
+                    success: function(response) {
+                        console.log(response);
+                        $.each(response, function (i, v) {
+                            data.push({
+                                name: v.candidate.name,
+                                data: v.votes
+                            });
+                        })
+
+
+                        display_graph_municipality_candidate_votes(categories, data);
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                }).done(function (e) {
+                    hidePreLoader();
+                })
+
+            } //get_municipalities
+
+
+
+            /*
+            * {
+                name: 'Milena Pires',
+                data: [20, 30, 10, 50, 40, 90]
+              },
+            */
+
+
+
+            function display_graph_municipality_candidate_votes(categories, data) {
+
+                Highcharts.chart('canvas-municipality-candidate-votes', {
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: 'Candidate Votings by Municipality'
+                    },
+                    subtitle: {
+                        text: ''
+                    },
+                    xAxis: {
+                        categories: categories,
+                        crosshair: true
+                    },
+                    yAxis: {
+                        min: 0,
+                        title: {
+                            text: 'Number of votes'
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                        pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                            '<td style="padding:0"><b>{point.y:.1f} mm</b></td></tr>',
+                        footerFormat: '</table>',
+                        shared: true,
+                        useHTML: true
+                    },
+                    plotOptions: {
+                        column: {
+                            pointPadding: 0.2,
+                            borderWidth: 0
+                        }
+                    },
+                    series: data,
+                    credits: {
+                        enabled: false
+                    },
+                });
+            }
+
+        });
+    </script>
+
+}

@@ -1,0 +1,213 @@
+﻿@model IEnumerable<VotingApp.Data.Area>
+
+@{
+    ViewData["Title"] = "Polling Stations";
+}
+@*<a href="#!" id="btn-create-new" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
+
+<header class="text-center text-white mb-5">
+    <h1 class="display-4">@ViewData["Title"]</h1>
+    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+</header>
+
+
+<div class="card rounded shadow border-0">
+    <div class="card-body p-5 bg-white rounded">
+
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="alert alert-primary" role="alert">
+                    Click on button to view the registered polling stations
+                </div>
+                @foreach (var area in Model)
+                {
+                    <a class="btn-view-voting-areas btn btn-outline-info mb-2" href="#!" data-id="@area.Id">@area.Name</a>
+                }
+
+                <p class="lead font-italic">Polling Stations Area</p>
+                <p class="lead font-italic mb-0">
+                    <div id="list-of-polling-stations" class=""></div>
+                </p>
+                <div class=" mb-4 table-responsive">
+                    <table class="table" id="table-polling-station">
+                        <thead>
+                            <tr>
+                                <th>Suco/Village</th>
+                                <th>Polling Station</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ps in ViewBag.PollingStations)
+                            {
+                                <tr>
+                                    <td>@ps.Area.Name</td>
+                                    <td>@ps.PollingStation.Name</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                </div>
+                <hr />
+
+            </div>
+            <div class="col-lg-4">
+                <div class="alert alert-primary" role="alert">
+                    Add new Polling Station
+                </div>
+                <form asp-action="Create">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="form-group">
+                        <label class="control-label">Municipality</label>
+                        <select id="AreaMunicipality" class="form-control" asp-items="ViewBag.Municipalities">
+                            <option>Select Municipality</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Administrative Post</label>
+                        <select id="AdministrativePost" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="AreaId" class="control-label">Suco/Village</label>
+                        <select id="AreaId" name="AreaId" class="form-control"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="StationName" class="control-label"></label>
+                        <input id="StationName" name="StationName" class="form-control" />
+                        @*<span asp-validation-for="StationName" class="text-danger"></span>*@
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" value="Create" class="btn btn-primary" />
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-view" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+    <script>
+        $(document).ready(function () {
+            $("body").on("click", ".btn-view-voting-areas", function () {
+                showPreLoader();
+                $.ajax({
+                    url: "/PollingStationAreas/GetVotingAreasOfMunicipality/" + $(this).data("id"),
+                    method: "get",
+                    success: function (response) {
+                        console.log(response);
+
+                        if (response.length > 0) {
+                            let html = "";
+                            $.each(response, function (i, v) {
+                                html += "<span  class='btn btn-primary mr-1 mb-1'>" + v.name + "</span>";
+
+                            });
+                            $("#list-of-polling-stations").html(html);
+                        } else {
+                            $("#list-of-polling-stations").html("<span class='text-warning'>No Polling Stations</span>");
+                        }
+                    }
+                }).done(function () {
+                    hidePreLoader();
+                })
+            });
+
+            $("#btn-create-new").on("click", function () {
+                showPreLoader();
+                $.ajax({
+                    url: "@Url.Action("Create")",
+                    method: "get",
+                    success: function (response) {
+                        $("#modal-view .modal-body").html(response);
+                        $("#modal-view").modal("show");
+                    }
+                }).done(function () {
+                    hidePreLoader();
+                })
+
+            });
+
+
+            $("body").on("change", "#AreaMunicipality",function (e) {
+                var id = $(this).val();
+                getPostAdministratives(id);
+            })
+
+            $("body").on("change", "#AdministrativePost", function (e) {
+                var id = $(this).val();
+                getVillages(id);
+            })
+
+
+            getPostAdministratives($("#AreaMunicipality").val());
+
+
+            function getPostAdministratives(municipalityID) {
+                //showPreLoader();
+                $.ajax({
+                    url: "/PollingStationAreas/GetPostAdministratives/" + municipalityID,
+                    method: "get",
+                    success: function (response) {
+                        console.log(response);
+                        var select = $("#AdministrativePost");
+                        select.html("");
+                        select.append("<option value=''>Select Administrative Post</option>");
+                        for (var i = 0; i < response.length; i++) {
+                            var item = response[i];
+
+                            select.append("<option value='" + item.id + "'>" + item.name + "</option>");
+                        }
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                }).done(function () {
+                    //hidePreLoader();
+                })
+            }
+
+            function getVillages(administrativePostId) {
+                //showPreLoader();
+                $.ajax({
+                    url: "/PollingStationAreas/GetVillages/" + administrativePostId,
+                    method: "get",
+                    success: function (response) {
+                        console.log(response);
+                        var select = $("#AreaId");
+                        select.html("");
+                        select.append("<option value=''>Select Village</option>");
+                        for (var i = 0; i < response.length; i++) {
+                            var item = response[i];
+                            select.append("<option value='" + item.id + "'>" + item.name + "</option>");
+                        }
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                }).done(function () {
+                    //hidePreLoader();
+                })
+            }
+        })
+    </script>
+}
