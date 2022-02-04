@@ -15,6 +15,10 @@ async function start() {
         await connection.start().then(() => console.log("Connection Started"));
     } catch (err) {
         toastr.error(err);
+        $.notify({
+            icon: "tim-icons icon-bell-55",
+            message: "Upsss. Disabled!"
+        });
         setTimeout(() => start(), 5000);
     }
 }
@@ -37,19 +41,27 @@ $("body").on("submit", "#form_save_vote", function (ev) {
         data: data,
         success: function (result) {
             if (result.success) {
-                toastr.success(result.message);
                 connection.invoke("BroadcastVotingData", result.message).then(function () { }).catch(function (err) { return console.log(err); })
-            } else {
-                toastr.error(result.message);
+                $.notify({
+                    icon: "tim-icons icon-bell-55",
+                    message: result.message
+                });
             }
+            
         },
         error: function () {
-            toastr.error('Failed to receive the Data');
+            $.notify({
+                icon: "tim-icons icon-bell-55",
+                message: 'Failed to receive the Data'
+            });
             console.log('Failed ');
         }
     })
 })
 
 connection.on("OnbroadcastVotingDataListener", function (message) {
-    toastr.success(message);
+    $.notify({
+        icon: "tim-icons icon-bell-55",
+        message: message
+    });
 });

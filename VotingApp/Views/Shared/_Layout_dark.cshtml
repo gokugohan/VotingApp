@@ -1,0 +1,228 @@
+﻿<!--
+=========================================================
+* * Black Dashboard - v1.0.1
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/black-dashboard
+* Copyright 2019 Creative Tim (https://www.creative-tim.com)
+
+
+* Coded by Creative Tim
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VotingApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="~/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/layout_dark/assets/css/nucleo-icons.css" rel="stylesheet" />
+    <link href="~/layout_dark/assets/css/black-dashboard.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+    <style>
+
+        .hide {
+            display: none;
+        }
+
+        
+        .form-control, .custom-file-label, .custom-file-label:after {
+            color: #495057 !important;
+        }
+
+        select option {
+            margin: 40px;
+            background: #27293d;
+            border-color: #e14eca;
+            color: #fff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+        }
+
+
+    </style>
+    @RenderSection("css", required: false)
+</head>
+<body>
+
+
+    <div class="please-wait" style="display: none;">
+        <div class="load-wrapper" style="opacity: 0;">
+            <img src="~/images/please_wait.svg" />
+        </div>
+        <div class="please-wait-bg"></div>
+    </div>
+
+    <div class="wrapper">
+        <div class="sidebar">
+            <!--
+            Tip 1: You can change the color of the sidebar using: data-color="blue | green | orange | red"
+        -->
+            <div class="sidebar-wrapper">
+                <div class="logo">
+                    <a href="javascript:void(0)" class="simple-text logo-mini">
+                        <img src="~/images/helder1.jpg" alt="..." width="65" class="mr-3 rounded-circle img-thumbnail shadow-sm">
+                    </a>
+                    <a href="javascript:void(0)" class="simple-text logo-normal">
+                        Chebre
+                    </a>
+                </div>
+                <ul class="nav">
+                    <li class="active ">
+                        @*<a href="./dashboard.html">
+                            <i class="tim-icons icon-chart-pie-36"></i>
+                            <p>Dashboard</p>
+                        </a>*@
+                        <a asp-action="Index" asp-controller="Home">
+                            <i class="fa fa-th-large mr-3 fa-fw"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="Areas">
+                            <i class="fa fa-address-card mr-3 fa-fw"></i>
+                            Areas
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="PollingStationAreas">
+                            <i class="fa fa-cubes mr-3 fa-fw"></i>
+                            Polling Stations
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="Candidates">
+                            <i class="fa fa-picture-o mr-3 fa-fw"></i>
+                            Candidates
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="Votings">
+                            <i class="fa fa-picture-o mr-3 fa-fw"></i>
+                            Votings
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="AuditLog" class="nav-link font-italic">
+                            <i class="fa fa-area-chart mr-3 fa-fw"></i>
+                            Logs
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-panel">
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent">
+                <div class="container-fluid">
+                    <div class="navbar-wrapper">
+                        <div class="navbar-toggle d-inline">
+                            <button type="button" class="navbar-toggler">
+                                <span class="navbar-toggler-bar bar1"></span>
+                                <span class="navbar-toggler-bar bar2"></span>
+                                <span class="navbar-toggler-bar bar3"></span>
+                            </button>
+                        </div>
+                        <a class="navbar-brand" href="javascript:void(0)">Dashboard</a>
+                    </div>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navigation">
+                        <ul class="navbar-nav ml-auto">
+                            <li class="search-bar input-group">
+                                <button class="btn btn-link" id="search-button" data-toggle="modal" data-target="#searchModal">
+                                    <i class="tim-icons icon-zoom-split"></i>
+                                    <span class="d-lg-none d-md-block">Search</span>
+                                </button>
+                            </li>
+                            <li class="dropdown nav-item">
+                                <a href="javascript:void(0)" class="dropdown-toggle nav-link" data-toggle="dropdown">
+                                    <div class="notification d-none d-lg-block d-xl-block"></div>
+                                    <i class="tim-icons icon-sound-wave"></i>
+                                    <p class="d-lg-none">
+                                        Notifications
+                                    </p>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-right dropdown-navbar">
+                                    <li class="nav-link"><a href="#" class="nav-item dropdown-item">Mike John responded to your email</a></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">You have 5 more tasks</a></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Your friend Michael is in town</a></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Another notification</a></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Another one</a></li>
+                                </ul>
+                            </li>
+                            <li class="dropdown nav-item">
+                                <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
+                                    <div class="photo">
+                                        <img src="../assets/img/anime3.png" alt="Profile Photo">
+                                    </div>
+                                    <b class="caret d-none d-lg-block d-xl-block"></b>
+                                    <p class="d-lg-none">
+                                        Log out
+                                    </p>
+                                </a>
+                                <ul class="dropdown-menu dropdown-navbar">
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Profile</a></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Settings</a></li>
+                                    <li class="dropdown-divider"></li>
+                                    <li class="nav-link"><a href="javascript:void(0)" class="nav-item dropdown-item">Log out</a></li>
+                                </ul>
+                            </li>
+                            <li class="separator d-lg-none"></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            <div class="modal modal-search fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModal" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <input type="text" class="form-control" id="inlineFormInputGroup" placeholder="SEARCH">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="tim-icons icon-simple-remove"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Navbar -->
+
+            <div class="content">
+                @RenderBody()
+            </div>
+
+            <footer class="footer border-top">
+                <div class="container">
+                    &copy; 2022 - VotingApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/layout_dark/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+    <script src="~/layout_dark/assets/js/plugins/bootstrap-notify.js"></script>
+    <script src="~/layout_dark/assets/js/black-dashboard.min.js"></script>
+
+    <script src="~/js/jquery.dataTables.min.js"></script>
+    <script src="~/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/js/signalr.min.js"></script>
+    <script src="~/js/voting_broadcasting.js"></script>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

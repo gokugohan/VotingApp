@@ -4,24 +4,37 @@
     ViewData["Title"] = "Areas";
 }
 
-<a href="#!" class="btn-add-new btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>
 
 
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
+
+
+
 
 <div class="card rounded shadow border-0">
-    <div class="card-body p-5 bg-white rounded">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+                <a href="#!" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
+            </h1>
+
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+
+
+        </div>
+    </div>
+
+    
+    <div class="card-body p-5 rounded">
+
         <div class="row">
-            <div class="col-md-12" id="municipality-container">
+            <div class="col" id="municipality-container">
                 <div class="table-responsive">
 
                     <table class="table" id="table-municipalities">
                         <thead>
                             <tr>
-                                <th>Name</th>
+                                <th>Municipality</th>
                                 @*<th></th>*@
                             </tr>
                         </thead>
@@ -32,31 +45,30 @@
                                     <td>
                                         <a href="#!" class="btn-view-post-admin" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
                                     </td>
-                                    @*<td>
-                                            <ul class="list-inline m-0">
-                                                <li class="list-inline-item">
-                                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary btn-sm rounded-0" data-toggle="tooltip" data-placement="top" title="Update"><i class="fa fa-edit"></i></a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-success btn-sm rounded-0" data-toggle="tooltip" data-placement="top" title="Detail"><i class="fa fa-eye-slash"></i></a>
-                                                </li>
-                                                <li class="list-inline-item">
-                                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm rounded-0" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fa fa-trash"></i></a>
-                                                </li>
-                                            </ul>
-                                        </td>*@
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="col-md-6 hide" id="municipality-child-area-container">
+            <div class="col hide" id="municipality-child-area-container">
                 <div class="table-responsive">
-                    <table class="table table-striped" id="table-areas">
+                    <table class="table table-striped" id="table-areas-admin-post">
                         <thead>
                             <tr>
-                                <th>Name</th>
+                                <th>Administrative Post</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col hide" id="admin-post-child-area-container">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="table-areas-village">
+                        <thead>
+                            <tr>
+                                <th>Village/Suco</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -92,18 +104,20 @@
         $(document).ready(function () {
 
             $(".btn-add-new").on("click", function () {
-                toastr.info("Upss");
+                $.notify({
+                    icon: "tim-icons icon-bell-55",
+                    message: "Upsss. Add new Area is disabled!"
+                });
             })
 
             $("body").on("click", ".btn-view-post-admin", function () {
                 let id = $(this).data("id");
+                $("#admin-post-child-area-container").addClass("hide");
                 $.ajax({
                     url: "/Areas/GetArea?level=" + 3 + "&parentId=" + id,
                     type: "get",
                     success: function (response) {
                         console.log(response);
-                        $("#municipality-container").removeClass("col-md-12");
-                        $("#municipality-container").addClass("col-md-6");
 
                         $("#municipality-child-area-container").removeClass("hide");
 
@@ -115,7 +129,7 @@
                         });
 
 
-                        $("#table-areas tbody").html(tbody);
+                        $("#table-areas-admin-post tbody").html(tbody);
                     }
                 })
             })
@@ -127,19 +141,23 @@
                     url: "/Areas/GetArea?level=" + 4 + "&parentId=" + id,
                     type: "get",
                     success: function (response) {
-                        var li = "";
+
+                        $("#admin-post-child-area-container").removeClass("hide");
+
+                        var tbody = "";
                         $.each(response.data, function (i, v) {
-                            li += "<li class='list-group-item'>" + v.name + "</li>";
+                            tbody += "<tr>";
+                            tbody += "<td>" + v.name + "</td>";
+                            tbody += "</tr>";
                         });
 
 
-                        $("#list-of-area").html(li);
-
-                        $("#modal-view .modal-title").html(title);
-                        $("#modal-view").modal("show");
+                        $("#table-areas-village tbody").html(tbody);
                     }
                 })
             })
+
+            $("#table-municipalities").DataTable();
         });
     </script>
 }

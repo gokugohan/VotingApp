@@ -4,15 +4,23 @@
     ViewData["Title"] = "Audit Log";
 }
 
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
-
 <div class="card rounded shadow border-0">
-    <div class="card-body p-5 bg-white rounded">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
+            </h1>
+
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+
+
+        </div>
+    </div>
+
+    <div class="card-body p-5 rounded">
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="table-logs">
                 <thead>
                     <tr>
                         <th>
@@ -76,3 +84,13 @@
         </div>
     </div>
 </div>
+
+
+@section scripts{ 
+
+    <script>
+        $(document).ready(function () {
+            $("#table-logs").DataTable();
+        })
+    </script>
+}

@@ -30,48 +30,76 @@
             color: #45b649;
             background: #fff;
         }
+
+        .button-list-of-candidates-top {
+        }
+
+            .button-list-of-candidates-top .btn-view-candidate-votes {
+                color: #fff;
+                /*width: 100%;*/
+            }
+
+                .button-list-of-candidates-top .btn-view-candidate-votes:hover {
+                    cursor: pointer;
+                    color: #45b649;
+                    background: #fff;
+                }
+
+        .card-chart .chart-area {
+            height: auto;
+        }
+
+        .btn-tab-votings a.selected, .btn-tab-votings a:hover {
+            border-color: #e14eca !important;
+            background: #ba54f5 !important;
+            background-color: #ba54f5 !important;
+            color: #fff !important;
+        }
     </style>
 }
 
 
 
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
+<div class="card card-chart">
+    <div class="card-header ">
+        <div class="row">
+            <div class="col-sm-6 text-left">
+                <h2 class="card-title">Dashboard</h2>
+                <h5 class="card-category">By Municipality & Candidate votes in Municipality</h5>
+                
+            </div>
+            <div class="col-sm-6">
+                <div class="btn-group btn-tab-votings btn-group-toggle float-right" data-toggle="buttons">
 
-<div class="p-5 mb-5">
-    <!-- Lined tabs-->
-    <ul id="tab-graph-municipality-candidate-vote" role="tablist" class="nav nav-tabs nav-pills flex-column flex-sm-row text-center border-0 rounded-nav">
-        <li class="nav-item flex-sm-fill">
-            <a id="municipality-tab" data-toggle="tab" href="#municipality-content" role="tab" aria-controls="municipality" aria-selected="true" 
-               class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0 active">VOTINGS MUNICIPALITY/CANDIDATE VOTES IN MUNICIPALITIES</a>
-        </li>
-        <li class="nav-item flex-sm-fill">
-            <a id="candidate-voting-tab" data-toggle="tab" href="#candidate-voting-content" role="tab" aria-controls="candidate-voting" 
-               aria-selected="false" class="nav-link text-uppercase font-weight-bold mr-sm-3 rounded-0">CANDIDATE VOTES </a>
-        </li>
-    </ul>
-    <div id="myTab2Content" class="tab-content">
-        <div id="municipality-content" role="tabpanel" aria-labelledby="home-tab" class="tab-pane fade px-4 py-5 show active">
+                    <a id="municipality-tab" data-toggle="tab" href="#municipality-content" role="tab"
+                       aria-controls="municipality" aria-selected="true"
+                       class="btn btn-sm btn-primary btn-simple selected">VOTINGS MUNICIPALITY/CANDIDATE VOTES IN MUNICIPALITIES</a>
 
-            <div class="row">
-                <div class="col-lg-2">
-                    <div class="nav flex-column nav-pills nav-pills-custom button-list-of-candidates" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-                    </div>
-                </div>
-                <div class="col-lg-10">
-                    <div id="canvas-graph-candidate-municipality"></div>
+                    <a id="candidate-voting-tab" data-toggle="tab" href="#candidate-voting-content" role="tab"
+                       aria-controls="candidate-voting" aria-selected="false" class="btn btn-sm btn-primary btn-simple">CANDIDATE VOTES</a>
                 </div>
             </div>
         </div>
-        <div id="candidate-voting-content" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5">
-            <div id="canvas-municipality-candidate-votes"></div>
-        </div>
     </div>
-    <!-- End lined tabs -->
-</div>
 
+    <div class="card-body">
+
+        <div id="myTab2Content" class="tab-content">
+            <div id="municipality-content" role="tabpanel" aria-labelledby="home-tab" class="tab-pane fade px-4 py-5 show active">
+                <div class="btn-group flex-wrap btn-group-toggle button-list-of-candidates-top" data-toggle="buttons">
+                </div>
+                <div class="chart-area">
+                    <div id="canvas-graph-candidate-municipality" class="mt-3"></div>
+                </div>
+                @*<div id="canvas-graph-candidate-municipality" class="mt-3"></div>*@
+            </div>
+            <div id="candidate-voting-content" role="tabpanel" aria-labelledby="profile-tab" class="tab-pane fade px-4 py-5">
+                <div id="canvas-municipality-candidate-votes"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
 
 
 <div class="separator"></div>
@@ -126,7 +154,7 @@
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
-   
+
     <script>
         $(document).ready(function () {
 
@@ -138,6 +166,13 @@
             });
 
 
+            $(".btn-tab-votings a").on("click", function () {
+                $(".btn-tab-votings a").removeClass("active");
+                $(".btn-tab-votings a").removeClass("selected");
+                $(this).addClass("selected");
+            });
+
+
             display_table_candidates_votings();
 
             var candidate_ids = [];
@@ -145,20 +180,24 @@
                 url: "/Candidates/GetCandidadesAjax",
                 type: "get",
                 success: function (response) {
-                    var li = "";
-                    li += '<a class="nav-link mb-3 p-3 shadow btn-view-candidate-votes" id="btn-view-all-votes" data-display-all="1" data-name="Voting by Municipality"><i class="fa fa-user-circle-o mr-2"></i>';
-                    li += '<span class="font-weight-bold small text-uppercase">All by Municipality</span></a>';
+                    var candidate_button_groups_top = '<a href="#!" id="btn-view-all-votes" class="btn btn-sm btn-primary active btn-simple btn-view-candidate-votes" data-display-all="1" data-name="Voting by Municipality">All by Municipality</a>';
+
                     candidate_ids.push("btn-view-all-votes");
+
                     $.each(response, function (i, v) {
                         candidate_ids.push(v.id);
-                        li += '<a class="nav-link mb-3 p-3 shadow btn-view-candidate-votes" data-name="' + v.name + '" id="' + v.id + '"><i class="fa fa-user-circle-o mr-2"></i>';
-                        li += '<span class="font-weight-bold small text-uppercase">' + v.name + '</span></a>';
+
+                        candidate_button_groups_top += '<a href="#!" class="btn btn-sm btn-primary btn-simple btn-view-candidate-votes" data-name="' + v.name + '" id="' + v.id + '">';
+                        candidate_button_groups_top += v.name;
+                        candidate_button_groups_top += '</a>';
+
                     })
 
-                    $(".button-list-of-candidates").html(li);
+                    $(".button-list-of-candidates-top").html(candidate_button_groups_top);
+
                     addEvenListenerToCandidatesButtoncandidates(candidate_ids);
                 }
-            })
+            });
 
             function addEvenListenerToCandidatesButtoncandidates(candidate_ids) {
                 candidate_ids.forEach(function (id) {
@@ -166,10 +205,10 @@
                     $("body").on("click", "#" + id, function () {
                         $(".btn-view-candidate-votes").removeClass("active");
                         var title = $(this).data("name");
-                        $(this).toggleClass("active");
+                        console.log(title);
 
                         if ($(this).data("display-all") == "1") {
-                            GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
+                            GetVotesMunicipalityByCandidate(null, title);
                         } else {
                             GetVotesMunicipalityByCandidate(id, title);
                         }
@@ -178,6 +217,8 @@
 
                 });
             }
+
+
 
             function graphByMunicipality(dataList, title) {
                 var categories = [];
@@ -207,13 +248,20 @@
                     //    , '#af505a', '#0a003f', '#0ff055', '#569055'],
 
                     chart: {
-                        type: 'column'
+                        type: 'column',
+                        backgroundColor: "#404360",
                     },
                     title: {
-                        text: title
+                        text: title,
+                        style: {
+                            color: '#ffffff',
+                        }
                     },
                     subtitle: {
-                        text: 'Presidential Election 2022'
+                        text: 'Presidential Election 2022',
+                        style: {
+                            color: '#ffffff',
+                        }
                     },
                     accessibility: {
                         announceNewData: {
@@ -221,11 +269,26 @@
                         }
                     },
                     xAxis: {
-                        type: 'category'
+                        type: 'category',
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
+                        }
                     },
                     yAxis: {
                         title: {
-                            text: 'Total votes'
+                            text: 'Total votes',
+                            style: {
+                                color: '#ffffff',
+                                fontWeight: 'bold',
+                                fontSize: '12px'
+                            }
+                        },
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
                         }
 
                     },
@@ -245,6 +308,16 @@
                     tooltip: {
                         headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
                         pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}</b> votes<br/>'
+                    },
+                    exporting: {
+                        buttons: {
+                            contextButton: {
+                                symbolStroke: "#fff",
+                                theme: {
+                                    fill: "#404360"
+                                }
+                            }
+                        }
                     },
 
                     series: [
@@ -302,6 +375,8 @@
                     },
                     chart: {
                         type: "pie",
+                        backgroundColor: "#404360",
+
                         options3d: {
                             enabled: true,
                             alpha: 45,
@@ -309,28 +384,54 @@
                         }
                     },
                     title: {
-                        text: "Presidential Election 2022"
+                        text: "Presidential Election 2022",
+                        style: {
+                            color: '#ffffff',
+                        }
                     },
 
                     subtitle: {
-                        text: "Total votes : " + $("#TotalVote").val()
-                    },
-
-                    yAxis: {
-                        title: {
-                            text: "Total Votes"
+                        text: "Total votes : " + $("#TotalVote").val(),
+                        style: {
+                            color: '#ffffff',
                         }
-                    },
-                    legend: {
-                        enabled: true
                     },
                     xAxis: {
                         title: {
                             text: null
-                        }
+                        },
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
+                        },
                     },
+                    yAxis: {
+                        title: {
+                            text: "Total Votes"
+                        },
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
+                        },
+                    },
+                    legend: {
+                        enabled: true
+                    },
+
                     tooltip: {
                         pointFormat: "Total votes: <b>{point.y} votes</b>"
+                    },
+                    exporting: {
+                        buttons: {
+                            contextButton: {
+                                symbolStroke: "#fff",
+                                theme: {
+                                    fill: "#404360"
+                                }
+                            }
+                        }
                     },
                     plotOptions: {
                         pie: {
@@ -360,7 +461,7 @@
             GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
 
             function GetVotesMunicipalityByCandidate(id, title) {
-                showPreLoader();
+                //showPreLoader();
                 var url = "/Votings/ListVotingInMunicipality";
                 if (id != null) {
                     url = "/Votings/ListVotingInMunicipality/" + id;
@@ -384,7 +485,7 @@
                         console.log(err);
                     }
                 }).done(function (e) {
-                    hidePreLoader();
+                    //hidePreLoader();
                 })
             }
 
@@ -452,22 +553,46 @@
 
                 Highcharts.chart('canvas-municipality-candidate-votes', {
                     chart: {
-                        type: 'column'
+                        type: 'column',
+                        backgroundColor: "#404360",
+                        polar: true,
                     },
                     title: {
-                        text: 'Candidate Votings by Municipality'
+                        text: 'Candidate Votings by Municipality',
+                        style: {
+                            color: '#ffffff',
+                        }
                     },
                     subtitle: {
                         text: ''
                     },
                     xAxis: {
                         categories: categories,
-                        crosshair: true
+                        crosshair: true,
+                        title: {
+                            text: null,
+                            
+                        },
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
+                        }
+                        
                     },
                     yAxis: {
                         min: 0,
                         title: {
-                            text: 'Number of votes'
+                            text: 'Number of votes',
+                            style: {
+                                color: '#fff'
+                            }
+                        },
+
+                        labels: {
+                            style: {
+                                color: '#fff'
+                            }
                         }
                     },
                     tooltip: {
@@ -477,6 +602,19 @@
                         footerFormat: '</table>',
                         shared: true,
                         useHTML: true
+                    },
+                    legend: {                        
+                        itemStyle: { color: '#fff', }
+                    },
+                    exporting: {
+                        buttons: {
+                            contextButton: {
+                                symbolStroke: "#fff",
+                                theme: {
+                                    fill: "#404360"
+                                }
+                            }
+                        }
                     },
                     plotOptions: {
                         column: {

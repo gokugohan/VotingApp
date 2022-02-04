@@ -5,19 +5,27 @@
 }
 @*<a href="#!" id="btn-create-new" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
 
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
-
 
 <div class="card rounded shadow border-0">
-    <div class="card-body p-5 bg-white rounded">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+                @*<a href="#!" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>*@
+            </h1>
+
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
 
 
+        </div>
+    </div>
+
+
+    <div class="card-body p-5 rounded">
         <div class="row">
             <div class="col-lg-8">
-                <div class="alert alert-primary" role="alert">
+                <div class="alert alert-info alert-with-icon" role="alert">
+                    <span class="tim-icons icon-bell-55"></span>
                     Click on button to view the registered polling stations
                 </div>
                 @foreach (var area in Model)
@@ -60,26 +68,25 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="form-group">
                         <label class="control-label">Municipality</label>
-                        <select id="AreaMunicipality" class="form-control" asp-items="ViewBag.Municipalities">
+                        <select id="AreaMunicipality" class="form-control" asp-items="ViewBag.Municipalities" required>
                             <option>Select Municipality</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="control-label">Administrative Post</label>
-                        <select id="AdministrativePost" class="form-control"></select>
+                        <select id="AdministrativePost" class="form-control" required></select>
                     </div>
                     <div class="form-group">
                         <label for="AreaId" class="control-label">Suco/Village</label>
-                        <select id="AreaId" name="AreaId" class="form-control"></select>
+                        <select id="AreaId" name="AreaId" class="form-control" required></select>
                     </div>
 
                     <div class="form-group">
                         <label for="StationName" class="control-label"></label>
-                        <input id="StationName" name="StationName" class="form-control" />
-                        @*<span asp-validation-for="StationName" class="text-danger"></span>*@
+                        <input id="StationName" name="StationName" class="form-control" required/>
                     </div>
                     <div class="form-group">
-                        <input type="submit" value="Create" class="btn btn-primary" />
+                        <input type="submit" value="Submit" class="btn btn-primary" />
                     </div>
                 </form>
 
@@ -163,7 +170,6 @@
 
 
             function getPostAdministratives(municipalityID) {
-                //showPreLoader();
                 $.ajax({
                     url: "/PollingStationAreas/GetPostAdministratives/" + municipalityID,
                     method: "get",
@@ -182,12 +188,10 @@
                         console.log(err);
                     }
                 }).done(function () {
-                    //hidePreLoader();
                 })
             }
 
             function getVillages(administrativePostId) {
-                //showPreLoader();
                 $.ajax({
                     url: "/PollingStationAreas/GetVillages/" + administrativePostId,
                     method: "get",
@@ -205,9 +209,11 @@
                         console.log(err);
                     }
                 }).done(function () {
-                    //hidePreLoader();
                 })
             }
+
+
+            $("#table-polling-station").DataTable();
         })
     </script>
 }

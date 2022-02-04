@@ -22,6 +22,6 @@ $(document).ready(function () {
         $('#sidebar, #content').toggleClass('active');
     });
 
-    $("table").DataTable();
+    
 
 })

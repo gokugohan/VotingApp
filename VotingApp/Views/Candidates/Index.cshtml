@@ -4,45 +4,73 @@
     ViewData["Title"] = "Candidates";
 }
 
-<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>
-
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
+@*<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
 
 
-<div class="p-5">
-    <div class="row text-center">
-        @foreach (var item in Model)
-        {
+<div class="card rounded shadow border-0">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
+            </h1>
+
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+
+
+        </div>
+    </div>
+
+
+    <div class="card-body p-5 rounded">
+        <div class="row text-center">
+            
+            @foreach (var item in Model)
+            {
 
             <div class="col-xl-3 col-sm-6 mb-5">
-                <div class="bg-white rounded shadow-sm py-5 px-4">
-                    @if (string.IsNullOrEmpty(item.Avatar))
-                    {
-                        <img src="~/images/no-photo.jpg" alt="@item.Name" width="100" class="img-fluid rounded-circle mb-3 img-thumbnail shadow-sm">
-                    }
-                    else
-                    {
-                        <img src="~/images/candidates/@item.Avatar" alt="@item.Name" width="100" class="img-fluid rounded-circle mb-3 img-thumbnail shadow-sm">
+                <div class="card card-user">
+                    <div class="card-body">
+                        <p class="card-text">
+                        </p><div class="author">
+                            <div class="block block-one"></div>
+                            <div class="block block-two"></div>
+                            <div class="block block-three"></div>
+                            <div class="block block-four"></div>
+                            <a href="javascript:void(0)">
+                                @if (string.IsNullOrEmpty(item.Avatar))
+                                {
+                                    <img src="~/images/no-photo.jpg" alt="@item.Name" class="avatar">
+                                }
+                                else
+                                {
+                                    <img src="~/images/candidates/@item.Avatar" alt="@item.Name" class="avatar">
 
-                    }
-                    <h5 class="mb-0">@item.Name</h5><span class="small text-uppercase text-muted">@item.Description</span>
-                    <ul class="social mb-0 list-inline mt-3">
-                        <li class="list-inline-item">
-                            <a data-id="@item.Id" data-title="@item.Name" href="#!" class="btn btn-primary btn-edit-candidate btn-sm rounded-0" data-toggle="tooltip" data-placement="top" title="Update"><i class="fa fa-edit"></i></a>
-                        </li>
-
-                        <li class="list-inline-item">
-                            <a data-id="@item.Id" data-title="@item.Name" href="#!" class="btn btn-danger btn-delete-candidate btn-sm rounded-0" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fa fa-trash"></i></a>
-                        </li>
-                    </ul>
+                                }
+                            <h5 class="title">@item.Name</h5>
+                            </a>
+                            <p class="description">
+                                @item.Description
+                            </p>
+                        </div>
+                        
+                    </div>
+                    <div class="card-footer">
+                        <div class="button-container">
+                            <a href="#!" data-id="@item.Id" data-title="@item.Name" class="btn btn-icon btn-round btn-edit-candidate">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                            <a href="#!" data-id="@item.Id" data-title="@item.Name" class="btn btn-icon text-danger btn-round btn-delete-candidate">
+                                <i class="fa fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
             </div>
 
-        }
+            }
+        </div>
     </div>
 </div>
 
@@ -77,7 +105,7 @@
                     url: "/Candidates/Edit/" + $(this).data("id"),
                     method: "get",
                     success: function (response) {
-                        
+
                         $("#modal-view .modal-body").html(response);
                         $("#modal-view").modal("show");
 
@@ -94,7 +122,7 @@
                     url: "/Candidates/Delete/" + $(this).data("id"),
                     method: "get",
                     success: function (response) {
-                        
+
                         $("#modal-view .modal-body").html(response);
                         $("#modal-view").modal("show");
 

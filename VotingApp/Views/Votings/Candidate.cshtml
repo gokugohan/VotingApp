@@ -13,92 +13,105 @@
 }
 
 
-<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>
+<div class="card rounded shadow border-0">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+            </h1>
 
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
-
-
-<div class="row">
-    <div class="col-md-3">
-        <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-
-            @foreach (var item in Model)
-            {
-                if (item.Id.Equals(ViewBag.Id))
-                {
-                    show_active_class = " active";
-                }
-                else
-                {
-                    show_active_class = "";
-                }
-                <a class="nav-link mb-3 p-3 shadow @show_active_class" id="v-pills-@item.Id-tab"
-                   asp-action="Candidate" asp-route-id="@item.Id">
-                    @{ 
-                        avatar = string.IsNullOrEmpty(item.Avatar) ? "/images/no-photo.jpg" : $"/images/candidates/{item.Avatar}";
-                    }
-                    @*<i class="fa fa-user-circle-o mr-2"></i>*@
-                    <img src="@avatar" alt="@item.Name" style="width: 30px; border-radius: 50%;" />
-                    <span class="font-weight-bold small text-uppercase">@item.Name</span>
-                </a>
-
-            }
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+            <p class="font-italic mb-0">
+                Add voting 
+            </p>
 
 
         </div>
     </div>
-    <div class="col-md-9">
-        <div class="tab-content" id="v-pills-tabContent">
 
-            @foreach (var item in Model)
-            {
 
-                if (item.Id.Equals(ViewBag.Id))
-                {
-                    show_active_class = " show active";
-                }
-                else
-                {
-                    show_active_class = "";
-                }
-                <div class="tab-pane fade shadow rounded bg-white @show_active_class p-5" id="v-pills-@item.Id" role="tabpanel" aria-labelledby="v-pills-@item.Id-tab">
-                    <h4 class="font-italic mb-4">@item.Name Voting Form</h4>
-                    <p class="font-italic text-muted mb-2">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    <div class="card-body p-5 rounded">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="nav flex-column nav-pills nav-pills-custom" id="v-pills-tab" role="tablist" aria-orientation="vertical">
 
-                   
-                    <form id="form_save_vote">
+                    @foreach (var item in Model)
+                    {
+                        if (item.Id.Equals(ViewBag.Id))
+                        {
+                            show_active_class = " active";
+                        }
+                        else
+                        {
+                            show_active_class = "";
+                        }
+                        <a class="nav-link mb-3 p-3 shadow @show_active_class" id="v-pills-@item.Id-tab"
+                           asp-action="Candidate" asp-route-id="@item.Id">
+                            @{
+                                avatar = string.IsNullOrEmpty(item.Avatar) ? "/images/no-photo.jpg" : $"/images/candidates/{item.Avatar}";
+                            }
+                            @*<i class="fa fa-user-circle-o mr-2"></i>*@
+                            <img src="@avatar" alt="@item.Name" style="width: 30px; border-radius: 50%;" />
+                            <span class="font-weight-bold small text-uppercase">@item.Name</span>
+                        </a>
 
-                        <input type="hidden" id="CandidateId" name="CandidateId" value="@item.Id" />
-                        
-                        <div class="row">
-                            <div class="col-lg-8">
-                                <div class="form-group">
-                                    <label for="PollingStationAreaId" class="control-label"></label>
-                                    <select id="PollingStationAreaId" name="PollingStationAreaId"
-                                            class="form-control selectpicker" data-live-search="true" 
-                                            asp-items="ViewBag.PollingStationAreaId" required></select>
-                                </div>
-                            </div>
-                            <div class="col-lg-4">
-                                <div class="form-group">
-                                    <label for="Total" class="control-label"></label>
-                                    <input id="Total" name="Total" class="form-control" required />
-                                </div>
-                            </div>
-                        </div>
+                    }
 
-                        <div class="form-group">
-                            <input type="submit" value="Submit" class="btn btn-primary btn-submit-vote" />
-                        </div>
-                    </form>
+
                 </div>
-            }
+            </div>
+            <div class="col-md-9">
+                <div class="tab-content" id="v-pills-tabContent">
+
+                    @foreach (var item in Model)
+                    {
+
+                        if (item.Id.Equals(ViewBag.Id))
+                        {
+                            show_active_class = " show active";
+                        }
+                        else
+                        {
+                            show_active_class = "";
+                        }
+                        <div class="tab-pane fade shadow rounded bg-white @show_active_class p-5" id="v-pills-@item.Id" role="tabpanel" aria-labelledby="v-pills-@item.Id-tab">
+                            <h4 class="font-italic mb-4">@item.Name Voting Form</h4>
+                            <p class="font-italic text-muted mb-2">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+
+                            <form id="form_save_vote">
+
+                                <input type="hidden" id="CandidateId" name="CandidateId" value="@item.Id" />
+
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <div class="form-group">
+                                            <label for="PollingStationAreaId" class="control-label"></label>
+                                            <select id="PollingStationAreaId" name="PollingStationAreaId"
+                                                    class="form-control selectpicker" data-live-search="true"
+                                                    asp-items="ViewBag.PollingStationAreaId" required></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="form-group">
+                                            <label for="Total" class="control-label"></label>
+                                            <input id="Total" name="Total" class="form-control" type="number" min="0" placeholder="Total Vote" required />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <input type="submit" value="Submit" class="btn btn-primary float-right btn-submit-vote" />
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
 
 
 @section scripts{

@@ -19,6 +19,17 @@
 
   <ItemGroup>
     <None Include="wwwroot\js\site.js" />
+    <None Include="wwwroot\layout_dark\assets\css\black-dashboard.css.map" />
+    <None Include="wwwroot\layout_dark\assets\fonts\nucleo.woff2" />
+    <None Include="wwwroot\layout_dark\assets\js\black-dashboard.js" />
+    <None Include="wwwroot\layout_dark\assets\js\black-dashboard.js.map" />
+    <None Include="wwwroot\layout_dark\assets\js\black-dashboard.min.js" />
+    <None Include="wwwroot\layout_dark\assets\js\core\bootstrap.min.js" />
+    <None Include="wwwroot\layout_dark\assets\js\core\jquery.min.js" />
+    <None Include="wwwroot\layout_dark\assets\js\core\popper.min.js" />
+    <None Include="wwwroot\layout_dark\assets\js\plugins\bootstrap-notify.js" />
+    <None Include="wwwroot\layout_dark\assets\js\plugins\chartjs.min.js" />
+    <None Include="wwwroot\layout_dark\assets\js\plugins\perfect-scrollbar.jquery.min.js" />
   </ItemGroup>
 
   <ItemGroup>

@@ -56,30 +56,38 @@
 }
 
 
-<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>
-
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
+@*<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
 
 
-<div class="container-fluid">
-    <div class="px-lg-5">
+<div class="card rounded shadow border-0">
+    <div class="card-header">
+        <div class="text-center">
+            <h1>
+                @ViewData["Title"]
+                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
+            </h1>
+
+            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
+
+
+        </div>
+    </div>
+
+
+    <div class="card-body p-5 rounded">
         <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="alert alert-info alert-with-icon" data-notify="container">
+                    <span data-notify="icon" class="tim-icons icon-bell-55"></span>
+                    <span data-notify="message">Click on the candidate name to add #vote</span>
+                </div>
+            </div>
+        </div>
+        <div class="btn-group flex-wrap btn-group-toggle">
             @foreach (var item in Model)
             {
-                avatar = !string.IsNullOrEmpty(item.Avatar) ? $"/images/candidates/{item.Avatar}" : "/images/no-photo.jpg";
-
-                <div class="col-xl-3 col-lg-4 mb-4">
-                    <div class="bg-white rounded shadow-sm">
-                        <img src="@avatar" alt="@item.Name" class="img-fluid card-img-top">
-                        <div class="p-4">
-                            <h5> <a asp-action="Candidate" asp-route-id="@item.Id" class="text-dark">@item.Name</a></h5>
-                            
-                        </div>
-                    </div>
-                </div>
+                //avatar = !string.IsNullOrEmpty(item.Avatar) ? $"/images/candidates/{item.Avatar}" : "/images/no-photo.jpg";
+                <h5> <a asp-action="Candidate" asp-route-id="@item.Id" class="btn btn-sm btn-primary btn-simple">@item.Name</a></h5>
             }
 
         </div>
