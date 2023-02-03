@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -21,17 +22,42 @@ namespace VotingApp.Controllers
             IMapper mapper,
             ILogger<BaseController> logger) : base(repository, hubContext, mapper, logger)
         {
+
         }
 
 
 
+        [AllowAnonymous]
         // GET: VotingCandidates
         public async Task<IActionResult> Index()
         {
 
             //return View(await this.repository.Votes.GetAllWithEntitiesAsync());
 
-            return View(await this.repository.Candidates.GetAllAsync());
+            var pollingStationAreas = await this.repository.PollingStationAreas.GetAllWithAreaPollingStationAsync();
+
+            var psas = pollingStationAreas.Select(m => new VotingCandidateAreaDropdownModel
+            {
+                Id = m.Id,
+                VotingAreaName = $"{m.Area.Name} - {m.PollingStation.Name}"
+            }).OrderBy(m => m.VotingAreaName).ToList();
+
+            ViewData["PollingStationAreaId"] = new SelectList(psas, "Id", "VotingAreaName");
+
+            var SelectedPollingStationArea = psas.First();
+            if (SelectedPollingStationArea != null)
+            {
+                ViewData["SelectedPollingStationArea"] = SelectedPollingStationArea.Id;
+                ViewData["SelectedPollingStationAreaName"] = SelectedPollingStationArea.VotingAreaName;
+             
+            }
+            else
+            {
+                ViewData["SelectedPollingStationArea"] = string.Empty;
+            }
+            
+            var candidates = await this.repository.Candidates.GetAllAsync();
+            return View(candidates);
         }
 
 
@@ -123,29 +149,43 @@ namespace VotingApp.Controllers
 
             return View(voteCandidate);
         }
-
+        [AllowAnonymous]
         public async Task<IActionResult> ListVotingInMunicipality(Guid? id)
         {
             return Json((await this.repository.Votes.ListVotingInMunicipalityByCandidateId(id)).ToList());
         }
 
 
+        [AllowAnonymous]
         public IActionResult GetTotalVoteOfCandidates()
         {
             return Json(this.repository.Votes.TotalVoteOfCandidate());
         }
 
-
+        [AllowAnonymous]
         public async Task<IActionResult> GetCandidateVotesWithinMunicipality(string id)
         {
             //throw new NotImplementedException();
             return Json((await this.repository.Votes.GetCandidateVotesWithinMunicipality(id)));
         }
 
-
+        [AllowAnonymous]
         public async Task<IActionResult> GetCandidateMunicipalitVotes()
         {
             return Json(await this.repository.Votes.GetCandidateMunicipalitVotes());
+        }
+        [AllowAnonymous]
+        public async Task<IActionResult> getCandidatesByMunicipality(string id)
+        {
+            return Json(await this.repository.Votes.GetCandidateByMunicipality(id));
+        }
+
+        [AllowAnonymous]
+
+        public async Task<IActionResult> GetTotalVotingByPollingStationId(Guid id)
+        {
+            var data = await this.repository.Votes.GetAllWithEntitiesAsync(m => m.PollingStationAreaId.Equals(id));
+            return Json(data);
         }
 
 

@@ -9,10 +9,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using VotingApp.Data;
 using VotingApp.Data.Interface;
+using VotingApp.Helpers;
 using VotingApp.SignalRHub;
+using static VotingApp.Helpers.Helper;
 
 namespace VotingApp.Controllers
 {
+    [Authorize]
     public class BaseController : Controller
     {
         protected readonly IRepositoryWrapper repository;
@@ -27,6 +30,11 @@ namespace VotingApp.Controllers
             this.mapper = mapper;
         }
 
+
+        protected static IList<PermissionItem> GetPermissions()
+        {
+            return Permission.List().OrderBy(m => m.Description).ToList();
+        }
 
 
     }

@@ -4,10 +4,13 @@
     ViewData["Title"] = "Areas";
 }
 
-
-
-
-
+@section css{ 
+    <style>
+        #admin-post-child-area-container{
+            transition: 1s ease-in-out;
+        }
+    </style>
+}
 
 
 <div class="card rounded shadow border-0">
@@ -26,54 +29,64 @@
 
     
     <div class="card-body p-5 rounded">
+        <div class="btn-group d-inline">
+            @foreach (var item in Model.Municipalities)
+            {
+                <a href="#!" class="btn-view-post-admin btn btn-sm" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
+            }
+        </div>
+        
+        <div class="row mt-5">
+            <!--<div class="col" id="municipality-container">
+        <div class="table-responsive">
 
-        <div class="row">
-            <div class="col" id="municipality-container">
-                <div class="table-responsive">
-
-                    <table class="table" id="table-municipalities">
-                        <thead>
+            <table class="table" id="table-municipalities">
+                <thead>
+                    <tr>
+                        <th>Municipality</th>-->
+            @*<th></th>*@
+            <!--</tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Municipalities)
+                        {
                             <tr>
-                                <th>Municipality</th>
-                                @*<th></th>*@
+                                <td>
+                                    <a href="#!" class="btn-view-post-admin" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.Municipalities)
-                            {
-                                <tr>
-                                    <td>
-                                        <a href="#!" class="btn-view-post-admin" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                    </tbody>
+                </table>
             </div>
+        </div>-->
             <div class="col hide" id="municipality-child-area-container">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="table-areas-admin-post">
-                        <thead>
-                            <tr>
-                                <th>Administrative Post</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <table class="table table-striped" id="table-areas-admin-post">
+                    <thead>
+                        <tr>
+                            <th>Administrative Post</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="text-center">Click on Municipality to list administrative post</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="col hide" id="admin-post-child-area-container">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="table-areas-village">
-                        <thead>
-                            <tr>
-                                <th>Village/Suco</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                <table class="table table-striped" id="table-areas-village">
+                    <thead>
+                        <tr>
+                            <th>Village/Suco</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="text-center">Click on Administrative post to list Village/Suco</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -151,13 +164,12 @@
                             tbody += "</tr>";
                         });
 
-
                         $("#table-areas-village tbody").html(tbody);
                     }
                 })
             })
 
-            $("#table-municipalities").DataTable();
+            //$("table").DataTable();
         });
     </script>
 }

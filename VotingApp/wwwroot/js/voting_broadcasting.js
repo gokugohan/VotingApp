@@ -47,7 +47,7 @@ $("body").on("submit", "#form_save_vote", function (ev) {
                     message: result.message
                 });
             }
-            
+
         },
         error: function () {
             $.notify({
@@ -57,7 +57,43 @@ $("body").on("submit", "#form_save_vote", function (ev) {
             console.log('Failed ');
         }
     })
-})
+});
+
+
+$("body").on("click", ".btn-submit-total-vote", function (ev) {
+    let id = $(this).data("party-id");
+    let htmlELementId = $(this).data("input-element-id");
+    let pollingStationAreaId = $("#PollingStationAreaId option:selected").val();
+    let total = $("#" + htmlELementId).val();
+
+    let data = {};
+    data.CandidateId = id;
+    data.PollingStationAreaId = pollingStationAreaId;
+    data.Total = total;
+
+    $.ajax({
+        type: 'POST',
+        url: '/Votings/SaveVote',
+        data: data,
+        success: function (result) {
+            if (result.success) {
+                connection.invoke("BroadcastVotingData", result.message).then(function () { }).catch(function (err) { return console.log(err); })
+                $.notify({
+                    icon: "tim-icons icon-bell-55",
+                    message: result.message
+                });
+            }
+
+        },
+        error: function () {
+            $.notify({
+                icon: "tim-icons icon-bell-55",
+                message: 'Failed to receive the Data'
+            });
+            console.log('Failed ');
+        }
+    })
+});
 
 connection.on("OnbroadcastVotingDataListener", function (message) {
     $.notify({

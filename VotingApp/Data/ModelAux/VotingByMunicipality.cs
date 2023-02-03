@@ -8,6 +8,7 @@ namespace VotingApp.Data.ModelAux
     public class VotingByMunicipality
     {
         public string AreaId { get; set; }
+        public string AreaKey { get; set; }
         public string AreaName { get; set; }
         public int TotalVote { get; set; }
 

@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VotingApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="~/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/layout_dark/assets/css/nucleo-icons.css" rel="stylesheet" />
+    <link href="~/layout_dark/assets/css/black-dashboard.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" />
+    <style>
+        
+        .hide {
+            display: none;
+        }
+
+
+        .form-control, .custom-file-label, .custom-file-label:after {
+            color: #495057 !important;
+        }
+        .main-panel > .content {
+            padding: 78px 30px 30px 78px;
+            min-height: calc(100vh - 70px);
+        }
+    </style>
+    @RenderSection("css", required: false)
+</head>
+<body>
+
+
+    <div class="wrapper">
+      
+        <div class="main-panel">
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent">
+                <div class="container-fluid">
+                    <div class="navbar-wrapper">
+                        <div class="navbar-toggle d-inline">
+                            <button type="button" class="navbar-toggler">
+                                <span class="navbar-toggler-bar bar1"></span>
+                                <span class="navbar-toggler-bar bar2"></span>
+                                <span class="navbar-toggler-bar bar3"></span>
+                            </button>
+                        </div>
+                        <a class="navbar-brand" asp-action="Index" asp-controller="Home">Dashboard</a>
+                    </div>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                        <span class="navbar-toggler-bar navbar-kebab"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navigation">
+                        <ul class="navbar-nav ml-auto">
+
+
+                            <li class="nav-item">
+                                <a asp-action="Index" asp-controller="Home" class="nav-link">
+                                    Home
+                                </a>
+                            </li>
+                            @*<partial name="_LoginPartial" />*@
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- End Navbar -->
+
+            <div class="content  py-7 py-lg-8 pt-lg-9">
+                @RenderBody()
+            </div>
+
+            <footer class="footer border-top">
+                <div class="container">
+                    &copy; 2022 - VotingApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/dataTables.bootstrap4.min.js"></script>
+
+    <script src="~/js/signalr.min.js"></script>
+    <script src="~/js/voting_broadcasting.js"></script>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

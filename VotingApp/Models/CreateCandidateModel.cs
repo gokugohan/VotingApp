@@ -12,6 +12,9 @@ namespace VotingApp.Models
         [Required]
         public string Name { get; set; }
         public string Description { get; set; }
+
+        [Display(Name="Short Bio")]
+        public string ShortBiography { get; set; }
         public IFormFile Image { get; set; }
     }
 }

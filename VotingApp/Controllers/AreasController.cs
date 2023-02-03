@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -23,6 +24,7 @@ namespace VotingApp.Controllers
 
 
         // GET: Areas
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var municipalities = await this.repository.Areas.GetAllAsync(m => m.Level.Equals(2));
@@ -39,13 +41,14 @@ namespace VotingApp.Controllers
             return View(model);
         }
 
-
+        [AllowAnonymous]
         public async Task<IActionResult> GetMunicipalities()
         {
             var municipalities = await this.repository.Areas.GetAllAsync(m => m.Level.Equals(2));
             return Json(new { data = municipalities });
         }
-         public async Task<IActionResult> GetArea(int level, string parentId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetArea(int level, string parentId)
         {
             var areas = await this.repository.Areas.GetAllAsync(m => m.Level.Equals(level) & m.ParentId.Equals(parentId));
             return Json(new { data = areas });

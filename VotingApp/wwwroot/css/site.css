@@ -1,7 +1,7 @@
 ﻿body {
-    background: #b91919;
+    /*background: #b91919;
     background: -webkit-linear-gradient(to right, #b91919, #b5b134c9);
-    background: linear-gradient(to right, #b91919, #b5b134c9);
+    background: linear-gradient(to right, #b91919, #b5b134c9);*/
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -57,6 +57,18 @@
 
 .text-gray {
     color: #aaa;
+}
+
+.hide {
+    display: none !important;
+}
+
+.form-control {
+    color: #6c757d !important;
+}
+
+.form-group .input-group-append .input-group-text, .form-group .input-group-prepend .input-group-text, .input-group .input-group-append .input-group-text, .input-group .input-group-prepend .input-group-text {
+    padding: 10px 0 5px 18px;
 }
 
 .vertical-nav {
@@ -163,8 +175,8 @@ table.dataTable tr.shown td.dt-control:before {
     opacity: 1;
 }
 
-#tab-graph-municipality-candidate-vote .nav-link{
-    color:#fff;
+#tab-graph-municipality-candidate-vote .nav-link {
+    color: #fff;
 }
 
     #tab-graph-municipality-candidate-vote .nav-link.active, #tab-graph-municipality-candidate-vote .show > .nav-link {
@@ -184,4 +196,3 @@ table.dataTable tr.shown td.dt-control:before {
         border-radius: 50rem !important;
     }
 }
-

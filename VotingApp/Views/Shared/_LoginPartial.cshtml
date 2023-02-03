@@ -1,0 +1,44 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using VotingApp.Data
+
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <li class="dropdown nav-item">
+        <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
+            <div class="photo">
+                <img src="~/layout_dark/assets/img/default-avatar.png" />
+            </div>
+            <b class="caret d-none d-lg-block d-xl-block"></b>
+            @*<p class="d-lg-none">
+                Account
+            </p>*@
+        </a>
+        <ul class="dropdown-menu dropdown-navbar">
+            <li class="nav-link">
+            <a asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage" class="nav-item dropdown-item">
+                <i class="fa fa-user"></i>
+                Manage Account</a></li>
+            
+            <li class="dropdown-divider"></li>
+            <li class="nav-link">
+                <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                    <button id="logout" type="submit" class="nav-item dropdown-item">Logout</button>
+                </form>
+            </li>
+        </ul>
+    </li>
+}
+else
+{
+
+    @*<li class="nav-item">
+        <a class="nav-link" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    </li>*@
+    <li class="nav-item">
+        <a class="nav-link" id="login" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    </li>
+}

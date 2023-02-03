@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,8 @@ namespace VotingApp.Controllers
             this.Context = context;
         }
 
+        
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var municipalities = await this.repository.Areas.GetAllAsync(m=>m.Level==Helper.MUNICIPALITY,m=>m.OrderBy(m=>m.Name));
@@ -50,18 +53,18 @@ namespace VotingApp.Controllers
             return View(municipalities);
         }
 
-
+        [AllowAnonymous]
         public async Task<IActionResult> GetMunicipalities()
         {
             var municipalities = await this.repository.Areas.GetAllAsync(m => m.Level == Helper.MUNICIPALITY);
             return Json(municipalities);
         }
-
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();
         }
-
+        [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

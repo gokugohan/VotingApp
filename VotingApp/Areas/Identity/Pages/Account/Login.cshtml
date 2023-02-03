@@ -1,0 +1,74 @@
+﻿@page
+@model LoginModel
+
+@{
+    ViewData["Title"] = "Log in";
+}
+
+@section css{
+<style>
+    .main-panel {
+        background-image: url('/images/baucau.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+</style>
+}
+
+
+<div class="container mt-5 pb-5" style="margin-top: 10% !important;">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card bg-gradient-primary border-0 mb-0">
+                <div class="card-header bg-transparent">
+                    <h1>@ViewData["Title"]</h1>
+                </div>
+                <div class="card-body px-lg-5 pb-lg-5">
+                    <form id="account" method="post">
+
+                        <hr />
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                        <div class="form-group">
+                            <label asp-for="Input.Email"></label>
+                            <input asp-for="Input.Email" class="form-control" />
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Input.Password"></label>
+                            <input asp-for="Input.Password" class="form-control" />
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label asp-for="Input.RememberMe">
+                                    <input asp-for="Input.RememberMe" />
+                                    @Html.DisplayNameFor(m => m.Input.RememberMe)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Log in</button>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-6">
+                    @*<a  asp-page="./ForgotPassword" class="text-light"><small>Forgot password?</small></a>*@
+                </div>
+                <div class="col-6 text-right">
+                    <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl"class="text-light"><small>Create new account</small></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

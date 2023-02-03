@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<VotingApp.Data.Candidate>
 
+
 @{
     ViewData["Title"] = "Votings";
     var isFirstItem = true;
@@ -10,11 +11,10 @@
 @section css{
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
 
+
     <style>
 
-        .card-img-top {
-            max-height: 250px;
-        }
+        
 
         .hover {
             overflow: hidden;
@@ -52,93 +52,167 @@
         .hover .hover-overlay {
             background: rgba(0, 0, 0, 0.5);
         }
+
+        .input-group input.form-control {
+            border-top-right-radius: 0px !important;
+            border-bottom-right-radius: 0px !important;
+        }
+
+        .input-group-append {
+            border: none;
+        }
+
+        .btn-submit {
+            margin: 0;
+            border: none;
+            border-top-left-radius: 0px !important;
+            border-bottom-left-radius: 0px !important;
+            padding: 0px 20px;
+            font-size: 12px;
+        }
+
+            .btn-submit:hover {
+                transform: translateY(0px) !important;
+                -webkit-transform: translateY(0px) !important;
+            }
+
+        #tps-list-votes li {
+            background-color: #242536;
+            border: .0625rem solid #6474a6;
+        }
+
+        .card-img-top-container{
+            max-height:200px;
+            overflow:hidden;
+        }
+
+            .card-img-top-container img{
+                height:150px;
+            }
+
+            .card-body {
+                padding: 15px 0px;
+            }
     </style>
 }
 
 
 @*<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
 
+<div class="container-fluid">
+    <div class="card rounded shadow border-0">
+        <div class="card-header">
+            <div class="text-center">
+                <h1>
+                    @ViewData["Title"] (<span class="selected-tps-name">@ViewData["SelectedPollingStationAreaName"]</span>)
+                    <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
+                </h1>
 
-<div class="card rounded shadow border-0">
-    <div class="card-header">
-        <div class="text-center">
-            <h1>
-                @ViewData["Title"]
-                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
-            </h1>
-
-            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-
-
-        </div>
-    </div>
+                <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
 
 
-    <div class="card-body p-5 rounded">
-        <div class="row">
-            <div class="col-md-6 offset-md-3">
-                <div class="alert alert-info alert-with-icon" data-notify="container">
-                    <span data-notify="icon" class="tim-icons icon-bell-55"></span>
-                    <span data-notify="message">Click on the candidate name to add #vote</span>
-                </div>
             </div>
         </div>
-        <div class="btn-group flex-wrap btn-group-toggle">
-            @foreach (var item in Model)
-            {
-                //avatar = !string.IsNullOrEmpty(item.Avatar) ? $"/images/candidates/{item.Avatar}" : "/images/no-photo.jpg";
-                <h5> <a asp-action="Candidate" asp-route-id="@item.Id" class="btn btn-sm btn-primary btn-simple">@item.Name</a></h5>
-            }
 
+
+        <div class="card-body p-5 rounded">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="alert alert-info alert-with-icon" data-notify="container">
+                        <span data-notify="icon" class="tim-icons icon-bell-55"></span>
+                        <span data-notify="message">
+                            Select the Voting Area (TPS) to add the #VOTE
+                        </span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">TOTAL INVALID VOTE</div>
+                            </div>
+                            <input type="number" id="input-votu-nulu"
+                                   min="0"
+                                   class="form-control" placeholder="Total invalid vote" />
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary btn-submit btn-submit-total-null-vote"
+                                        type="button">
+                                    <i class="fa fa-send"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr />
+
+
+                    <div class="form-group">
+                        <label for="PollingStationAreaId" class="control-label"></label>
+                        <select id="PollingStationAreaId" name="PollingStationAreaId"
+                                class="form-control selectpicker" data-live-search="true"
+                                asp-items="ViewBag.PollingStationAreaId" required></select>
+                    </div>
+                    <div class="selected-tps-vote-container mb-4">
+                        <ul class="list-group" id="tps-list-votes"></ul>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    
+                    <div class="row">
+                        @foreach (var item in Model)
+                        {
+                            avatar = !string.IsNullOrEmpty(item.Avatar) ? $"/images/candidates/{item.Avatar}" : "/images/no-photo.jpg";
+
+                            <div class="card col-xl-3 col-sm-6">
+                                <div class="card-img-top-container">
+                                    <img class="card-img-top img-fluid" src="@avatar" alt="@item.Name">
+                                </div>
+                                <div class="card-body">
+                                    <h4 class="card-title">@item.Name</h4>
+                                    <div class="form-group">
+                                        <div class="input-group mb-3">
+                                            @*<div class="input-group-prepend">
+                                                <div class="input-group-text">
+                                                    @item.Name
+                                                </div>
+                                            </div>*@
+                                            <input type="number" id="input_@item.Name.ToCamelCase()"
+                                                   min="0"
+                                                   class="form-control" 
+                                                   placeholder="Total vote for @item.Name" />
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary btn-submit btn-submit-total-vote"
+                                                        data-party-id="@item.Id"
+                                                        data-input-element-id="input_@item.Name.ToCamelCase()"
+                                                        type="button">
+                                                    <i class="fa fa-send"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        }
+                    </div>
+
+
+                </div>
+            </div>
+
+            @*<div class="btn-group flex-wrap btn-group-toggle">
+                    @foreach (var item in Model)
+                    {
+                        //avatar = !string.IsNullOrEmpty(item.Avatar) ? $"/images/candidates/{item.Avatar}" : "/images/no-photo.jpg";
+                        <h5> <a asp-action="Candidate" asp-route-id="@item.Id" class="btn btn-sm btn-primary btn-simple">@item.Name</a></h5>
+                    }
+
+                </div>*@
         </div>
     </div>
 </div>
-
-
-@*<div class="card rounded shadow border-0">
-        <div class="card-body p-5 bg-white rounded">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>
-                                @Html.DisplayNameFor(model => model.Candidate)
-                            </th>
-                            <th>
-                                @Html.DisplayNameFor(model => model.PollingStationArea)
-                            </th>
-                            <th>
-                                @Html.DisplayNameFor(model => model.Total)
-                            </th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>
-                                    @Html.DisplayFor(modelItem => item.Candidate.Name)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => item.PollingStationArea.Area.Name)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => item.Total)
-                                </td>
-                                <td>
-                                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>*@
-
 
 @section scripts{
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
@@ -147,20 +221,78 @@
         $(document).ready(function () {
             let candidateId;
             let tpsValue = "";
-            $("body").on("change", ".SelectPollingStationAreaId", function () {
+            $("body").on("change", "#PollingStationAreaId", function () {
 
-                tpsValue = $(this).val();
-
-                console.log($(this).data("candidate") + " " + $(this).data("candidate-name"));
-
-                candidateId = $(this).data("candidate");
+                console.log($(this).val());
+                getDefaultSelectedPollingStationVotes($(this).val());
             })
 
+            $(".selected-tps-name").html($("#PollingStationAreaId option:selected").text());
 
-            $("body").on("click", "#btn-" + candidateId, function () {
-                console.log("tpsValue: " + tpsValue);
-                console.log($("#input-" + candidateId).val());
-            });
+            getDefaultSelectedPollingStationVotes("@ViewData["SelectedPollingStationArea"]");
+            function getDefaultSelectedPollingStationVotes(pollingStationId) {
+                let list_votes = $("#tps-list-votes");
+                $(".selected-tps-name").html($("#PollingStationAreaId option:selected").text());
+                $.ajax({
+                    type: 'POST',
+                    url: '/Votings/GetTotalVotingByPollingStationId/' + pollingStationId,
+                    success: function (response) {
+                        console.log(response);
+                        // Candidate (Party)
+                        // Area
+                        // Total Vote
+                        let html = "";
+
+                        $.each(response, function (index, item) {
+                            //let party_name =item.candidate.name;
+                            //let area_name= item.pollingStationArea.area.name;
+                            //let polling_station = item.pollingStationArea.pollingStation.name;
+
+                            html += "<li class='list-group-item'>" +
+                                "<p class='tps-vote'>" +
+                                "Party: " + item.candidate.name + "<br/>" +
+                                "Area: " + item.pollingStationArea.area.name + "<br/>" +
+                                "Polling Station (TPS): " + item.pollingStationArea.pollingStation.name
+                            "</p>"
+                            "</li>";
+                        });
+                        list_votes.html(html);
+                    },
+                    error: function () {
+                        $.notify({
+                            icon: "tim-icons icon-bell-55",
+                            message: 'Failed to receive the Data'
+                        });
+                        console.log('Failed ');
+                    }
+                });
+            }// getDefaultSelectedPollingStationVotes
+
+            //$.ajax({
+            //    type: 'POST',
+            //    url: '/Votings/SaveVote',
+            //    data: data,
+            //    success: function (result) {
+            //        if (result.success) {
+            //            connection.invoke("BroadcastVotingData", result.message).then(function () { }).catch(function (err) { return console.log(err); })
+            //            $.notify({
+            //                icon: "tim-icons icon-bell-55",
+            //                message: result.message
+            //            });
+            //        }
+
+            //    },
+            //    error: function () {
+            //        $.notify({
+            //            icon: "tim-icons icon-bell-55",
+            //            message: 'Failed to receive the Data'
+            //        });
+            //        console.log('Failed ');
+            //    }
+            //})});
+
+
+
 
         });
     </script>

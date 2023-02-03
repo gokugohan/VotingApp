@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VotingApp.Data.Interface;
 using VotingApp.Data.ModelAux;
@@ -10,6 +11,7 @@ namespace VotingApp.Data.Repository
 {
     public class VoteRepository : RepositoryBase<Vote>, IVoteRepository
     {
+
         public VoteRepository(AppDbContext context) : base(context)
         {
         }
@@ -43,7 +45,7 @@ namespace VotingApp.Data.Repository
         }
         public async Task<Dictionary<string, VotingByMunicipality>> ListVotingInMunicipality()
         {
-
+            var dictionaryAreaKeys = Helpers.Helper.initializeAreaKeys();
             var votings = this.Context.Votes
                 .Include(m => m.Candidate)
                 .Include(m => m.PollingStationArea).ThenInclude(m => m.Area)
@@ -53,7 +55,7 @@ namespace VotingApp.Data.Repository
 
             var dictionaryVoting = new Dictionary<string, VotingByMunicipality>();
 
-            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m=>m.Name).ToListAsync();
+            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m => m.Name).ToListAsync();
 
             municipalities.ForEach(m =>
             {
@@ -74,6 +76,7 @@ namespace VotingApp.Data.Repository
                         item = new VotingByMunicipality
                         {
                             AreaId = area.Id,
+                            AreaKey = dictionaryAreaKeys[voting.PollingStationArea.AreaId.Substring(0, 6)],
                             AreaName = area.Name,
                             TotalVote = voting.Total
                         };
@@ -99,7 +102,7 @@ namespace VotingApp.Data.Repository
                 return await ListVotingInMunicipality();
 
             }
-
+            var dictionaryAreaKeys = Helpers.Helper.initializeAreaKeys();
             var votings = this.Context.Votes
                 .Where(m => m.CandidateId.Equals(candidateId))
                 .Include(m => m.Candidate)
@@ -110,7 +113,7 @@ namespace VotingApp.Data.Repository
 
             var dictionaryVoting = new Dictionary<string, VotingByMunicipality>();
 
-            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m=>m.Name).ToListAsync();
+            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m => m.Name).ToListAsync();
 
             municipalities.ForEach(m =>
             {
@@ -131,6 +134,7 @@ namespace VotingApp.Data.Repository
                         item = new VotingByMunicipality
                         {
                             AreaId = area.Id,
+                            AreaKey = dictionaryAreaKeys[voting.PollingStationArea.AreaId.Substring(0, 6)],
                             AreaName = area.Name,
                             TotalVote = voting.Total
                         };
@@ -156,16 +160,16 @@ namespace VotingApp.Data.Repository
 
         public async Task<Dictionary<string, VotingCandidate>> GetCandidateVotesWithinMunicipality(string id)
         {
-            
+
             var votings = await this.Context.Votes
-                .Where(m=>m.PollingStationArea.AreaId.Substring(0,6).Equals(id))
+                .Where(m => m.PollingStationArea.AreaId.Substring(0, 6).Equals(id))
                 .Include(m => m.Candidate)
                 .Include(m => m.PollingStationArea).ThenInclude(m => m.Area)
                 .Include(m => m.PollingStationArea).ThenInclude(m => m.PollingStation)
                 .ToListAsync();
 
             var list = new List<VotingCandidate>();
-            var candidates = await this.Context.Candidates.OrderBy(m=>m.Name).ToListAsync();
+            var candidates = await this.Context.Candidates.OrderBy(m => m.Name).ToListAsync();
             var dictionaryVoting = new Dictionary<string, VotingCandidate>();
 
             candidates.ForEach(c => { dictionaryVoting.Add(c.Name, null); });
@@ -183,7 +187,6 @@ namespace VotingApp.Data.Repository
                         TotalVote = v.Total,
                     };
                     dictionary = vCandidate;
-                    //list.Add(vCandidate);
                 }
                 else
                 {
@@ -226,7 +229,7 @@ namespace VotingApp.Data.Repository
 
             var dictionaryVoting = new Dictionary<string, VotingByMunicipality>();
 
-            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m=>m.Name).ToListAsync();
+            var municipalities = await this.Context.Areas.Where(m => m.Level == 2).OrderBy(m => m.Name).ToListAsync();
 
             municipalities.ForEach(m =>
             {
@@ -297,8 +300,50 @@ namespace VotingApp.Data.Repository
 
         public async Task<Vote> GetWithAllEntitiesAsync(Guid? id)
         {
-            return await this.Context.Votes.Include(v => v.Candidate).Include(v => v.PollingStationArea).ThenInclude(m => m.Area).FirstOrDefaultAsync(m => m.Id.Equals(id));
+            return await this.Context.Votes
+                .Include(v => v.Candidate)
+                .Include(m => m.Candidate)
+                .Include(v => v.PollingStationArea).ThenInclude(m => m.PollingStation)
+                .Include(v => v.PollingStationArea).ThenInclude(m => m.Area)
+                .FirstOrDefaultAsync(m => m.Id.Equals(id));
+        }
+
+        public async Task<IEnumerable<Vote>> GetAllWithEntitiesAsync(Expression<Func<Vote, bool>> expression)
+        {
+            return await this.Context.Votes
+                .Include(v => v.Candidate)
+                .Include(v => v.PollingStationArea).ThenInclude(m => m.Area)
+                .Include(v => v.PollingStationArea).ThenInclude(m => m.PollingStation)
+                .Where(expression).AsNoTracking().ToListAsync();
+
+        }
+
+
+        public async Task<List<CandidateMunicipalityVoteItem>> GetCandidateByMunicipality(string municipalityId)
+        {
+            var dictionary = Helpers.Helper.initializeAreaKeys();
+            var res = await this.Context.Votes
+                .Include(m => m.PollingStationArea)
+                .ThenInclude(m => m.Area)
+                .Include(m => m.Candidate)
+                .Where(m => m.PollingStationArea.AreaId.Substring(0, 6).Equals(municipalityId))
+                .Select(m => new CandidateMunicipalityVoteItem
+                {
+                    Candidate = m.Candidate,
+                    Area = m.PollingStationArea.Area,
+                    AreaKey = dictionary[m.PollingStationArea.AreaId.Substring(0, 6)],
+                    Total = m.Total
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            /*
+                Candidate Name,Total Vote, Area key
+             */
+
+            return res;
         }
 
     }
+
 }

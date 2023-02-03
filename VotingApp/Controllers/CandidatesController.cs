@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ using VotingApp.Data;
 using VotingApp.Data.Interface;
 using VotingApp.Models;
 using VotingApp.SignalRHub;
+using VotingApp.ViewModels;
 
 namespace VotingApp.Controllers
 {
@@ -31,12 +33,14 @@ namespace VotingApp.Controllers
 
 
         // GET: Candidates
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             return View(await repository.Candidates.GetAllAsync());
         }
 
         // GET: Candidates/Details/5
+        [AllowAnonymous]
         public async Task<IActionResult> Details(Guid? id)
         {
             if (id == null)
@@ -73,6 +77,7 @@ namespace VotingApp.Controllers
                     Id=Guid.NewGuid(),
                     Name = model.Name,
                     Description = model.Description,
+                    ShortBiography = model.ShortBiography,
                     Avatar = UploadImage(model.Image)
                 };
                 repository.Candidates.Add(candidate);
@@ -111,8 +116,17 @@ namespace VotingApp.Controllers
             {
                 try
                 {
-                    model.Avatar = UploadImage(model.Image);
-                    var candidate = this.mapper.Map<Candidate>(model);
+                    //var candidate = this.mapper.Map<Candidate>(model);
+                    var candidate = await this.repository.Candidates.GetAsync(id);
+
+                    if (model.Image != null)
+                    {
+                        model.Avatar = UploadImage(model.Image);
+                        candidate.Avatar = model.Avatar;
+                    }
+
+                    candidate.Description = model.Description;
+                    candidate.ShortBiography = model.ShortBiography;
                     repository.Candidates.Update(candidate);
                     await repository.SaveAsync();
                 }
@@ -142,12 +156,25 @@ namespace VotingApp.Controllers
 
             var candidate = await repository.Candidates
                 .GetAsync(m => m.Id == id);
+
+            
             if (candidate == null)
             {
                 return NotFound();
             }
 
-            return View(candidate);
+            var model = new DeleteCandidateViewModel();
+            model.Id = candidate.Id;
+            model.Candidate = candidate;
+
+            // Check if candidates has vote
+            if(await repository.Candidates.hasAnyVoting(id.Value))
+            {
+                ViewData["TotalCandidateVote"] = await this.repository.Candidates.GetTotalVoting(id.Value);
+                model.VoteList = await this.repository.Candidates.getTotalVotingWithAreas(id.Value);
+            }
+
+            return View(model);
         }
 
         // POST: Candidates/Delete/5
@@ -158,7 +185,7 @@ namespace VotingApp.Controllers
             try
             {
                 this.repository.Candidates.Delete(m => m.Id.Equals(id));
-                await this.repository.SaveAsync();
+                //await this.repository.SaveAsync();
             }
             catch (Exception ex)
             {
@@ -198,7 +225,7 @@ namespace VotingApp.Controllers
 
 
         //Ajax
-
+        [AllowAnonymous]
         public async Task<IActionResult> GetCandidadesAjax()
         {
             return Json(await this.repository.Candidates.GetAllAsync());

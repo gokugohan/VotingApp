@@ -14,6 +14,7 @@ namespace VotingApp.Automapper
         {
             this.CreateMap<Candidate, EditCandidateModel>().ReverseMap();
             this.CreateMap<SaveCandidateVote, Vote>();
+
         }
     }   
 }

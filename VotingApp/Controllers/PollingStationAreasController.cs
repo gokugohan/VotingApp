@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -26,6 +27,7 @@ namespace VotingApp.Controllers
 
 
         // GET: VotingAreas
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var votingAreas = repository.PollingStationAreas.GetAllWithAreaPollingStation();
@@ -53,7 +55,7 @@ namespace VotingApp.Controllers
             return View(municipalities);
         }
 
-
+        [AllowAnonymous]
         public IActionResult GetVotingAreasOfMunicipality(string id)
         {
 
@@ -78,6 +80,7 @@ namespace VotingApp.Controllers
             return View(pollingStationArea);
         }
 
+        [AllowAnonymous]
 
         public async Task<IActionResult> GetPostAdministratives(string id)
         {
@@ -85,6 +88,7 @@ namespace VotingApp.Controllers
             return Json(post_administratives);
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> GetVillages(string id)
         {
             var villages = await this.repository.Areas.GetAllAsync(m => m.Level == Helper.VILLAGE && m.ParentId.Equals(id));

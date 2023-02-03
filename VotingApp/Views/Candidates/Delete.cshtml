@@ -1,4 +1,4 @@
-﻿@model VotingApp.Data.Candidate
+﻿@model VotingApp.ViewModels.DeleteCandidateViewModel
 
 @{
     ViewData["Title"] = "Delete";
@@ -7,22 +7,40 @@
 
 <div class="container">
 
-    <h3 style="color: #32325d;">Are you sure you want to delete this?</h3>
+    <h3>
+        Are you sure you want to delete this?
+        <br />
+
+        <small>Total Votes: @ViewData["TotalCandidateVote"]</small>
+    </h3>
+
+    @if (Model.VoteList.Count > 0)
+    {
+
+        <ol>
+            @foreach (var item in Model.VoteList)
+            {
+                <li>Pooling Station(@item.PollingStationArea.Area.Name) : @item.Total</li>
+            }
+        </ol>
+    }
+
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
+            @Html.DisplayNameFor(model => model.Candidate.Name)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Name)
+            @Html.DisplayFor(model => model.Candidate.Name)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
+            @Html.DisplayNameFor(model => model.Candidate.Description)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Description)
+            @Html.DisplayFor(model => model.Candidate.Description)
         </dd>
     </dl>
+
 
     <form asp-action="Delete">
         <input type="hidden" asp-for="Id" />

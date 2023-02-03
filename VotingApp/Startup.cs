@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using VotingApp.Data;
-using VotingApp.Data.Interface;
-using VotingApp.Data.Repository;
+using VotingApp.Extensions;
 using VotingApp.SignalRHub;
 
 namespace VotingApp
@@ -23,25 +22,18 @@ namespace VotingApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+            //services.AddDbContext<AppDbContext>(options =>
+            //    options.UseSqlServer(
+            //        Configuration.GetConnectionString("DefaultConnection")));
 
+            services.Configure(Configuration);
 
-            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
-            services.AddSignalR();
-            services.AddAutoMapper(typeof(Startup));
 
             services.AddControllersWithViews().AddNewtonsoftJson(option =>
             {
                 option.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
-            //services.AddRazorPages();
-
-
-            //           services.AddControllers().AddNewtonsoftJson(x =>
-            //x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-
+            services.AddRazorPages();
 
 
         }
@@ -65,6 +57,8 @@ namespace VotingApp
 
             app.UseRouting();
 
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
@@ -75,10 +69,12 @@ namespace VotingApp
 
 
 
-                //endpoints.MapRazorPages();
+                endpoints.MapRazorPages();
 
                 endpoints.MapHub<VotingHub>("/voting-data-broadcast");
             });
+
+            
         }
     }
 }
