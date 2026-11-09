@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    name: Build, test and checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore VotingApp.sln
+
+      - name: Build
+        run: dotnet build VotingApp.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test VotingApp.sln -c Release --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+      - name: Vulnerable packages
+        run: |
+          dotnet list VotingApp.sln package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Vulnerable NuGet packages found"
+            exit 1
+          fi
+
+      - name: EF model matches migrations
+        env:
+          # Design-time only: no database connection is opened.
+          ConnectionStrings__DefaultConnection: "Server=localhost;Database=ci;User ID=ci;Password=ci;TrustServerCertificate=True"
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --project VotingApp.Infrastructure --startup-project VotingApp --configuration Release --no-build
+
+      - name: Idempotent migration script
+        env:
+          ConnectionStrings__DefaultConnection: "Server=localhost;Database=ci;User ID=ci;Password=ci;TrustServerCertificate=True"
+        run: dotnet ef migrations script --idempotent --project VotingApp.Infrastructure --startup-project VotingApp --configuration Release --no-build -o migrations.sql
+
+      - name: Upload migration script
+        uses: actions/upload-artifact@v4
+        with:
+          name: migrations-sql
+          path: migrations.sql
+
+  container:
+    name: Container image
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/votingapp
+          tags: |
+            type=sha
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build (and push on master/tags)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
