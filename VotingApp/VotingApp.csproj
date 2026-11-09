@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>aspnet-VotingApp-A4B088B9-ABE1-42F0-A2C5-344D1152B189</UserSecretsId>
     <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
   </PropertyGroup>
@@ -33,17 +32,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.33" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.33" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.33" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.33" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.33" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.33">
+    <ProjectReference Include="..\VotingApp.Infrastructure\VotingApp.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.23" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,8 +74,5 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Data\Configuration\" />
-  </ItemGroup>
 
 </Project>

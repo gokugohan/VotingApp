@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Use cases (services), repository/persistence abstractions and permissions. -->
+  <ItemGroup>
+    <ProjectReference Include="..\VotingApp.Domain\VotingApp.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- DbSet/IQueryable abstractions for application services; no provider here. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+  </ItemGroup>
+</Project>

@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using VotingApp.Data;
+using VotingApp.Infrastructure.Identity;
 
 namespace VotingApp.Authorization.Claims
 {

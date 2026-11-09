@@ -1,0 +1,143 @@
+@model List<VotingApp.Application.Elections.StationProgress>
+@using VotingApp.Application.Security
+@using VotingApp.Domain.Elections
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService Authz
+@{
+    var round = (ElectionRound)ViewData["Round"];
+    var summary = (VotingApp.Application.Elections.RoundSummary)ViewData["Summary"];
+    ViewData["Title"] = $"{round.Election.Name}: round {round.Number} result sheets";
+    var canEnter = (await Authz.AuthorizeAsync(User, Permissions.EnterResults)).Succeeded;
+    var canVerify = (await Authz.AuthorizeAsync(User, Permissions.VerifyResults)).Succeeded;
+    var canApprove = (await Authz.AuthorizeAsync(User, Permissions.ApproveResults)).Succeeded;
+    var canLock = (await Authz.AuthorizeAsync(User, Permissions.LockResults)).Succeeded;
+    var entryOpen = round.Status == ElectionStatus.Counting || round.Status == ElectionStatus.Provisional;
+    var municipalities = Model.Select(s => new { s.MunicipalityId, s.MunicipalityName }).Distinct().OrderBy(m => m.MunicipalityName).ToList();
+    int Count(ResultSheetStatus? st) => Model.Count(s => s.Status == st);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0">@round.Election.Name: round @round.Number</h2>
+    <a asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">Public results</a>
+</div>
+<p class="text-muted">
+    Round status: <span class="badge badge-info">@round.Status</span>
+    @if (!entryOpen)
+    {
+        <span>Entry opens when the round is moved to Counting.</span>
+    }
+</p>
+
+<div class="row text-center mb-3">
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.Count</h3><small>stations in your scope</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Count(null)</h3><small>not received</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Count(ResultSheetStatus.Entered)</h3><small>awaiting verification</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Count(ResultSheetStatus.Verified)</h3><small>awaiting approval</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@(Count(ResultSheetStatus.Approved) + Count(ResultSheetStatus.Locked))</h3><small>approved / locked</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0 @(Model.Any(s => s.ErrorCount > 0) ? "text-danger" : "")">@Model.Count(s => s.ErrorCount > 0)</h3><small>with arithmetic errors</small></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <form method="get" class="form-inline">
+            <input type="hidden" name="roundId" value="@round.Id" />
+            <select name="municipalityId" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
+                <option value="">All municipalities in scope</option>
+                @foreach (var m in municipalities)
+                {
+                    <option value="@m.MunicipalityId" selected="@(m.MunicipalityId == (string)ViewData["MunicipalityId"])">@m.MunicipalityName</option>
+                }
+            </select>
+        </form>
+        @if (canLock)
+        {
+            <form asp-action="Lock" method="post" class="d-inline">
+                <input type="hidden" name="roundId" value="@round.Id" />
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="National tabulation: approved sheets become read-only">Lock all approved sheets</button>
+            </form>
+        }
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr><th>Municipality</th><th>Village</th><th>Station</th><th>Status</th><th>Checks</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var s in Model)
+            {
+                <tr>
+                    <td>@s.MunicipalityName</td>
+                    <td>@s.VillageName</td>
+                    <td>@s.StationName</td>
+                    <td>
+                        @if (s.Status == null)
+                        {
+                            <span class="badge badge-secondary">Not received</span>
+                        }
+                        else
+                        {
+                            <span class="badge @(s.Status >= ResultSheetStatus.Approved ? "badge-success" : "badge-warning")">@s.Status</span>
+                        }
+                    </td>
+                    <td>
+                        @if (s.ErrorCount > 0) { <span class="badge badge-danger">@s.ErrorCount error(s)</span> }
+                        @if (s.WarningCount > 0) { <span class="badge badge-warning">@s.WarningCount warning(s)</span> }
+                        @if (!string.IsNullOrEmpty(s.LastMismatchFields))
+                        {
+                            <span class="badge badge-danger" title="Second entry differed in: @s.LastMismatchFields">entries differ</span>
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        @if (entryOpen && canEnter && (s.Status == null || s.Status == ResultSheetStatus.Entered))
+                        {
+                            <a asp-action="Enter" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">@(s.Status == null ? "Enter" : "Correct")</a>
+                        }
+                        @if (entryOpen && canVerify && s.Status == ResultSheetStatus.Entered)
+                        {
+                            <text> | </text><a asp-action="Verify" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">Verify</a>
+                        }
+                        @if (canApprove && s.Status == ResultSheetStatus.Verified && s.SheetId.HasValue)
+                        {
+                            <form asp-action="Approve" method="post" class="d-inline">
+                                <input type="hidden" name="roundId" value="@round.Id" />
+                                <input type="hidden" name="sheetId" value="@s.SheetId" />
+                                <button type="submit" class="btn btn-link btn-sm p-0" disabled="@(s.ErrorCount > 0)">Approve</button>
+                            </form>
+                        }
+                        @if (canApprove && (s.Status == ResultSheetStatus.Verified || s.Status == ResultSheetStatus.Approved) && s.SheetId.HasValue)
+                        {
+                            <form asp-action="Reopen" method="post" class="d-inline js-reopen">
+                                <input type="hidden" name="roundId" value="@round.Id" />
+                                <input type="hidden" name="sheetId" value="@s.SheetId" />
+                                <input type="hidden" name="reason" />
+                                <button type="submit" class="btn btn-link btn-sm p-0 text-danger">Reopen</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="6" class="text-muted">No polling stations in your scope. Ask an administrator to assign your municipalities.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (summary != null)
+{
+    <p class="text-muted small">All sheets received so far (any status): @summary.SheetsCounted of @summary.PollingStations stations, @summary.ValidVotes valid votes. The public page only counts approved sheets.</p>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll("form.js-reopen").forEach(function (form) {
+            form.addEventListener("submit", function (e) {
+                var reason = window.prompt("Why is this sheet being reopened? (recorded in the sheet's notes and the audit log)");
+                if (!reason || !reason.trim()) { e.preventDefault(); return; }
+                form.querySelector("input[name=reason]").value = reason;
+            });
+        });
+    </script>
+}

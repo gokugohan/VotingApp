@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace VotingApp.Areas.Identity.Pages.Account.Manage
 {
-    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Application.Security.Permissions.AdminRole)]
     public class RolesModel : PageModel
     {
         public IList<IdentityRole> Roles { get; set; }

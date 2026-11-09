@@ -1,33 +1,19 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using VotingApp.Data;
-using VotingApp.Data.Interface;
-using VotingApp.SignalRHub;
-
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using static VotingApp.Helpers.Helper;
+using Microsoft.AspNetCore.Mvc;
+using VotingApp.Application.AuditLogs;
+using VotingApp.Application.Security;
 
 namespace VotingApp.Controllers
 {
-    [Authorize(Policy = Permission.PERMISSION_ACCESS_VIEW_LOG)]
-    public class AuditLogController :Controller
+    [Authorize(Policy = Permissions.ViewAuditLog)]
+    public class AuditLogController : BaseController
     {
-        private readonly AppDbContext context;
-        public AuditLogController(AppDbContext context)
-        {
-            this.context = context;
-        }
+        private readonly AuditLogService auditLogs;
 
-        public async Task<IActionResult> Index()
-        {
-            return View(await this.context.AuditLogs.OrderByDescending(m=>m.DateTime).ToListAsync());
-        }
+        public AuditLogController(AuditLogService auditLogs) => this.auditLogs = auditLogs;
+
+        public async Task<IActionResult> Index() =>
+            View(await auditLogs.ListRecentAsync(ct: HttpContext.RequestAborted));
     }
 }

@@ -1,0 +1,40 @@
+@model VotingApp.Models.CreateElectionModel
+@{
+    ViewData["Title"] = "New election";
+}
+<h2>New election</h2>
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Create" method="post" style="max-width: 32rem">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-control" placeholder="e.g. Presidential Election 2027" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Type"></label>
+                <select asp-for="Type" asp-items="Html.GetEnumSelectList<VotingApp.Domain.Elections.ElectionType>()" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="ElectionDate"></label>
+                <input asp-for="ElectionDate" class="form-control" />
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label asp-for="TotalSeats"></label>
+                    <input asp-for="TotalSeats" class="form-control" />
+                </div>
+                <div class="form-group col">
+                    <label asp-for="ThresholdPercent"></label>
+                    <input asp-for="ThresholdPercent" class="form-control" />
+                </div>
+            </div>
+            <small class="form-text text-muted mb-3">Seats and threshold apply to parliamentary elections only. Check them against the electoral law in force.</small>
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a asp-action="Index" class="btn btn-link">Cancel</a>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using VotingApp.Data;
+using VotingApp.Domain.Entities;
 
 namespace VotingApp.Models
 {

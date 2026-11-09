@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using System.Linq;
 using System.Threading.Tasks;
-using VotingApp.Authorization.Claims;
+using VotingApp.Application.Security;
 using VotingApp.Authorization.Requirements;
-using VotingApp.Data;
+using VotingApp.Infrastructure.Identity;
 
 namespace VotingApp.Authorization.Handlers
 {
@@ -26,20 +26,20 @@ namespace VotingApp.Authorization.Handlers
             var user = await this.userManager.GetUserAsync(context.User);
             if (user == null) return;
 
-            if (await UserHasPermissionAsync(user, requirement.Permission) ||
-                await AnyRoleHasPermissionAsync(user, requirement.Permission))
+            if (await UserHasAnyPermissionAsync(user, requirement) ||
+                await AnyRoleHasAnyPermissionAsync(user, requirement))
             {
                 context.Succeed(requirement);
             }
         }
 
-        private async Task<bool> UserHasPermissionAsync(AppUser user, string permission)
+        private async Task<bool> UserHasAnyPermissionAsync(AppUser user, PermissionRequirement requirement)
         {
             var claims = await this.userManager.GetClaimsAsync(user);
-            return claims.Any(c => c.Type == CustomClaimTypes.Permission && c.Value == permission);
+            return claims.Any(c => c.Type == CustomClaimTypes.Permission && requirement.Permissions.Contains(c.Value));
         }
 
-        private async Task<bool> AnyRoleHasPermissionAsync(AppUser user, string permission)
+        private async Task<bool> AnyRoleHasAnyPermissionAsync(AppUser user, PermissionRequirement requirement)
         {
             // Look roles up one by one instead of roles.Where(r => names.Contains(r.Name)):
             // EF Core 8 translates Contains on a list to OPENJSON, which needs SQL Server compat level >= 130.
@@ -49,7 +49,7 @@ namespace VotingApp.Authorization.Handlers
                 if (role == null) continue;
 
                 var claims = await this.roleManager.GetClaimsAsync(role);
-                if (claims.Any(c => c.Type == CustomClaimTypes.Permission && c.Value == permission))
+                if (claims.Any(c => c.Type == CustomClaimTypes.Permission && requirement.Permissions.Contains(c.Value)))
                 {
                     return true;
                 }

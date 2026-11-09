@@ -104,6 +104,12 @@
                         </a>
                     </li>
                     <li>
+                        <a asp-action="Index" asp-controller="Elections">
+                            <i class="fa fa-check-square-o mr-3 fa-fw"></i>
+                            Elections
+                        </a>
+                    </li>
+                    <li>
                         <a asp-action="Index" asp-controller="AuditLog" class="nav-link font-italic">
                             <i class="fa fa-area-chart mr-3 fa-fw"></i>
                             Logs
@@ -158,6 +164,7 @@
             <!-- End Navbar -->
 
             <div class="content">
+                <partial name="_Flash" />
                 @RenderBody()
             </div>
 

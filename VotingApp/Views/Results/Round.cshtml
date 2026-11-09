@@ -1,0 +1,99 @@
+@model VotingApp.Application.Elections.RoundSummary
+@using VotingApp.Domain.Elections
+@using VotingApp.Domain.Elections.Rules
+@{
+    ViewData["Title"] = $"{Model.ElectionName}: results";
+    var names = Model.Contestants.ToDictionary(c => c.ContestantId, c => c.Name);
+    string Name(Guid? id) => id.HasValue && names.TryGetValue(id.Value, out var n) ? n : "?";
+    var isFinal = Model.RoundStatus == ElectionStatus.Certified;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0">@Model.ElectionName @(Model.RoundNumber > 1 ? $"(round {Model.RoundNumber})" : "")</h2>
+    <a asp-action="Summary" asp-route-id="@Model.RoundId" class="btn btn-outline-secondary btn-sm">Download JSON</a>
+</div>
+
+<div class="alert @(isFinal ? "alert-success" : "alert-warning")">
+    @if (isFinal)
+    {
+        <strong>Certified results.</strong>
+    }
+    else
+    {
+        <strong>Provisional results.</strong> <span>Only polling station sheets that have been verified and approved are counted. Official results are those certified by the competent authorities.</span>
+    }
+</div>
+
+<div class="row text-center mb-3">
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.ReportingPercent%</h3><small>stations reporting (@Model.SheetsCounted of @Model.PollingStations)</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.ValidVotes.ToString("N0")</h3><small>valid votes</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.BlankVotes.ToString("N0")</h3><small>blank</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.InvalidVotes.ToString("N0")</h3><small>invalid</small></div></div>
+</div>
+
+@if (Model.Presidential != null && Model.SheetsCounted > 0)
+{
+    var p = Model.Presidential;
+    <div class="alert alert-info">
+        @switch (p.Outcome)
+        {
+            case PresidentialOutcome.Elected:
+                <span><strong>@Name(p.WinnerId)</strong> has more than half of the valid votes counted so far.</span>
+                break;
+            case PresidentialOutcome.Runoff:
+                <span>No candidate has more than half of the valid votes (@p.MajorityThreshold.ToString("N0") needed). Heading to a runoff between <strong>@Name(p.RunoffContestantIds[0])</strong> and <strong>@Name(p.RunoffContestantIds[1])</strong>.</span>
+                break;
+            case PresidentialOutcome.TieRequiresResolution:
+                <span>A tie between @string.Join(", ", p.TiedContestantIds.Select(id => Name(id))) decides the outcome and must be resolved under the law.</span>
+                break;
+        }
+    </div>
+}
+@if (Model.Parliamentary != null && Model.SheetsCounted > 0)
+{
+    var pr = Model.Parliamentary;
+    <div class="alert alert-info">
+        Projected allocation of @pr.TotalSeats seats (D'Hondt, @pr.ThresholdPercent% threshold) from the votes counted so far.
+        @if (pr.LastSeatWinnerId.HasValue)
+        {
+            <span>Last seat: <strong>@Name(pr.LastSeatWinnerId)</strong>@(pr.LastSeatDecidedByTie ? " (decided by a tie-break)" : ""); next in line: <strong>@Name(pr.NextInLineId)</strong>.</span>
+        }
+    </div>
+}
+
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>@(Model.Type == ElectionType.Presidential ? "Candidate" : "Party / coalition")</th>
+                    <th class="text-right">Votes</th>
+                    <th class="text-right">% of valid</th>
+                    @if (Model.Parliamentary != null) { <th class="text-right">Seats</th> }
+                    <th style="width: 35%"></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var c in Model.Contestants)
+            {
+                <tr>
+                    <td>@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="text-muted">(@c.Acronym)</span> }</td>
+                    <td class="text-right">@c.Votes.ToString("N0")</td>
+                    <td class="text-right">@c.PercentOfValid.ToString("0.00")%</td>
+                    @if (Model.Parliamentary != null) { <td class="text-right"><strong>@c.Seats</strong></td> }
+                    <td>
+                        <div class="progress" style="height: 0.75rem" role="img" aria-label="@c.PercentOfValid.ToString("0.0")% of valid votes">
+                            <div class="progress-bar" style="width: @c.PercentOfValid.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <p class="text-muted small mb-0">Updated @Model.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC. This page refreshes every 30 seconds.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>setTimeout(function () { window.location.reload(); }, 30000);</script>
+}

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using VotingApp.Services.Elections;
+using VotingApp.Domain.Elections.Rules;
 
 namespace VotingApp.Tests
 {

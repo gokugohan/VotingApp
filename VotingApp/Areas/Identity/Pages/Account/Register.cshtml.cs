@@ -13,12 +13,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
-using VotingApp.Data;
+using VotingApp.Infrastructure.Identity;
 
 namespace VotingApp.Areas.Identity.Pages.Account
 {
     // Public self-registration is disabled: only admins create accounts (election staff are provisioned, not self-enrolled).
-    [Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
+    [Authorize(Roles = VotingApp.Application.Security.Permissions.AdminRole)]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<AppUser> _signInManager;

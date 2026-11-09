@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using VotingApp.Helpers;
-using static VotingApp.Helpers.Helper;
+using VotingApp.Application.Security;
 
 namespace VotingApp.Areas.Identity.Pages.Account.Manage
 {
-    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Application.Security.Permissions.AdminRole)]
     public class PermissionsModel : PageModel
     {
         public IList<PermissionItem> PermissionItems { get; set; }
@@ -19,7 +18,7 @@ namespace VotingApp.Areas.Identity.Pages.Account.Manage
 
         public void OnGet()
         {
-            PermissionItems = Permission.List().OrderBy(m => m.Description).ToList();
+            PermissionItems = Permissions.All.OrderBy(m => m.Group).ThenBy(m => m.Description).ToList();
         }
     }
 }

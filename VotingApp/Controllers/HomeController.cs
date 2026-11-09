@@ -1,77 +1,49 @@
-﻿using AutoMapper;
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using VotingApp.Data;
-using VotingApp.Data.Interface;
-using VotingApp.Helpers;
+using VotingApp.Application.Candidates;
+using VotingApp.Application.Geography;
+using VotingApp.Application.Results;
 using VotingApp.Models;
-using VotingApp.SignalRHub;
 
 namespace VotingApp.Controllers
 {
     public class HomeController : BaseController
     {
-        private AppDbContext Context;
-        public HomeController(IRepositoryWrapper repository, IHubContext<VotingHub> hubContext,
-            IMapper mapper,
-            AppDbContext context,
-            ILogger<BaseController> logger) : base(repository, hubContext,mapper, logger)
+        // Dot as thousands separator, no decimals (e.g. 1.234.567).
+        private static readonly NumberFormatInfo VoteNumberFormat = new() { NumberDecimalDigits = 0, NumberGroupSeparator = "." };
+
+        private readonly AreaService areas;
+        private readonly CandidateService candidates;
+        private readonly ResultsQueryService results;
+
+        public HomeController(AreaService areas, CandidateService candidates, ResultsQueryService results)
         {
-            this.Context = context;
+            this.areas = areas;
+            this.candidates = candidates;
+            this.results = results;
         }
 
-        
         [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-            var municipalities = await this.repository.Areas.GetAllAsync(m=>m.Level==Helper.MUNICIPALITY,m=>m.OrderBy(m=>m.Name));
-            var candidates = await this.repository.Candidates.GetAllAsync(m=>m.OrderBy(m=>m.Name));
-
-            //ViewData["candidates"] = candidates;
-            var totalVotesOfCandidate = this.repository.Votes.TotalVoteOfCandidate();
-
-            ViewData["TotalVote"] = this.repository.Votes.GetTotalVote();
-            ViewData["candidates"] = candidates;
-
-            //var votings = this.Context.Votes
-            //    .Include(m => m.Candidate)
-            //    .Include(m => m.PollingStationArea).ThenInclude(m => m.Area)
-            //    .Include(m => m.PollingStationArea).ThenInclude(m => m.PollingStation)
-            //    .ToList();
-            //var mstring = municipalities.Select(m => m.Id).ToList();
-            //var cVotings = votings.Select(m => m.Candidate.Name).Distinct().ToList();
-
-
-            return View(municipalities);
+            ViewData["TotalVote"] = (await results.GetTotalVotesAsync(HttpContext.RequestAborted)).ToString("N", VoteNumberFormat);
+            ViewData["candidates"] = await candidates.ListAsync(HttpContext.RequestAborted);
+            return View(await areas.GetMunicipalitiesAsync(HttpContext.RequestAborted));
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> GetMunicipalities()
-        {
-            var municipalities = await this.repository.Areas.GetAllAsync(m => m.Level == Helper.MUNICIPALITY);
-            return Json(municipalities);
-        }
+        public async Task<IActionResult> GetMunicipalities() =>
+            Json(await areas.GetMunicipalitiesAsync(HttpContext.RequestAborted));
+
         [AllowAnonymous]
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        public IActionResult Privacy() => View();
+
         [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-
-
+        public IActionResult Error() =>
+            View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using VotingApp.Data;
+using VotingApp.Infrastructure.Identity;
 
 namespace VotingApp.Areas.Identity.Pages.Account
 {

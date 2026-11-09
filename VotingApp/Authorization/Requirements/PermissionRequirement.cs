@@ -1,14 +1,19 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VotingApp.Authorization.Requirements
 {
-    public class PermissionRequirement:IAuthorizationRequirement
+    /// <summary>Satisfied when the user has at least one of <see cref="Permissions"/> (via a role or directly).</summary>
+    public class PermissionRequirement : IAuthorizationRequirement
     {
-        public string Permission { get; private set; }
-
-        public PermissionRequirement(string permission)
+        public PermissionRequirement(IEnumerable<string> permissions)
         {
-            Permission = permission;
+            Permissions = permissions?.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().ToArray() ?? Array.Empty<string>();
+            if (Permissions.Count == 0) throw new ArgumentException("At least one permission is required.", nameof(permissions));
         }
+
+        public IReadOnlyList<string> Permissions { get; }
     }
 }

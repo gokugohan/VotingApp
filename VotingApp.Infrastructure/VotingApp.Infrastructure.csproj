@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- EF Core (SQL Server), Identity stores, repositories, migrations and seeding. -->
+  <PropertyGroup>
+    <!-- Legacy migration class names such as 'aaa'. -->
+    <NoWarn>$(NoWarn);CS8981</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VotingApp.Application\VotingApp.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+</Project>

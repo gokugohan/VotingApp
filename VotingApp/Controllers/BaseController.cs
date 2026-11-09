@@ -1,41 +1,32 @@
-﻿using AutoMapper;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using VotingApp.Data;
-using VotingApp.Data.Interface;
-using VotingApp.Helpers;
-using VotingApp.SignalRHub;
-using static VotingApp.Helpers.Helper;
+using VotingApp.Application.Common;
 
 namespace VotingApp.Controllers
 {
+    /// <summary>Requires sign-in by default; actions opt out with [AllowAnonymous].</summary>
     [Authorize]
-    public class BaseController : Controller
+    public abstract class BaseController : Controller
     {
-        protected readonly IRepositoryWrapper repository;
-        protected readonly ILogger<BaseController> logger;
-        protected readonly IHubContext<VotingHub> hubContext;
-        protected readonly IMapper mapper;
-        public BaseController(IRepositoryWrapper repository, IHubContext<VotingHub> hubContext, IMapper mapper, ILogger<BaseController> logger) : base()
+        /// <summary>Maps a failed command to the matching HTTP response (for JSON endpoints).</summary>
+        protected IActionResult JsonFailure(OperationResult result) => result.Failure switch
         {
-            this.logger = logger;
-            this.hubContext = hubContext;
-            this.repository = repository;
-            this.mapper = mapper;
+            FailureKind.NotFound => NotFound(new { success = false, message = result.Error }),
+            FailureKind.Forbidden => StatusCode(403, new { success = false, message = result.Error }),
+            FailureKind.Conflict => Conflict(new { success = false, message = result.Error }),
+            _ => BadRequest(new { success = false, message = result.Error }),
+        };
+
+        /// <summary>Copies a failed command's messages into ModelState (for form posts).</summary>
+        protected void AddErrors(OperationResult result)
+        {
+            foreach (var error in result.Errors.DefaultIfEmpty("The operation failed."))
+            {
+                ModelState.AddModelError(string.Empty, error);
+            }
         }
 
-
-        protected static IList<PermissionItem> GetPermissions()
-        {
-            return Permission.List().OrderBy(m => m.Description).ToList();
-        }
-
-
+        protected void Flash(string message, bool error = false) => TempData[error ? "Error" : "Success"] = message;
     }
 }

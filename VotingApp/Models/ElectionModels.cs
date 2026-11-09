@@ -1,0 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using VotingApp.Application.Elections;
+using VotingApp.Domain.Elections;
+using VotingApp.Domain.Elections.Rules;
+using VotingApp.Infrastructure.Identity;
+
+namespace VotingApp.Models
+{
+    public class CreateElectionModel
+    {
+        [Required, StringLength(200)]
+        public string Name { get; set; }
+
+        public ElectionType Type { get; set; } = ElectionType.Presidential;
+
+        [DataType(DataType.Date), Display(Name = "Election date")]
+        public DateTime ElectionDate { get; set; } = DateTime.Today;
+
+        [Range(1, 500), Display(Name = "Seats (parliamentary)")]
+        public int? TotalSeats { get; set; } = ParliamentarySeatAllocator.DefaultSeats;
+
+        [Range(0, 99.99), Display(Name = "Threshold % (parliamentary)")]
+        public decimal? ThresholdPercent { get; set; } = ParliamentarySeatAllocator.DefaultThresholdPercent;
+    }
+
+    public class AddContestantModel
+    {
+        public Guid ElectionId { get; set; }
+
+        [Required, StringLength(200)]
+        public string Name { get; set; }
+
+        [StringLength(30)]
+        public string Acronym { get; set; }
+
+        public ContestantType Type { get; set; }
+
+        [Display(Name = "Linked candidate profile")]
+        public Guid? CandidateId { get; set; }
+    }
+
+    public class ContestantVoteField
+    {
+        public Guid ContestantId { get; set; }
+        public string Name { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int? Votes { get; set; }
+    }
+
+    /// <summary>Paper results sheet form, used for both first entry and blind verification.</summary>
+    public class SheetFormModel
+    {
+        public Guid RoundId { get; set; }
+        public Guid StationId { get; set; }
+        public Guid? SheetId { get; set; }
+
+        [Range(0, int.MaxValue), Display(Name = "Registered voters")] public int? RegisteredVoters { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Ballots received")] public int? BallotsReceived { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Ballots used (in the box)")] public int? BallotsUsed { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Spoiled ballots")] public int? BallotsSpoiled { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Unused ballots")] public int? BallotsUnused { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Blank votes")] public int? BlankVotes { get; set; }
+        [Required, Range(0, int.MaxValue), Display(Name = "Invalid votes")] public int? InvalidVotes { get; set; }
+
+        public List<ContestantVoteField> Votes { get; set; } = new();
+
+        public SheetFiguresInput ToInput() => new(
+            RegisteredVoters, BallotsReceived, BallotsUsed, BallotsSpoiled, BallotsUnused,
+            BlankVotes ?? 0, InvalidVotes ?? 0,
+            Votes.ToDictionary(v => v.ContestantId, v => v.Votes ?? 0));
+
+        public static SheetFormModel Blank(Guid roundId, Guid stationId, IEnumerable<Contestant> ballot) => new()
+        {
+            RoundId = roundId,
+            StationId = stationId,
+            Votes = ballot.Select(c => new ContestantVoteField { ContestantId = c.Id, Name = c.Name }).ToList(),
+        };
+
+        public static SheetFormModel From(ResultSheet sheet, IEnumerable<Contestant> ballot) => new()
+        {
+            RoundId = sheet.ElectionRoundId,
+            StationId = sheet.PollingStationAreaId,
+            SheetId = sheet.Id,
+            RegisteredVoters = sheet.RegisteredVoters,
+            BallotsReceived = sheet.BallotsReceived,
+            BallotsUsed = sheet.BallotsUsed,
+            BallotsSpoiled = sheet.BallotsSpoiled,
+            BallotsUnused = sheet.BallotsUnused,
+            BlankVotes = sheet.BlankVotes,
+            InvalidVotes = sheet.InvalidVotes,
+            Votes = ballot.Select(c => new ContestantVoteField
+            {
+                ContestantId = c.Id,
+                Name = c.Name,
+                Votes = sheet.Entries.FirstOrDefault(e => e.ContestantId == c.Id)?.Votes,
+            }).ToList(),
+        };
+    }
+
+    public class SheetPageModel
+    {
+        public EntryForm Context { get; set; }
+        public SheetFormModel Form { get; set; }
+        /// <summary>Verification mode hides the first entry's figures.</summary>
+        public bool IsVerification { get; set; }
+    }
+
+    public class UserScopeRow
+    {
+        public AppUser User { get; set; }
+        public IReadOnlyCollection<string> MunicipalityIds { get; set; }
+    }
+}

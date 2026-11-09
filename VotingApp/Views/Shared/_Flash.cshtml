@@ -1,0 +1,9 @@
+@* One-shot messages set by controllers via TempData["Success"] / TempData["Error"]. *@
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert alert-success" role="status">@ok</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}

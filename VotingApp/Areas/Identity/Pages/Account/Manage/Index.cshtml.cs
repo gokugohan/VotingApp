@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using VotingApp.Data;
+using VotingApp.Infrastructure.Identity;
 
 namespace VotingApp.Areas.Identity.Pages.Account.Manage
 {

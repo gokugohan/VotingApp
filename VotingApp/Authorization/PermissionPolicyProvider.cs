@@ -1,49 +1,47 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using VotingApp.Authorization.Requirements;
 
 namespace VotingApp.Authorization
 {
-    // https://www.zehntec.com/blog/permission-based-authorization-in-asp-net-core/
+    /// <summary>
+    /// Builds policies on the fly from permission names, e.g. [Authorize(Policy = Permissions.EnterVotes)].
+    /// Several permissions joined with '|' mean "any of": see <see cref="AnyPermission"/>.
+    /// Other policy names fall back to the default provider.
+    /// </summary>
     public class PermissionPolicyProvider : IAuthorizationPolicyProvider
     {
+        private const string Prefix = "PERMISSION.";
+
         public PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
         {
-            // There can only be one policy provider in ASP.NET Core.
-            // We only handle permissions related policies, for the rest
-            /// we will use the default provider.
-            this.FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
+            FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
         }
 
         public DefaultAuthorizationPolicyProvider FallbackPolicyProvider { get; }
 
+        /// <summary>Policy name satisfied by any of the given permissions.</summary>
+        public static string AnyPermission(params string[] permissions) => string.Join("|", permissions);
 
-        public Task<AuthorizationPolicy> GetDefaultPolicyAsync()
-        {
-            return this.FallbackPolicyProvider.GetDefaultPolicyAsync();
-        }
+        public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => FallbackPolicyProvider.GetDefaultPolicyAsync();
 
-        public Task<AuthorizationPolicy> GetFallbackPolicyAsync()
-        {
-            return this.FallbackPolicyProvider.GetFallbackPolicyAsync();
-        }
+        public Task<AuthorizationPolicy> GetFallbackPolicyAsync() => FallbackPolicyProvider.GetFallbackPolicyAsync();
 
         public Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
         {
-            bool isValidPermissionInitial = policyName.StartsWith("PERMISSION.", StringComparison.OrdinalIgnoreCase);
-            if (isValidPermissionInitial)
+            var parts = policyName.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length > 0 && parts.All(p => p.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)))
             {
-                var policy = new AuthorizationPolicyBuilder();
-                policy.AddRequirements(new PermissionRequirement(policyName));
-                return Task.FromResult(policy.Build());
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new PermissionRequirement(parts))
+                    .Build();
+                return Task.FromResult(policy);
             }
-
-            // Policy is not for permissions, try the default provider.
-            return this.FallbackPolicyProvider.GetPolicyAsync(policyName);
+            return FallbackPolicyProvider.GetPolicyAsync(policyName);
         }
     }
 }

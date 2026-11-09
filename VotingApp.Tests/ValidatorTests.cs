@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using VotingApp.Data.Elections;
-using VotingApp.Services.Elections;
+using VotingApp.Domain.Elections;
+using VotingApp.Domain.Elections.Rules;
 
 namespace VotingApp.Tests
 {

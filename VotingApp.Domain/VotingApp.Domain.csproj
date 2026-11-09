@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Entities, value types and election rules. No framework or persistence dependencies. -->
+</Project>
