@@ -81,6 +81,7 @@
 
 
                             <form id="form_save_vote">
+                                @Html.AntiForgeryToken()
 
                                 <input type="hidden" id="CandidateId" name="CandidateId" value="@item.Id" />
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace VotingApp.Areas.Identity.Pages.Account.Manage
 {
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
     public class RolesModel : PageModel
     {
         public IList<IdentityRole> Roles { get; set; }

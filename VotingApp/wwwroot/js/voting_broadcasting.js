@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 var connectionId;
 
@@ -26,6 +26,23 @@ async function start() {
 
 connection.onclose(async () => {
     await start();
+
+// Send the antiforgery token with every AJAX post (header name configured in ServiceExtension).
+$.ajaxSetup({
+    beforeSend: function (xhr) {
+        var token = $('input[name="__RequestVerificationToken"]').first().val();
+        if (token) {
+            xhr.setRequestHeader("RequestVerificationToken", token);
+        }
+    }
+});
+
+function notifySaveFailure(xhr) {
+    var message = 'Failed to save the vote';
+    if (xhr && xhr.status === 403) message = 'You do not have permission to enter votes';
+    else if (xhr && xhr.responseJSON && xhr.responseJSON.message) message = xhr.responseJSON.message;
+    $.notify({ icon: "tim-icons icon-bell-55", message: message });
+}
 });
 
 start();
@@ -40,22 +57,13 @@ $("body").on("submit", "#form_save_vote", function (ev) {
         url: '/Votings/SaveVote',
         data: data,
         success: function (result) {
-            if (result.success) {
-                connection.invoke("BroadcastVotingData", result.message).then(function () { }).catch(function (err) { return console.log(err); })
-                $.notify({
-                    icon: "tim-icons icon-bell-55",
-                    message: result.message
-                });
-            }
-
-        },
-        error: function () {
             $.notify({
                 icon: "tim-icons icon-bell-55",
-                message: 'Failed to receive the Data'
+                message: result.message || (result.success ? 'Saved' : 'Failed to save the vote')
             });
-            console.log('Failed ');
-        }
+
+        },
+        error: notifySaveFailure
     })
 });
 
@@ -76,22 +84,13 @@ $("body").on("click", ".btn-submit-total-vote", function (ev) {
         url: '/Votings/SaveVote',
         data: data,
         success: function (result) {
-            if (result.success) {
-                connection.invoke("BroadcastVotingData", result.message).then(function () { }).catch(function (err) { return console.log(err); })
-                $.notify({
-                    icon: "tim-icons icon-bell-55",
-                    message: result.message
-                });
-            }
-
-        },
-        error: function () {
             $.notify({
                 icon: "tim-icons icon-bell-55",
-                message: 'Failed to receive the Data'
+                message: result.message || (result.success ? 'Saved' : 'Failed to save the vote')
             });
-            console.log('Failed ');
-        }
+
+        },
+        error: notifySaveFailure
     })
 });
 

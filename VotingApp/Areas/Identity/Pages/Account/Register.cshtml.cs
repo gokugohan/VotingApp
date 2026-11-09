@@ -17,7 +17,8 @@ using VotingApp.Data;
 
 namespace VotingApp.Areas.Identity.Pages.Account
 {
-    [AllowAnonymous]
+    // Public self-registration is disabled: only admins create accounts (election staff are provisioned, not self-enrolled).
+    [Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<AppUser> _signInManager;
@@ -98,7 +99,7 @@ namespace VotingApp.Areas.Identity.Pages.Account
                     }
                     else
                     {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
+                        // An admin is creating the account: stay signed in as the admin.
                         return LocalRedirect(returnUrl);
                     }
                 }

@@ -4,14 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using VotingApp.Authorization;
 using VotingApp.Authorization.Handlers;
 using VotingApp.Data;
 using VotingApp.Data.Interface;
 using VotingApp.Data.Repository;
+using VotingApp.Services.Elections;
 
 namespace VotingApp.Extensions
 {
@@ -19,48 +17,56 @@ namespace VotingApp.Extensions
     {
         public static void Configure(this IServiceCollection services, IConfiguration configuration)
         {
-            // Add identity db context. identity dbcontext must be integrated with frontend application
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' is not configured. " +
+                    "Use 'dotnet user-secrets set ConnectionStrings:DefaultConnection \"...\"' in development, " +
+                    "or the ConnectionStrings__DefaultConnection environment variable in production.");
+            }
+
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+                options.UseSqlServer(connectionString,
                 assembly => assembly.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+            services.AddDatabaseDeveloperPageExceptionFilter();
+
             services.AddIdentity<AppUser, IdentityRole>(
                 options =>
                 {
-                    options.Password.RequireDigit = false;
-                    options.Password.RequiredLength = 1;
-                    options.Password.RequiredUniqueChars = 0;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireUppercase = false;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequireLowercase = true;
+                    options.Password.RequireUppercase = true;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.SignIn.RequireConfirmedAccount = false;
-                    options.User.RequireUniqueEmail = false;
+                    options.Password.RequiredUniqueChars = 4;
 
+                    options.Lockout.MaxFailedAccessAttempts = 5;
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                    options.Lockout.AllowedForNewUsers = true;
+
+                    options.SignIn.RequireConfirmedAccount = false;
+                    options.User.RequireUniqueEmail = true;
                 })
                 .AddDefaultTokenProviders()
                 .AddDefaultUI()
                 .AddEntityFrameworkStores<AppDbContext>();
 
-            //services.ConfigureApplicationCookie(options =>
-            //{
-            //    options.Cookie.HttpOnly = true;
-            //    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-            //    options.LoginPath = "/Account/Login";
-            //    options.AccessDeniedPath = "/AccessDenied";
-            //    options.SlidingExpiration = true;
-            //});
+            // AJAX posts send the antiforgery token in this header (see wwwroot/js/voting_broadcasting.js).
+            services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
 
-
-
+            services.AddHttpContextAccessor();
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddSignalR();
             services.AddAutoMapper(typeof(Startup));
 
             services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-
-
             services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
-
+            services.AddSingleton<PresidentialResultCalculator>();
+            services.AddSingleton<ParliamentarySeatAllocator>();
+            services.AddSingleton<ResultSheetValidator>();
+            services.AddSingleton<PartyListValidator>();
         }
     }
 }

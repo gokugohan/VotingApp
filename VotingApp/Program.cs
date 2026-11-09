@@ -5,9 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using VotingApp.Data;
 using VotingApp.Data.Seed;
@@ -16,29 +13,30 @@ namespace VotingApp
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
 
             using (var scope = host.Services.CreateScope())
             {
                 var serviceProvider = scope.ServiceProvider;
+                var logger = serviceProvider.GetRequiredService<ILogger<AppDbContext>>();
                 try
                 {
-                    var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
-                    var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-                    UserAndRoleDataInitializer.SeedData(userManager, roleManager);
+                    await UserAndRoleDataInitializer.SeedDataAsync(
+                        serviceProvider.GetRequiredService<UserManager<AppUser>>(),
+                        serviceProvider.GetRequiredService<RoleManager<IdentityRole>>(),
+                        serviceProvider.GetRequiredService<IConfiguration>(),
+                        logger);
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.Message);
+                    // Keep the site up (e.g. DB temporarily unreachable) but make the failure visible.
+                    logger.LogError(ex, "Seeding roles/permissions failed");
                 }
             }
 
-            host.Run();
-
-
-
+            await host.RunAsync();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

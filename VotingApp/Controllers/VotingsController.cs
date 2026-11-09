@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -13,6 +14,7 @@ using VotingApp.Data;
 using VotingApp.Data.Interface;
 using VotingApp.Models;
 using VotingApp.SignalRHub;
+using static VotingApp.Helpers.Helper;
 
 namespace VotingApp.Controllers
 {
@@ -44,7 +46,7 @@ namespace VotingApp.Controllers
 
             ViewData["PollingStationAreaId"] = new SelectList(psas, "Id", "VotingAreaName");
 
-            var SelectedPollingStationArea = psas.First();
+            var SelectedPollingStationArea = psas.FirstOrDefault();
             if (SelectedPollingStationArea != null)
             {
                 ViewData["SelectedPollingStationArea"] = SelectedPollingStationArea.Id;
@@ -61,6 +63,7 @@ namespace VotingApp.Controllers
         }
 
 
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_VOTING)]
         public async Task<IActionResult> Candidate(Guid? id)
         {
             if (id.HasValue)
@@ -85,35 +88,43 @@ namespace VotingApp.Controllers
 
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_VOTING)]
         public async Task<IActionResult> SaveVote(SaveCandidateVote model)
         {
-            try
+            if (model == null || model.CandidateId == Guid.Empty || model.PollingStationAreaId == Guid.Empty)
             {
-                if (!this.repository.Votes.IsVoteAlreadyExist(model.CandidateId, model.PollingStationAreaId))
-                {
-
-                    var vote = this.mapper.Map<Vote>(model);
-                    vote.Id = Guid.NewGuid();
-                    this.repository.Votes.Add(vote);
-                    await this.repository.SaveAsync();
-                    return Json(new { success = true, message = "Vote added!" });
-                }
-                else
-                {
-                    var vote = await this.repository.Votes.GetAsync(m => m.CandidateId.Equals(model.CandidateId) & m.PollingStationAreaId.Equals(model.PollingStationAreaId));
-                    vote.Total = model.Total;
-                    this.repository.Votes.Update(vote);
-                    await this.repository.SaveAsync();
-                    return Json(new { success = true, message = "Vote Updated!" });
-                }
-
+                return BadRequest(new { success = false, message = "Candidate and polling station are required." });
             }
-            catch (Exception ex)
+            if (model.Total < 0)
             {
-                this.logger.LogInformation(ex.Message);
+                return BadRequest(new { success = false, message = "Total votes cannot be negative." });
             }
 
-            return Json(new { success = false });
+            string message;
+            var vote = await this.repository.Votes.GetAsync(m => m.CandidateId == model.CandidateId && m.PollingStationAreaId == model.PollingStationAreaId);
+            if (vote == null)
+            {
+                vote = this.mapper.Map<Vote>(model);
+                vote.Id = Guid.NewGuid();
+                this.repository.Votes.Add(vote);
+                message = "Vote added!";
+            }
+            else
+            {
+                vote.Total = model.Total;
+                message = "Vote updated!";
+            }
+
+            // SaveAsync logs failures (incl. the unique-index violation when two clerks insert the same row at once).
+            if (!await this.repository.SaveAsync())
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { success = false, message = "The vote could not be saved. Please try again." });
+            }
+
+            await this.hubContext.Clients.All.SendAsync(VotingHub.VotingDataEvent, message);
+            return Json(new { success = true, message });
         }
 
         //public async Task<IActionResult> ListVotingsOfCandidates()
@@ -134,6 +145,7 @@ namespace VotingApp.Controllers
 
 
         // GET: VotingCandidates/Details/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_VOTING)]
         public async Task<IActionResult> Details(Guid? id)
         {
             if (id == null)

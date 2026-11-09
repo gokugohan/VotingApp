@@ -15,6 +15,8 @@ using VotingApp.Helpers;
 using VotingApp.Models;
 using VotingApp.SignalRHub;
 
+using static VotingApp.Helpers.Helper;
+
 namespace VotingApp.Controllers
 {
     public class PollingStationAreasController : BaseController
@@ -96,6 +98,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: VotingAreas/Create
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public IActionResult Create()
         {
             ViewData["Municipalities"] = new SelectList(repository.Areas.GetAll(m=>m.Level==2), "Id", "Name");
@@ -108,6 +111,7 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Create([Bind("Id,AreaId,StationName")] CreatePollingStationArea model)
         {
             if (ModelState.IsValid)
@@ -139,6 +143,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: VotingAreas/Edit/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Edit(Guid? id)
         {
             if (id == null)
@@ -165,6 +170,7 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Edit(Guid id, [Bind("Id,AreaId,StationName")] PollingStationArea votingArea)
         {
             if (id != votingArea.Id)
@@ -197,6 +203,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: VotingAreas/Delete/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
@@ -216,19 +223,24 @@ namespace VotingApp.Controllers
         // POST: VotingAreas/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(Guid id)
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
+        public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            try
+            var entity = await this.repository.PollingStationAreas.GetAsync(id);
+            if (entity == null)
             {
-                this.repository.PollingStationAreas.Delete(m => m.Id.Equals(id));
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.Message);
+                return NotFound();
             }
 
-            return RedirectToAction(nameof(Delete), new { id = id });
+            this.repository.PollingStationAreas.Delete(entity);
+            if (await this.repository.SaveAsync())
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Most likely still referenced (e.g. has votes); SaveAsync logged the details.
+            TempData["Error"] = "Could not delete: the record is still in use.";
+            return RedirectToAction(nameof(Delete), new { id });
         }
 
         private bool VotingAreaExists(Guid id)

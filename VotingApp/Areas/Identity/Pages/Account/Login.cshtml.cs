@@ -83,11 +83,11 @@ namespace VotingApp.Areas.Identity.Pages.Account
                 var user = await _userManager.FindByEmailAsync(Input.Email);
                 if (user != null)
                 {
-                    var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                    var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                     if (result.Succeeded)
                     {
                         user.LastLoginDateUtc = DateTime.UtcNow;
-                        user.LastLoginIPAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+                        user.LastLoginIPAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
                         await _userManager.UpdateAsync(user);
 
                         _logger.LogInformation("User logged in.");
@@ -109,7 +109,8 @@ namespace VotingApp.Areas.Identity.Pages.Account
                     }
                 }
 
-                ModelState.AddModelError(string.Empty, "User not found.");
+                // Same message as a wrong password, so the form can't be used to discover which emails have accounts.
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 return Page();
 
             }

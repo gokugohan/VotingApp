@@ -18,6 +18,8 @@ using VotingApp.Models;
 using VotingApp.SignalRHub;
 using VotingApp.ViewModels;
 
+using static VotingApp.Helpers.Helper;
+
 namespace VotingApp.Controllers
 {
     public class CandidatesController : BaseController
@@ -58,6 +60,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: Candidates/Create
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public IActionResult Create()
         {
             return View();
@@ -68,8 +71,10 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public async Task<IActionResult> Create(CreateCandidateModel model)
         {
+            ValidateImage(model.Image);
             if (ModelState.IsValid)
             {
                 var candidate = new Candidate
@@ -88,6 +93,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: Candidates/Edit/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public async Task<IActionResult> Edit(Guid? id)
         {
             if (id == null)
@@ -105,6 +111,7 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public async Task<IActionResult> Edit(Guid id, EditCandidateModel model)
         {
             if (id != model.Id)
@@ -112,6 +119,11 @@ namespace VotingApp.Controllers
                 return NotFound();
             }
 
+            ValidateImage(model.Image);
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
             if (ModelState.IsValid)
             {
                 try
@@ -147,6 +159,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: Candidates/Delete/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
@@ -180,19 +193,24 @@ namespace VotingApp.Controllers
         // POST: Candidates/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_CANDIDATE)]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            try
+            var entity = await this.repository.Candidates.GetAsync(id);
+            if (entity == null)
             {
-                this.repository.Candidates.Delete(m => m.Id.Equals(id));
-                //await this.repository.SaveAsync();
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.Message);
+                return NotFound();
             }
 
-            return RedirectToAction(nameof(Index));
+            this.repository.Candidates.Delete(entity);
+            if (await this.repository.SaveAsync())
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Most likely still referenced (e.g. has votes); SaveAsync logged the details.
+            TempData["Error"] = "Could not delete: the record is still in use.";
+            return RedirectToAction(nameof(Delete), new { id });
         }
 
         private bool CandidateExists(Guid id)
@@ -200,29 +218,42 @@ namespace VotingApp.Controllers
             return repository.Candidates.Any(e => e.Id == id);
         }
 
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        private const long MaxImageBytes = 2 * 1024 * 1024;
+
+        /// <summary>Adds a model error if the upload is not a small raster image. SVG is rejected (it can carry script).</summary>
+        private void ValidateImage(IFormFile formFile)
+        {
+            if (formFile == null) return;
+
+            var extension = Path.GetExtension(formFile.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(extension) || !AllowedImageExtensions.Contains(extension) ||
+                formFile.ContentType == null || !formFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("Image", "Only JPG, PNG, GIF or WEBP images are allowed.");
+            }
+            else if (formFile.Length == 0 || formFile.Length > MaxImageBytes)
+            {
+                ModelState.AddModelError("Image", "The image must be smaller than 2 MB.");
+            }
+        }
+
+        /// <summary>Saves an already validated image under a server-generated name.</summary>
         private string UploadImage(IFormFile formFile)
         {
-            string uniqueFileName = null;
+            if (formFile == null) return null;
 
-            if (formFile != null)
+            string uploadsFolderPath = Path.Combine(this.webHostEnvironment.WebRootPath, "images", "candidates");
+            Directory.CreateDirectory(uploadsFolderPath);
+
+            // Never reuse the client's file name: it can contain path segments or misleading extensions.
+            var uniqueFileName = Guid.NewGuid().ToString("N") + Path.GetExtension(formFile.FileName).ToLowerInvariant();
+            using (var fileStream = new FileStream(Path.Combine(uploadsFolderPath, uniqueFileName), FileMode.CreateNew))
             {
-                string uploadsFolderPath = Path.Combine(this.webHostEnvironment.WebRootPath, "images/candidates");
-
-                if (!Directory.Exists(uploadsFolderPath))
-                {
-                    Directory.CreateDirectory(uploadsFolderPath);
-                }
-                uniqueFileName = Guid.NewGuid().ToString() + "_" + formFile.FileName;
-                string filePath = Path.Combine(uploadsFolderPath, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    formFile.CopyTo(fileStream);
-                }
+                formFile.CopyTo(fileStream);
             }
             return uniqueFileName;
         }
-
-
 
         //Ajax
         [AllowAnonymous]

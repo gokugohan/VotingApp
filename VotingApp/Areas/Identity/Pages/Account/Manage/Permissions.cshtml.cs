@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +9,7 @@ using static VotingApp.Helpers.Helper;
 
 namespace VotingApp.Areas.Identity.Pages.Account.Manage
 {
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = VotingApp.Helpers.Helper.Permission.ADMIN_ROLE)]
     public class PermissionsModel : PageModel
     {
         public IList<PermissionItem> PermissionItems { get; set; }

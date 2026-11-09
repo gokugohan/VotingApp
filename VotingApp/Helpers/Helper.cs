@@ -13,9 +13,9 @@ namespace VotingApp.Helpers
 
     public static class Helper
     {
-        public static readonly int MUNICIPALITY = 2;
-        public static readonly int ADMINISTRATIVE_POST = 3;
-        public static readonly int VILLAGE = 4;
+        public const int MUNICIPALITY = 2;
+        public const int ADMINISTRATIVE_POST = 3;
+        public const int VILLAGE = 4;
 
 
         public static class Permission
@@ -23,13 +23,15 @@ namespace VotingApp.Helpers
             public const string PERMISSION_VIEW_ACCOUNT = "PERMISSION.VIEW.ACCOUNT";
             public const string PERMISSION_DELETE_USER = "PERMISSION.VIEW.DELETE_USER";
 
-            public const string PERMISSION_ACCESS_AREA = "PERMISSION.ADD.AREA";
+            public const string PERMISSION_ACCESS_AREA = PERMISSION_ACCESS_ADD_AREA; // same permission; listed once below
             public const string PERMISSION_ACCESS_ADD_AREA = "PERMISSION.ADD.AREA";
             public const string PERMISSION_ACCESS_ADD_POLLING_STATION = "PERMISSION.ADD.POLLING_STATION";
             public const string PERMISSION_ACCESS_ADD_CANDIDATE = "PERMISSION.ADD.CANDIDATE";
             public const string PERMISSION_ACCESS_ADD_VOTING = "PERMISSION.ADD.VOTING";
 
             public const string PERMISSION_ACCESS_VIEW_LOG = "PERMISSION.VIEW.LOG";
+
+            public const string ADMIN_ROLE = "Admin";
 
             public static IList<PermissionItem> List()
             {
@@ -38,7 +40,6 @@ namespace VotingApp.Helpers
                     new PermissionItem { Name=PERMISSION_VIEW_ACCOUNT,Description=PERMISSION_VIEW_ACCOUNT},
                     new PermissionItem { Name=PERMISSION_DELETE_USER,Description=PERMISSION_DELETE_USER},
 
-                    new PermissionItem { Name=PERMISSION_ACCESS_AREA,Description=PERMISSION_ACCESS_AREA},
                     new PermissionItem { Name=PERMISSION_ACCESS_ADD_AREA,Description=PERMISSION_ACCESS_ADD_AREA},
                     new PermissionItem { Name=PERMISSION_ACCESS_ADD_POLLING_STATION,Description=PERMISSION_ACCESS_ADD_POLLING_STATION},
                     new PermissionItem { Name=PERMISSION_ACCESS_ADD_CANDIDATE,Description=PERMISSION_ACCESS_ADD_CANDIDATE},

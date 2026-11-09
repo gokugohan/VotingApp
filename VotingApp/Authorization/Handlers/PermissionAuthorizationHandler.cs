@@ -10,7 +10,6 @@ namespace VotingApp.Authorization.Handlers
 {
     public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
     {
-
         private readonly UserManager<AppUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
@@ -22,53 +21,39 @@ namespace VotingApp.Authorization.Handlers
 
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
         {
-            if (context.User == null) return;
+            if (context.User?.Identity?.IsAuthenticated != true) return;
 
-            // Get all the roles the user belongs to and check if any of the roles has the permission required
-            // for the authorization to succeed.
             var user = await this.userManager.GetUserAsync(context.User);
             if (user == null) return;
-            var userRoleNames = await this.userManager.GetRolesAsync(user);
-            var userRoles = this.roleManager.Roles.Where(m => userRoleNames.Contains(m.Name));
 
-
-            // Check if the roles wich user belongs to has a claims or wether user has claims to access the resource
-            if (await IsRoleHasClaims(requirement, userRoles) || await IsUserHasClaims(requirement, user))
+            if (await UserHasPermissionAsync(user, requirement.Permission) ||
+                await AnyRoleHasPermissionAsync(user, requirement.Permission))
             {
                 context.Succeed(requirement);
-                return;
             }
-
-
         }
 
-        private async Task<bool> IsUserHasClaims(PermissionRequirement requirement, AppUser user)
+        private async Task<bool> UserHasPermissionAsync(AppUser user, string permission)
         {
-            var userClaims = await this.userManager.GetClaimsAsync(user);
-
-            var permissions = userClaims.Where(m => m.Type == CustomClaimTypes.Permission && m.Value == requirement.Permission).Select(m => m.Value);
-
-            if (permissions.Any())
-            {
-                return true;
-            }
-            return false;
+            var claims = await this.userManager.GetClaimsAsync(user);
+            return claims.Any(c => c.Type == CustomClaimTypes.Permission && c.Value == permission);
         }
 
-        private async Task<bool> IsRoleHasClaims(PermissionRequirement requirement, IQueryable<IdentityRole> userRoles)
+        private async Task<bool> AnyRoleHasPermissionAsync(AppUser user, string permission)
         {
-            foreach (var role in userRoles)
+            // Look roles up one by one instead of roles.Where(r => names.Contains(r.Name)):
+            // EF Core 8 translates Contains on a list to OPENJSON, which needs SQL Server compat level >= 130.
+            foreach (var roleName in await this.userManager.GetRolesAsync(user))
             {
-                var roleClaims = await this.roleManager.GetClaimsAsync(role);
-                var permissions = roleClaims.Where(m => m.Type == CustomClaimTypes.Permission &&
-                    m.Value == requirement.Permission).Select(m => m.Value);
+                var role = await this.roleManager.FindByNameAsync(roleName);
+                if (role == null) continue;
 
-                if (permissions.Any())
+                var claims = await this.roleManager.GetClaimsAsync(role);
+                if (claims.Any(c => c.Type == CustomClaimTypes.Permission && c.Value == permission))
                 {
                     return true;
                 }
             }
-
             return false;
         }
     }

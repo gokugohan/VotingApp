@@ -3,9 +3,10 @@
 
 @{
     ViewData["Title"] = "Votings";
-    var isFirstItem = true;
     var avatar = "";
 }
+@* Read by voting_broadcasting.js and sent as the RequestVerificationToken header on vote saves. *@
+@Html.AntiForgeryToken()
 
 
 @section css{

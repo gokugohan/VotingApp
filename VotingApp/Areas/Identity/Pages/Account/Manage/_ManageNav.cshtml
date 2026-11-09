@@ -5,8 +5,12 @@
 <ul class="nav nav-pills flex-column">
     <li class="nav-item"><a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">Profile</a></li>
 
-    <li class="nav-item"><a class="nav-link @ManageNavPages.RolesNavClass(ViewContext)" id="roles" asp-page="./Roles">Roles</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PermissionsNavClass(ViewContext)" id="roles" asp-page="./Permissions">Permissions</a></li>
+    @if (User.IsInRole(VotingApp.Helpers.Helper.Permission.ADMIN_ROLE))
+    {
+        <li class="nav-item"><a class="nav-link @ManageNavPages.RolesNavClass(ViewContext)" id="roles" asp-page="./Roles">Roles</a></li>
+        <li class="nav-item"><a class="nav-link @ManageNavPages.PermissionsNavClass(ViewContext)" id="permissions" asp-page="./Permissions">Permissions</a></li>
+        <li class="nav-item"><a class="nav-link" id="create-user" asp-page="/Account/Register">Create user</a></li>
+    }
 
     @*<li class="nav-item"><a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">Email</a></li>*@
     

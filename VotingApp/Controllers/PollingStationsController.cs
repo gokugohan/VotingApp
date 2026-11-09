@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
@@ -10,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VotingApp.Data;
 using VotingApp.SignalRHub;
+
+using static VotingApp.Helpers.Helper;
 
 namespace VotingApp.Controllers
 {
@@ -46,6 +49,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: PollingStations/Create
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public IActionResult Create()
         {
             return View();
@@ -56,6 +60,7 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Create([Bind("Id,Name")] PollingStation pollingStation)
         {
             if (ModelState.IsValid)
@@ -69,6 +74,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: PollingStations/Edit/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Edit(Guid? id)
         {
             if (id == null)
@@ -89,6 +95,7 @@ namespace VotingApp.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name")] PollingStation pollingStation)
         {
             if (id != pollingStation.Id)
@@ -120,6 +127,7 @@ namespace VotingApp.Controllers
         }
 
         // GET: PollingStations/Delete/5
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
@@ -139,19 +147,24 @@ namespace VotingApp.Controllers
         // POST: PollingStations/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(Guid id)
+        [Authorize(Policy = Permission.PERMISSION_ACCESS_ADD_POLLING_STATION)]
+        public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            try
+            var entity = await this.repository.PollingStations.GetAsync(id);
+            if (entity == null)
             {
-                this.repository.PollingStations.Delete(m => m.Id.Equals(id));
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.Message);
+                return NotFound();
             }
 
-            return RedirectToAction(nameof(Delete), new { id = id });
+            this.repository.PollingStations.Delete(entity);
+            if (await this.repository.SaveAsync())
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Most likely still referenced (e.g. has votes); SaveAsync logged the details.
+            TempData["Error"] = "Could not delete: the record is still in use.";
+            return RedirectToAction(nameof(Delete), new { id });
         }
 
         private bool PollingStationExists(Guid id)

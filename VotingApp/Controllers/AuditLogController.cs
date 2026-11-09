@@ -11,8 +11,12 @@ using VotingApp.Data;
 using VotingApp.Data.Interface;
 using VotingApp.SignalRHub;
 
+using Microsoft.AspNetCore.Authorization;
+using static VotingApp.Helpers.Helper;
+
 namespace VotingApp.Controllers
 {
+    [Authorize(Policy = Permission.PERMISSION_ACCESS_VIEW_LOG)]
     public class AuditLogController :Controller
     {
         private readonly AppDbContext context;
