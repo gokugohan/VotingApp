@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VotingApp.Data;
 
+#nullable disable
+
 namespace VotingApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
@@ -15,9 +17,10 @@ namespace VotingApp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.21")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "8.0.33")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -29,29 +32,30 @@ namespace VotingApp.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedName")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasName("RoleNameIndex")
+                        .HasDatabaseName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
-                    b.ToTable("AspNetRoles");
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -67,15 +71,16 @@ namespace VotingApp.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetRoleClaims");
+                    b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -91,7 +96,7 @@ namespace VotingApp.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserClaims");
+                    b.ToTable("AspNetUserClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -113,7 +118,7 @@ namespace VotingApp.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserLogins");
+                    b.ToTable("AspNetUserLogins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -128,7 +133,7 @@ namespace VotingApp.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetUserRoles");
+                    b.ToTable("AspNetUserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -147,7 +152,7 @@ namespace VotingApp.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("AspNetUserTokens");
+                    b.ToTable("AspNetUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("VotingApp.Data.AppUser", b =>
@@ -163,8 +168,8 @@ namespace VotingApp.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -188,12 +193,12 @@ namespace VotingApp.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NormalizedUserName")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -211,20 +216,20 @@ namespace VotingApp.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(256)")
-                        .HasMaxLength(256);
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasName("EmailIndex");
+                        .HasDatabaseName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasName("UserNameIndex")
+                        .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("AspNetUsers");
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("VotingApp.Data.Area", b =>
@@ -250,8 +255,9 @@ namespace VotingApp.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AffectedColumns")
                         .HasColumnType("nvarchar(max)");
@@ -303,6 +309,269 @@ namespace VotingApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Candidates");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.Contestant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Acronym")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid?>("CandidateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("ElectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LogoPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CandidateId");
+
+                    b.HasIndex("ElectionId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Contestants");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.Election", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ElectionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ThresholdPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("TotalSeats")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Elections");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ElectionRound", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ElectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("VotingDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElectionId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("ElectionRounds");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.PartyListCandidate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContestantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSubstitute")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContestantId", "Position", "IsSubstitute")
+                        .IsUnique();
+
+                    b.ToTable("PartyListCandidates");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ResultSheet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("BallotsReceived")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BallotsSpoiled")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BallotsUnused")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BallotsUsed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BlankVotes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ElectionRoundId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("EnteredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EnteredByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("InvalidVotes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("PollingStationAreaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("RegisteredVoters")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("ScanPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerifiedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PollingStationAreaId");
+
+                    b.HasIndex("ElectionRoundId", "PollingStationAreaId")
+                        .IsUnique();
+
+                    b.HasIndex("ElectionRoundId", "Status");
+
+                    b.ToTable("ResultSheets");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ResultSheetEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContestantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResultSheetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Votes")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContestantId");
+
+                    b.HasIndex("ResultSheetId", "ContestantId")
+                        .IsUnique();
+
+                    b.ToTable("ResultSheetEntries");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.RoundContestant", b =>
+                {
+                    b.Property<Guid>("ElectionRoundId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContestantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BallotPosition")
+                        .HasColumnType("int");
+
+                    b.HasKey("ElectionRoundId", "ContestantId");
+
+                    b.HasIndex("ContestantId");
+
+                    b.ToTable("RoundContestants");
                 });
 
             modelBuilder.Entity("VotingApp.Data.PollingStation", b =>
@@ -358,9 +627,10 @@ namespace VotingApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateId");
-
                     b.HasIndex("PollingStationAreaId");
+
+                    b.HasIndex("CandidateId", "PollingStationAreaId")
+                        .IsUnique();
 
                     b.ToTable("Votes");
                 });
@@ -416,6 +686,103 @@ namespace VotingApp.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("VotingApp.Data.Elections.Contestant", b =>
+                {
+                    b.HasOne("VotingApp.Data.Candidate", "Candidate")
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("VotingApp.Data.Elections.Election", "Election")
+                        .WithMany("Contestants")
+                        .HasForeignKey("ElectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("Election");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ElectionRound", b =>
+                {
+                    b.HasOne("VotingApp.Data.Elections.Election", "Election")
+                        .WithMany("Rounds")
+                        .HasForeignKey("ElectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Election");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.PartyListCandidate", b =>
+                {
+                    b.HasOne("VotingApp.Data.Elections.Contestant", "Contestant")
+                        .WithMany("ListCandidates")
+                        .HasForeignKey("ContestantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contestant");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ResultSheet", b =>
+                {
+                    b.HasOne("VotingApp.Data.Elections.ElectionRound", "ElectionRound")
+                        .WithMany("ResultSheets")
+                        .HasForeignKey("ElectionRoundId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VotingApp.Data.PollingStationArea", "PollingStationArea")
+                        .WithMany()
+                        .HasForeignKey("PollingStationAreaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ElectionRound");
+
+                    b.Navigation("PollingStationArea");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ResultSheetEntry", b =>
+                {
+                    b.HasOne("VotingApp.Data.Elections.Contestant", "Contestant")
+                        .WithMany()
+                        .HasForeignKey("ContestantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("VotingApp.Data.Elections.ResultSheet", "ResultSheet")
+                        .WithMany("Entries")
+                        .HasForeignKey("ResultSheetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contestant");
+
+                    b.Navigation("ResultSheet");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.RoundContestant", b =>
+                {
+                    b.HasOne("VotingApp.Data.Elections.Contestant", "Contestant")
+                        .WithMany()
+                        .HasForeignKey("ContestantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("VotingApp.Data.Elections.ElectionRound", "ElectionRound")
+                        .WithMany("Contestants")
+                        .HasForeignKey("ElectionRoundId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contestant");
+
+                    b.Navigation("ElectionRound");
+                });
+
             modelBuilder.Entity("VotingApp.Data.PollingStationArea", b =>
                 {
                     b.HasOne("VotingApp.Data.Area", "Area")
@@ -429,6 +796,10 @@ namespace VotingApp.Migrations
                         .HasForeignKey("PollingStationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Area");
+
+                    b.Navigation("PollingStation");
                 });
 
             modelBuilder.Entity("VotingApp.Data.Vote", b =>
@@ -444,6 +815,34 @@ namespace VotingApp.Migrations
                         .HasForeignKey("PollingStationAreaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("PollingStationArea");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.Contestant", b =>
+                {
+                    b.Navigation("ListCandidates");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.Election", b =>
+                {
+                    b.Navigation("Contestants");
+
+                    b.Navigation("Rounds");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ElectionRound", b =>
+                {
+                    b.Navigation("Contestants");
+
+                    b.Navigation("ResultSheets");
+                });
+
+            modelBuilder.Entity("VotingApp.Data.Elections.ResultSheet", b =>
+                {
+                    b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using VotingApp.Data.Configuration;
+using VotingApp.Data.Elections;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,11 +24,20 @@ namespace VotingApp.Data
         public DbSet<Candidate> Candidates { get; set; }
         public DbSet<Vote> Votes { get; set; }
 
+        public DbSet<Election> Elections { get; set; }
+        public DbSet<ElectionRound> ElectionRounds { get; set; }
+        public DbSet<Contestant> Contestants { get; set; }
+        public DbSet<RoundContestant> RoundContestants { get; set; }
+        public DbSet<PartyListCandidate> PartyListCandidates { get; set; }
+        public DbSet<ResultSheet> ResultSheets { get; set; }
+        public DbSet<ResultSheetEntry> ResultSheetEntries { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
 
             base.OnModelCreating(builder);
+            builder.ConfigureElections();
             //builder.HasDefaultSchema("Identity");
             //builder.Entity<IdentityUser>(entity =>
             //{
@@ -58,10 +69,10 @@ namespace VotingApp.Data
             //});
         }
 
-        public virtual async Task<int> SaveChangesAsync(string userId = null)
+        public virtual async Task<int> SaveChangesAsync(string userId, System.Threading.CancellationToken cancellationToken = default)
         {
             OnBeforeSaveChanges(userId);
-            var result = await base.SaveChangesAsync();
+            var result = await base.SaveChangesAsync(cancellationToken);
             return result;
         }
 
