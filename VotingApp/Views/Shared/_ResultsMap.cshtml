@@ -1,0 +1,73 @@
+@model RoundResultsPage
+@inject TimorMap Map
+@{
+    var s = Model.Summary;
+    var b = Model.Breakdown;
+    var byKey = b.Municipalities.Where(m => m.MapKey != null).ToDictionary(m => m.MapKey);
+    var ballotPos = b.Ballot.ToDictionary(c => c.Id, c => c.BallotPosition);
+    var names = b.Ballot.ToDictionary(c => c.Id, c => c.Name);
+    var shareMode = Model.MapContestantId.HasValue;
+
+    // Leader mode: categorical, at most 3 colours (all pairs touch on a map), rest = Other.
+    var leaders = b.Municipalities.Where(m => m.LeaderId.HasValue).Select(m => m.LeaderId.Value).Distinct().ToList();
+    var slots = SeriesPalette.Assign(leaders.Select(id => (id, ballotPos[id])), SeriesPalette.AllPairsCap);
+
+    // Share mode: sequential single hue, 7 steps up to the highest share.
+    decimal Share(MunicipalityResult m) =>
+        m.ValidVotes == 0 ? 0 : (decimal)m.Votes[Model.MapContestantId.Value] * 100m / m.ValidVotes;
+    var maxShare = shareMode ? Math.Max(b.Municipalities.Select(Share).DefaultIfEmpty(0).Max(), 1m) : 1m;
+
+    string FillClass(MunicipalityResult m)
+    {
+        if (m == null || m.ValidVotes == 0) return "f-none";
+        if (shareMode) return "q-" + Math.Clamp((int)Math.Ceiling(Share(m) / maxShare * 7), 1, 7);
+        return m.LeaderId.HasValue ? "f-" + slots[m.LeaderId.Value] : "f-other";
+    }
+    string Describe(MunicipalityResult m)
+    {
+        if (m == null) return "no data";
+        if (m.ValidVotes == 0) return "no results yet";
+        var detail = shareMode
+            ? $"{names[Model.MapContestantId.Value]} {Share(m):0.0}%"
+            : (m.LeaderId.HasValue ? $"leading: {names[m.LeaderId.Value]}" : "tie");
+        return $"{detail}, {m.ReportingPercent:0.#}% of stations reporting";
+    }
+}
+<svg class="map" viewBox="@Map.ViewBox" role="group" aria-label="Map of Timor-Leste by municipality. The table below has the same figures.">
+    @foreach (var shape in Map.Shapes)
+    {
+        byKey.TryGetValue(shape.Key, out var m);
+        var label = $"{m?.Name ?? shape.Name}: {Describe(m)}";
+        if (m != null)
+        {
+            <a href="@Url.Action("Municipality", "Results", new { roundId = s.RoundId, id = m.MunicipalityId })" aria-label="@label">
+                <path class="@FillClass(m)" d="@shape.Path"><title>@label</title></path>
+            </a>
+        }
+        else
+        {
+            <path class="f-none" d="@shape.Path"><title>@label</title></path>
+        }
+    }
+</svg>
+
+<div class="legend" aria-label="Map legend">
+    @if (shareMode)
+    {
+        <span class="key">0%</span>
+        <span class="ramp" aria-hidden="true">@for (var i = 1; i <= 7; i++) { <i class="s-none" style="background:var(--seq-@i);border:0"></i> }</span>
+        <span class="key">@maxShare.ToString("0")% @names[Model.MapContestantId.Value]</span>
+    }
+    else
+    {
+        foreach (var id in leaders.OrderBy(id => ballotPos[id]).Where(id => slots[id] != "other"))
+        {
+            <span class="key"><span class="swatch s-@slots[id]"></span> @names[id]</span>
+        }
+        if (leaders.Any(id => slots[id] == "other"))
+        {
+            <span class="key"><span class="swatch s-other"></span> Other: @string.Join(", ", leaders.Where(id => slots[id] == "other").Select(id => names[id]))</span>
+        }
+    }
+    <span class="key"><span class="swatch s-none"></span> No results yet</span>
+</div>

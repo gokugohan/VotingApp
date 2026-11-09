@@ -1,144 +1,169 @@
-@model VotingApp.Domain.Elections.Election
-@using VotingApp.Domain.Elections
+@model Election
 @{
     ViewData["Title"] = Model.Name;
     var current = Model.Rounds.OrderByDescending(r => r.Number).First();
     ElectionStatus? next = current.Status == ElectionStatus.Certified ? null : current.Status + 1;
     var canEditBallot = Model.Status == ElectionStatus.Setup && Model.Rounds.Count == 1;
+    var steps = Enum.GetValues<ElectionStatus>();
+    string NextHelp(ElectionStatus s) => s switch
+    {
+        ElectionStatus.Voting => "Polls are open. The ballot can no longer change.",
+        ElectionStatus.Counting => "Result sheet entry opens for clerks.",
+        ElectionStatus.Provisional => "Provisional results are announced; entry stays open for remaining stations.",
+        ElectionStatus.Certified => "Final: results are certified and the round can no longer change.",
+        _ => "",
+    };
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">@Model.Name</h2>
-    <a asp-action="Index">Back to elections</a>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<div class="page-header">
+    <div class="eyebrow">@(Model.Type == ElectionType.Presidential ? "Presidential" : "Parliamentary") election · @Model.ElectionDate.ToString("d MMMM yyyy")</div>
+    <h1>@Model.Name</h1>
 </div>
 
-<div class="row">
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header"><h4 class="card-title mb-0">Election</h4></div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-5">Type</dt><dd class="col-7">@Model.Type</dd>
-                    <dt class="col-5">Date</dt><dd class="col-7">@Model.ElectionDate.ToString("yyyy-MM-dd")</dd>
-                    @if (Model.Type == ElectionType.Parliamentary)
-                    {
-                        <dt class="col-5">Seats</dt><dd class="col-7">@Model.TotalSeats</dd>
-                        <dt class="col-5">Threshold</dt><dd class="col-7">@Model.ThresholdPercent %</dd>
-                    }
-                    <dt class="col-5">Current round</dt><dd class="col-7">@current.Number: <span class="badge badge-info">@current.Status</span></dd>
-                </dl>
-                @if (next.HasValue)
-                {
-                    <form asp-action="SetStatus" method="post" class="mt-3" data-confirm="Move round @current.Number to @next? Status cannot go back.">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <input type="hidden" name="status" value="@next" />
-                        <button type="submit" class="btn btn-primary btn-sm">Move to @next</button>
-                        <small class="d-block text-muted mt-1">Result entry is open while the round is Counting or Provisional.</small>
-                    </form>
-                }
-                @if (Model.Type == ElectionType.Presidential && Model.Rounds.Count == 1)
-                {
-                    <form asp-action="CreateRunoff" method="post" class="mt-3">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <label for="votingDate">Runoff date</label>
-                        <input type="date" id="votingDate" name="votingDate" class="form-control form-control-sm mb-2" required />
-                        <button type="submit" class="btn btn-outline-primary btn-sm">Create runoff from approved results</button>
-                    </form>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-7">
+<div class="grid grid-side">
+    <div class="stack-lg">
         @foreach (var round in Model.Rounds.OrderBy(r => r.Number))
         {
-            <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                    <h4 class="card-title mb-0">Round @round.Number ballot</h4>
-                    <span>
-                        <a asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">Result sheets</a> |
-                        <a asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">Public results</a>
+            <section class="card" aria-labelledby="round-@round.Number">
+                <div class="card-header">
+                    <h2 id="round-@round.Number">@(round.Number == 1 ? (Model.Rounds.Count > 1 ? "First round" : "Ballot") : "Runoff") <span class="muted small">@round.VotingDate.ToString("d MMM yyyy")</span></h2>
+                    <span class="cluster">
+                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">@Icon.Render("file") Result sheets</a>
+                        <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") Results</a>
                     </span>
                 </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <thead><tr><th>#</th><th>Name</th><th>Type</th><th></th></tr></thead>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th scope="col" class="num" style="width:3rem">#</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
                         <tbody>
-                        @foreach (var rc in round.Contestants.OrderBy(c => c.BallotPosition))
-                        {
-                            <tr>
-                                <td>@rc.BallotPosition</td>
-                                <td>
-                                    @rc.Contestant.Name
-                                    @if (!string.IsNullOrEmpty(rc.Contestant.Acronym))
-                                    {
-                                        <span class="text-muted">(@rc.Contestant.Acronym)</span>
-                                    }
-                                </td>
-                                <td>@rc.Contestant.Type</td>
-                                <td>
-                                    @if (canEditBallot)
-                                    {
-                                        <form asp-action="RemoveContestant" method="post" class="d-inline">
-                                            <input type="hidden" name="electionId" value="@Model.Id" />
-                                            <input type="hidden" name="contestantId" value="@rc.ContestantId" />
-                                            <button type="submit" class="btn btn-link btn-sm text-danger p-0">Remove</button>
-                                        </form>
-                                    }
-                                </td>
-                            </tr>
-                        }
+                            @foreach (var rc in round.Contestants.OrderBy(c => c.BallotPosition))
+                            {
+                                <tr>
+                                    <td class="num">@rc.BallotPosition</td>
+                                    <th scope="row">@rc.Contestant.Name @if (!string.IsNullOrEmpty(rc.Contestant.Acronym)) { <span class="muted">(@rc.Contestant.Acronym)</span> }</th>
+                                    <td>@rc.Contestant.Type</td>
+                                    <td class="actions-cell">
+                                        @if (canEditBallot)
+                                        {
+                                            <form asp-action="RemoveContestant" method="post" class="inline" data-confirm="Remove @rc.Contestant.Name from the ballot?">
+                                                <input type="hidden" name="electionId" value="@Model.Id" />
+                                                <input type="hidden" name="contestantId" value="@rc.ContestantId" />
+                                                <button type="submit" class="btn btn-ghost btn-sm" aria-label="Remove @rc.Contestant.Name">@Icon.Render("trash") Remove</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            @if (!round.Contestants.Any())
+                            {
+                                <tr><td colspan="4" class="empty">No contestants yet. Add them below.</td></tr>
+                            }
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
         }
 
         @if (canEditBallot)
         {
-            <div class="card">
-                <div class="card-header"><h4 class="card-title mb-0">Add @(Model.Type == ElectionType.Presidential ? "candidate" : "party or coalition")</h4></div>
-                <div class="card-body">
-                    <form asp-action="AddContestant" method="post">
-                        <input type="hidden" name="ElectionId" value="@Model.Id" />
-                        <div class="form-row">
-                            <div class="form-group col-md-5"><input name="Name" class="form-control" placeholder="Name" required maxlength="200" /></div>
-                            <div class="form-group col-md-2"><input name="Acronym" class="form-control" placeholder="Acronym" maxlength="30" /></div>
-                            <div class="form-group col-md-3">
-                                @if (Model.Type == ElectionType.Presidential)
-                                {
-                                    <input type="hidden" name="Type" value="@ContestantType.Candidate" />
-                                    <span class="form-control-plaintext">Candidate</span>
-                                }
-                                else
-                                {
-                                    <select name="Type" class="form-control">
-                                        <option value="@ContestantType.Party">Party</option>
-                                        <option value="@ContestantType.Coalition">Coalition</option>
-                                    </select>
-                                }
+            <section class="card" aria-labelledby="add-heading">
+                <div class="card-header"><h2 id="add-heading">Add @(Model.Type == ElectionType.Presidential ? "a candidate" : "a party or coalition")</h2></div>
+                <form asp-action="AddContestant" method="post" class="card-body">
+                    <input type="hidden" name="ElectionId" value="@Model.Id" />
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="c-name">Name</label>
+                            <input id="c-name" name="Name" required maxlength="200" />
+                        </div>
+                        <div class="field">
+                            <label for="c-acronym">Acronym <span class="muted">(optional)</span></label>
+                            <input id="c-acronym" name="Acronym" maxlength="30" />
+                        </div>
+                        @if (Model.Type == ElectionType.Presidential)
+                        {
+                            <input type="hidden" name="Type" value="@ContestantType.Candidate" />
+                        }
+                        else
+                        {
+                            <div class="field">
+                                <label for="c-type">Type</label>
+                                <select id="c-type" name="Type">
+                                    <option value="@ContestantType.Party">Party</option>
+                                    <option value="@ContestantType.Coalition">Coalition</option>
+                                </select>
                             </div>
-                            <div class="form-group col-md-2"><button type="submit" class="btn btn-success btn-block">Add</button></div>
+                        }
+                        <div class="field">
+                            <label for="c-profile">Candidate profile <span class="muted">(optional)</span></label>
+                            <select id="c-profile" name="CandidateId" asp-items="ViewBag.Candidates"><option value="">None</option></select>
+                            <span class="hint">Links a photo and biography.</span>
                         </div>
-                        <div class="form-group mb-0">
-                            <label for="CandidateId">Link to candidate profile (optional, for photo and biography)</label>
-                            <select id="CandidateId" name="CandidateId" class="form-control" asp-items="ViewBag.Candidates">
-                                <option value="">(none)</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    </div>
+                    <div class="actions"><button type="submit" class="btn btn-primary">@Icon.Render("plus") Add to ballot</button></div>
+                </form>
+            </section>
         }
     </div>
-</div>
 
-@section Scripts {
-    <script>
-        document.querySelectorAll("form[data-confirm]").forEach(function (form) {
-            form.addEventListener("submit", function (e) {
-                if (!window.confirm(form.getAttribute("data-confirm"))) e.preventDefault();
-            });
-        });
-    </script>
-}
+    <aside class="stack-lg">
+        <section class="card" aria-labelledby="status-heading">
+            <div class="card-header"><h2 id="status-heading">Status</h2></div>
+            <div class="card-body stack">
+                <ol style="list-style:none;margin:0;padding:0" class="stack">
+                    @foreach (var st in steps)
+                    {
+                        var done = st < current.Status; var now = st == current.Status;
+                        <li class="cluster" style="flex-wrap:nowrap">
+                            <span class="badge @(now ? "badge-info" : done ? "badge-ok" : "")" style="min-width:1.6rem;justify-content:center">@(done ? Icon.Render("check") : new Microsoft.AspNetCore.Html.HtmlString(((int)st + 1).ToString()))</span>
+                            <span style="@(now ? "font-weight:700" : done ? "" : "color:var(--muted)")">@st @if (now) { <span class="visually-hidden">(current)</span> }</span>
+                        </li>
+                    }
+                </ol>
+                @if (next.HasValue)
+                {
+                    <form asp-action="SetStatus" method="post" data-confirm="Move to @next? This cannot be undone.">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@next" />
+                        <button type="submit" class="btn btn-primary" style="width:100%">Move to @next</button>
+                        <p class="hint" style="margin:.5rem 0 0">@NextHelp(next.Value)</p>
+                    </form>
+                }
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="rules-heading">
+            <div class="card-header"><h2 id="rules-heading">Rules</h2></div>
+            <div class="card-body">
+                <dl class="dl">
+                    @if (Model.Type == ElectionType.Presidential)
+                    {
+                        <dt>Winner</dt><dd>More than 50% of valid votes; otherwise a runoff between the top two.</dd>
+                    }
+                    else
+                    {
+                        <dt>Seats</dt><dd>@Model.TotalSeats</dd>
+                        <dt>Threshold</dt><dd>@Model.ThresholdPercent?.ToString("0.##")% of valid votes</dd>
+                        <dt>Method</dt><dd>D'Hondt</dd>
+                    }
+                </dl>
+            </div>
+        </section>
+
+        @if (Model.Type == ElectionType.Presidential && Model.Rounds.Count == 1)
+        {
+            <section class="card" aria-labelledby="runoff-heading">
+                <div class="card-header"><h2 id="runoff-heading">Runoff</h2></div>
+                <form asp-action="CreateRunoff" method="post" class="card-body">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <p class="hint">Uses approved first-round results. Only possible when no candidate has a majority and no tie decides who qualifies.</p>
+                    <div class="field">
+                        <label for="votingDate">Runoff voting date</label>
+                        <input type="date" id="votingDate" name="votingDate" required />
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Create runoff round</button>
+                </form>
+            </section>
+        }
+    </aside>
+</div>

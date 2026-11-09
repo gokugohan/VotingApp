@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,11 +26,17 @@ namespace VotingApp.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string municipalityId)
         {
             var ct = HttpContext.RequestAborted;
             var municipalities = await areas.GetMunicipalitiesAsync(ct);
-            ViewData["PollingStations"] = await stations.ListLocationsAsync(ct);
+            var locations = await stations.ListLocationsAsync(ct);
+            if (!string.IsNullOrEmpty(municipalityId))
+            {
+                locations = locations.Where(l => l.AreaId != null && l.AreaId.StartsWith(municipalityId, StringComparison.Ordinal)).ToList();
+            }
+            ViewData["PollingStations"] = locations.OrderBy(l => l.AreaId).ThenBy(l => l.PollingStation?.Name).ToList();
+            ViewData["MunicipalityId"] = municipalityId;
             ViewData["Municipalities"] = new SelectList(municipalities, "Id", "Name");
             return View(municipalities);
         }

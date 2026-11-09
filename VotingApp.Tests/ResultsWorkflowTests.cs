@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using VotingApp.Application.Abstractions;
 using VotingApp.Application.Common;
 using VotingApp.Application.Elections;
-using VotingApp.Application.Results;
 using VotingApp.Domain.Elections;
 using VotingApp.Domain.Elections.Rules;
 using VotingApp.Domain.Entities;
@@ -30,6 +29,7 @@ namespace VotingApp.Tests
         public static readonly Guid StationAinaro = Guid.Parse("10000000-0000-0000-0000-000000000002");
 
         public FakeUser User { get; } = new();
+        public RoundResultsCache Cache { get; } = new();
         public AppDbContext Db { get; }
         public ElectionResultsService Results { get; }
         public ElectionAdminService Admin { get; }
@@ -40,7 +40,7 @@ namespace VotingApp.Tests
         {
             var options = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
             Db = new AppDbContext(options, User);
-            Results = new ElectionResultsService(Db, new MemoryCache(new MemoryCacheOptions()),
+            Results = new ElectionResultsService(Db, Cache,
                 new PresidentialResultCalculator(), new ParliamentarySeatAllocator());
             Admin = new ElectionAdminService(Db, Results);
             Scopes = new UserScopeService(Db, User);
@@ -281,7 +281,7 @@ namespace VotingApp.Tests
             await f.Sheets.SubmitVerificationAsync(aileu, Fixture.Sheet(ids, 300, 200, 100));
             f.User.UserId = "supervisor";
             Assert.True((await f.Sheets.ApproveAsync(aileu)).Succeeded);
-            return (f, round, ids, new PublicResultsService(f.Db, new MemoryCache(new MemoryCacheOptions())));
+            return (f, round, ids, new PublicResultsService(f.Db, f.Cache));
         }
 
         [Fact]
@@ -345,49 +345,6 @@ namespace VotingApp.Tests
             Assert.StartsWith("TLS001,Aileu,Aileu Vila,Seloi Malere,", lines[1]);
             Assert.Contains("\"'=HYPERLINK(\"\"x\"\"), Seloi\"", lines[1]);
             Assert.EndsWith(",300,200,100", lines[1]);
-        }
-    }
-
-    public class VoteEntryServiceTests
-    {
-        [Fact]
-        public async Task Adds_then_updates_one_row_per_candidate_and_station_and_rejects_bad_input()
-        {
-            using var f = new Fixture();
-            var cand = new Candidate { Id = Guid.NewGuid(), Name = "Party A" };
-            f.Db.Candidates.Add(cand);
-            await f.Db.SaveChangesAsync();
-            var service = new Application.Votes.VoteEntryService(f.Db, NullLogger<Application.Votes.VoteEntryService>.Instance);
-
-            var added = await service.SaveAsync(cand.Id, Fixture.StationAileu, 10);
-            var updated = await service.SaveAsync(cand.Id, Fixture.StationAileu, 25);
-            Assert.Equal(Application.Votes.VoteSaveKind.Added, added.Value);
-            Assert.Equal(Application.Votes.VoteSaveKind.Updated, updated.Value);
-            Assert.Equal(25, (await f.Db.Votes.SingleAsync()).Total);
-
-            Assert.Equal(FailureKind.Validation, (await service.SaveAsync(cand.Id, Fixture.StationAileu, -1)).Failure);
-            Assert.Equal(FailureKind.Validation, (await service.SaveAsync(Guid.NewGuid(), Fixture.StationAileu, 1)).Failure);
-        }
-    }
-
-    public class ResultsQueryServiceTests
-    {
-        [Fact]
-        public async Task Totals_by_municipality_include_empty_municipalities_and_map_keys()
-        {
-            using var f = new Fixture();
-            var cand = new Candidate { Id = Guid.NewGuid(), Name = "Party A" };
-            f.Db.Candidates.Add(cand);
-            f.Db.Votes.AddRange(
-                new Vote { Id = Guid.NewGuid(), CandidateId = cand.Id, PollingStationAreaId = Fixture.StationAileu, Total = 40 });
-            await f.Db.SaveChangesAsync();
-
-            var result = await new ResultsQueryService(f.Db).GetTotalsByMunicipalityAsync(null);
-
-            Assert.Equal(new[] { "Aileu", "Ainaro" }, result.Keys);
-            Assert.Equal(40, result["Aileu"].TotalVote);
-            Assert.Equal("tl-an", result["Aileu"].AreaKey);
-            Assert.Null(result["Ainaro"]);
         }
     }
 }

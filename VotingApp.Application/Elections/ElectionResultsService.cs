@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using VotingApp.Application.Abstractions;
 using VotingApp.Domain.Elections;
 using VotingApp.Domain.Elections.Rules;
@@ -42,13 +41,12 @@ namespace VotingApp.Application.Elections
     /// </summary>
     public class ElectionResultsService
     {
-        private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(15);
         private readonly IAppDbContext db;
-        private readonly IMemoryCache cache;
+        private readonly RoundResultsCache cache;
         private readonly PresidentialResultCalculator presidential;
         private readonly ParliamentarySeatAllocator parliamentary;
 
-        public ElectionResultsService(IAppDbContext db, IMemoryCache cache,
+        public ElectionResultsService(IAppDbContext db, RoundResultsCache cache,
             PresidentialResultCalculator presidential, ParliamentarySeatAllocator parliamentary)
         {
             this.db = db;
@@ -57,16 +55,8 @@ namespace VotingApp.Application.Elections
             this.parliamentary = parliamentary;
         }
 
-        private static string Key(Guid roundId, ResultSheetStatus min) => $"round-summary:{roundId}:{min}";
-
-        public void Invalidate(Guid roundId)
-        {
-            foreach (var status in Enum.GetValues<ResultSheetStatus>())
-            {
-                cache.Remove(Key(roundId, status));
-            }
-            cache.Remove(PublicResultsService.BreakdownKey(roundId));
-        }
+        /// <summary>Marks everything cached for the round stale (summary, breakdowns, station lists, CSV).</summary>
+        public void Invalidate(Guid roundId) => cache.Invalidate(roundId);
 
         /// <summary>
         /// Summary counting sheets at or beyond <paramref name="minimumStatus"/>
@@ -74,12 +64,9 @@ namespace VotingApp.Application.Elections
         /// </summary>
         public async Task<RoundSummary> GetSummaryAsync(Guid roundId, ResultSheetStatus minimumStatus = ResultSheetStatus.Approved, CancellationToken ct = default)
         {
-            var key = Key(roundId, minimumStatus);
-            if (cache.TryGetValue(key, out RoundSummary cached)) return cached;
-
-            var summary = await BuildAsync(roundId, minimumStatus, ct);
-            if (summary != null) cache.Set(key, summary, CacheDuration);
-            return summary;
+            // Built with CancellationToken.None: the result is shared with other waiting requests.
+            return await cache.GetOrBuildAsync(roundId, "summary:" + minimumStatus,
+                () => BuildAsync(roundId, minimumStatus, CancellationToken.None));
         }
 
         private async Task<RoundSummary> BuildAsync(Guid roundId, ResultSheetStatus minimumStatus, CancellationToken ct)

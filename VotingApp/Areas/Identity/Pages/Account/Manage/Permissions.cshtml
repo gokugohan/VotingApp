@@ -1,33 +1,19 @@
 ﻿@page
-@model VotingApp.Areas.Identity.Pages.Account.Manage.PermissionsModel
-
+@model PermissionsModel
 @{
-    ViewData["Title"] = "Roles";
+    ViewData["Title"] = "Permissions";
     ViewData["ActivePage"] = ManageNavPages.Permissions;
 }
-
-<h4>@ViewData["Title"]</h4>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
-<div class="table-responsive">
-    <table class="table table-hover" id="table-permissions">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.PermissionItems)
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>@item.Description</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th scope="col">Area</th><th scope="col">Permission</th><th scope="col">Code</th></tr></thead>
+            <tbody>
+                @foreach (var item in Model.PermissionItems)
+                {
+                    <tr><td>@item.Group</td><td>@item.Description</td><td><code class="small">@item.Name</code></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}

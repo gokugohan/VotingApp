@@ -141,6 +141,8 @@ namespace VotingApp.Application.Elections
             current.Status = status;
             election.Status = status;
             await db.SaveChangesAsync(ct);
+            results.Invalidate(current.Id);
+            results.Invalidate(PublicResultsService.AllRounds);
             return OperationResult.Success();
         }
 

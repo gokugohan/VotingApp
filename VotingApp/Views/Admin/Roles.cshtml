@@ -1,57 +1,59 @@
 @model List<VotingApp.Controllers.RolePermissionsRow>
 @using VotingApp.Application.Security
 @{
-    ViewData["Title"] = "Roles";
+    ViewData["Title"] = "Roles and permissions";
     var groups = Permissions.All.GroupBy(p => p.Group).ToList();
 }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Roles and permissions</h2>
-    <a asp-action="Users">Back to users</a>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Users">Users and roles</a><span aria-hidden="true">/</span><span>Roles</span></nav>
+<div class="page-header">
+    <h1>Roles and permissions</h1>
+    <p>A suggested set-up for results night: <strong>Clerk</strong> (enter), <strong>Verifier</strong> (verify), <strong>Municipal supervisor</strong> (verify and approve), <strong>National tabulation</strong> (approve and lock). Then limit staff to their municipalities.</p>
 </div>
-<p class="text-muted">
-    Suggested set-up for results night: <strong>Clerk</strong> (enter results), <strong>Verifier</strong> (verify results),
-    <strong>Municipal supervisor</strong> (verify + approve), <strong>National tabulation</strong> (approve + lock).
-    Then limit clerks and supervisors to their municipalities under User municipalities.
-</p>
 
-<form asp-action="CreateRole" method="post" class="form-inline mb-3">
-    <input name="name" class="form-control form-control-sm mr-2" placeholder="New role name" required maxlength="100" />
-    <button type="submit" class="btn btn-success btn-sm">Create role</button>
+<form asp-action="CreateRole" method="post" class="card" style="margin-bottom:1.5rem">
+    <div class="card-body cluster" style="align-items:flex-end">
+        <div class="field" style="margin:0;flex:1;min-width:14rem">
+            <label for="new-role">New role</label>
+            <input id="new-role" name="name" required maxlength="100" placeholder="e.g. Municipal supervisor" />
+        </div>
+        <button type="submit" class="btn btn-primary">@Icon.Render("plus") Create role</button>
+    </div>
 </form>
 
-@foreach (var row in Model)
-{
-    var isAdmin = row.Role.Name == Permissions.AdminRole;
-    <div class="card">
-        <div class="card-header"><h4 class="card-title mb-0">@row.Role.Name</h4></div>
-        <div class="card-body">
-            <form asp-action="SetRolePermissions" method="post">
-                <input type="hidden" name="roleId" value="@row.Role.Id" />
-                <div class="row">
+<div class="stack-lg">
+    @foreach (var row in Model)
+    {
+        var isAdmin = row.Role.Name == Permissions.AdminRole;
+        <form asp-action="SetRolePermissions" method="post" class="card">
+            <input type="hidden" name="roleId" value="@row.Role.Id" />
+            <div class="card-header">
+                <h2>@row.Role.Name</h2>
+                <span class="badge">@(isAdmin ? "All permissions" : $"{row.Permissions.Count} permission{(row.Permissions.Count == 1 ? "" : "s")}")</span>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-4">
                     @foreach (var group in groups)
                     {
-                        <div class="col-md-3 mb-2">
-                            <strong>@group.Key</strong>
+                        <fieldset style="border:0;margin:0;padding:0">
+                            <legend class="label" style="margin-bottom:.25rem">@group.Key</legend>
                             @foreach (var p in group)
                             {
-                                <div>
-                                    <label class="font-weight-normal mb-0">
-                                        <input type="checkbox" name="permissions" value="@p.Name" checked="@(isAdmin || row.Permissions.Contains(p.Name))" disabled="@isAdmin" /> @p.Description
-                                    </label>
-                                </div>
+                                <div><label class="check"><input type="checkbox" name="permissions" value="@p.Name" checked="@(isAdmin || row.Permissions.Contains(p.Name))" disabled="@isAdmin" /> @p.Description</label></div>
                             }
-                        </div>
+                        </fieldset>
                     }
                 </div>
-                @if (!isAdmin)
+            </div>
+            <div class="card-footer">
+                @if (isAdmin)
                 {
-                    <button type="submit" class="btn btn-primary btn-sm">Save permissions</button>
+                    <span class="muted small">The Admin role always has every permission.</span>
                 }
                 else
                 {
-                    <small class="text-muted">The Admin role always has every permission.</small>
+                    <button type="submit" class="btn btn-primary btn-sm">Save permissions</button>
                 }
-            </form>
-        </div>
-    </div>
-}
+            </div>
+        </form>
+    }
+</div>

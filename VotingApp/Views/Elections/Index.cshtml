@@ -1,4 +1,4 @@
-@model IEnumerable<VotingApp.Domain.Elections.Election>
+@model IEnumerable<Election>
 @using VotingApp.Application.Security
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService Authz
@@ -7,61 +7,69 @@
     var canManage = (await Authz.AuthorizeAsync(User, Permissions.ManageElections)).Succeeded;
     var canWorkResults = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User,
         Permissions.EnterResults + "|" + Permissions.VerifyResults + "|" + Permissions.ApproveResults + "|" + Permissions.LockResults)).Succeeded;
+    string StatusBadge(ElectionStatus s) => s switch
+    {
+        ElectionStatus.Certified => "badge-ok",
+        ElectionStatus.Counting or ElectionStatus.Provisional => "badge-warn",
+        ElectionStatus.Voting => "badge-info",
+        _ => "",
+    };
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Elections</h2>
+<div class="page-header spread">
     <div>
-        @if (User.IsInRole(Permissions.AdminRole))
-        {
-            <a asp-controller="Admin" asp-action="Users" class="btn btn-outline-secondary btn-sm">Users and roles</a>
-            <a asp-action="Scopes" class="btn btn-outline-secondary btn-sm">User municipalities</a>
-        }
-        @if (canManage)
-        {
-            <a asp-action="Create" class="btn btn-success btn-sm"><i class="fa fa-plus"></i> New election</a>
-        }
+        <h1>Elections</h1>
+        <p>Results, open data and, for staff, result sheet entry for each election round.</p>
     </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New election</a>
+    }
 </div>
 
-<div class="card">
-    <div class="card-body table-responsive">
-        <table class="table">
-            <thead><tr><th>Name</th><th>Type</th><th>Date</th><th>Status</th><th>Rounds</th><th></th></tr></thead>
-            <tbody>
-            @foreach (var e in Model)
-            {
-                <tr>
-                    <td>@e.Name</td>
-                    <td>@e.Type</td>
-                    <td>@e.ElectionDate.ToString("yyyy-MM-dd")</td>
-                    <td><span class="badge badge-info">@e.Status</span></td>
-                    <td>
+@if (!Model.Any())
+{
+    <div class="card"><div class="empty"><h3>No elections yet</h3>@if (canManage) { <p><a asp-action="Create">Create the first election</a></p> }</div></div>
+}
+else
+{
+    <div class="grid grid-2">
+        @foreach (var e in Model)
+        {
+            <article class="card">
+                <div class="card-body stack">
+                    <div class="spread">
+                        <span class="eyebrow muted small" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">@(e.Type == ElectionType.Presidential ? "Presidential" : "Parliamentary") · @e.ElectionDate.ToString("d MMMM yyyy")</span>
+                        <span class="badge @StatusBadge(e.Status)">@e.Status</span>
+                    </div>
+                    <h2 style="margin:0">@e.Name</h2>
+                    <ul style="list-style:none;margin:0;padding:0" class="stack">
                         @foreach (var r in e.Rounds.OrderBy(r => r.Number))
                         {
-                            <div>
-                                Round @r.Number (@r.VotingDate.ToString("yyyy-MM-dd")):
-                                <a asp-controller="Results" asp-action="Round" asp-route-id="@r.Id">results</a>
-                                @if (canWorkResults)
-                                {
-                                    <text> | </text><a asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@r.Id">result sheets</a>
-                                }
-                            </div>
+                            <li class="spread" style="border-top:1px solid var(--border);padding-top:.75rem">
+                                <span>
+                                    <strong>@(e.Rounds.Count > 1 ? (r.Number == 1 ? "First round" : "Runoff") : "Results")</strong>
+                                    <span class="muted small"> · @r.VotingDate.ToString("d MMM yyyy") · @r.Status</span>
+                                </span>
+                                <span class="cluster">
+                                    @if (r.Status >= ElectionStatus.Counting)
+                                    {
+                                        <a class="btn btn-secondary btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@r.Id">@Icon.Render("chart") Results</a>
+                                    }
+                                    @if (canWorkResults)
+                                    {
+                                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@r.Id">@Icon.Render("file") Result sheets</a>
+                                    }
+                                </span>
+                            </li>
                         }
-                    </td>
-                    <td>
-                        @if (canManage)
-                        {
-                            <a asp-action="Details" asp-route-id="@e.Id">Manage</a>
-                        }
-                    </td>
-                </tr>
-            }
-            @if (!Model.Any())
-            {
-                <tr><td colspan="6" class="text-muted">No elections yet.</td></tr>
-            }
-            </tbody>
-        </table>
+                    </ul>
+                </div>
+                @if (canManage)
+                {
+                    <div class="card-footer"><a asp-action="Details" asp-route-id="@e.Id">Manage election @Icon.Render("chevron-right")</a></div>
+                }
+            </article>
+        }
     </div>
-</div>
+}

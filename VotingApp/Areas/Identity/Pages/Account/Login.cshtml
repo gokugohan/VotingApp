@@ -1,73 +1,28 @@
 ﻿@page
 @model LoginModel
-
 @{
-    ViewData["Title"] = "Log in";
+    ViewData["Title"] = "Staff sign in";
 }
-
-@section css{
-<style>
-    .main-panel {
-        background-image: url('/images/baucau.jpg');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }
-</style>
-}
-
-
-<div class="container mt-5 pb-5" style="margin-top: 10% !important;">
-
-    <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-            <div class="card bg-gradient-primary border-0 mb-0">
-                <div class="card-header bg-transparent">
-                    <h1>@ViewData["Title"]</h1>
-                </div>
-                <div class="card-body px-lg-5 pb-lg-5">
-                    <form id="account" method="post">
-
-                        <hr />
-                        <div asp-validation-summary="All" class="text-danger"></div>
-                        <div class="form-group">
-                            <label asp-for="Input.Email"></label>
-                            <input asp-for="Input.Email" class="form-control" />
-                            <span asp-validation-for="Input.Email" class="text-danger"></span>
-                        </div>
-                        <div class="form-group">
-                            <label asp-for="Input.Password"></label>
-                            <input asp-for="Input.Password" class="form-control" />
-                            <span asp-validation-for="Input.Password" class="text-danger"></span>
-                        </div>
-                        <div class="form-group">
-                            <div class="checkbox">
-                                <label asp-for="Input.RememberMe">
-                                    <input asp-for="Input.RememberMe" />
-                                    @Html.DisplayNameFor(m => m.Input.RememberMe)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Log in</button>
-                        </div>
-                        
-                    </form>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-6">
-                    @*<a  asp-page="./ForgotPassword" class="text-light"><small>Forgot password?</small></a>*@
-                </div>
-                <div class="col-6 text-right">
-                </div>
-            </div>
+<div class="card" style="max-width:26rem;margin:2rem auto">
+    <form id="account" method="post" class="card-body">
+        <h1 style="font-size:1.5rem">Staff sign in</h1>
+        <p class="muted small">For election staff. Viewing results does not need an account.</p>
+        <div asp-validation-summary="All" class="errors"></div>
+        <div class="field">
+            <label asp-for="Input.Email">E-mail</label>
+            <input asp-for="Input.Email" autocomplete="username" autofocus />
+            <span asp-validation-for="Input.Email" class="field-error"></span>
         </div>
-    </div>
+        <div class="field">
+            <label asp-for="Input.Password">Password</label>
+            <input asp-for="Input.Password" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="field-error"></span>
+        </div>
+        <label class="check" style="margin-bottom:1rem"><input asp-for="Input.RememberMe" /> Keep me signed in on this device</label>
+        <button type="submit" class="btn btn-primary" style="width:100%">@Icon.Render("log-in") Sign in</button>
+        <p class="hint" style="margin:1rem 0 0">Forgot your password or locked out? Ask an administrator. After 5 wrong attempts the account is locked for 15 minutes.</p>
+    </form>
 </div>
-
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

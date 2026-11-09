@@ -1,25 +1,13 @@
-﻿@inject SignInManager<AppUser> SignInManager
-@{
-    var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
+﻿@{
+    string Current(string navClass) => navClass == "active" ? "page" : null;
 }
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item"><a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">Profile</a></li>
-
+<nav class="tabs" aria-label="Account">
+    <a asp-page="./Index" aria-current="@Current(ManageNavPages.IndexNavClass(ViewContext))">Profile</a>
+    <a asp-page="./ChangePassword" aria-current="@Current(ManageNavPages.ChangePasswordNavClass(ViewContext))">Password</a>
     @if (User.IsInRole(VotingApp.Application.Security.Permissions.AdminRole))
     {
-        <li class="nav-item"><a class="nav-link @ManageNavPages.RolesNavClass(ViewContext)" id="roles" asp-page="./Roles">Roles</a></li>
-        <li class="nav-item"><a class="nav-link @ManageNavPages.PermissionsNavClass(ViewContext)" id="permissions" asp-page="./Permissions">Permissions</a></li>
-        <li class="nav-item"><a class="nav-link" id="create-user" asp-page="/Account/Register">Create user</a></li>
-        <li class="nav-item"><a class="nav-link" id="users-roles" asp-area="" asp-controller="Admin" asp-action="Users">Users and roles</a></li>
+        <a asp-page="./Roles" aria-current="@Current(ManageNavPages.RolesNavClass(ViewContext))">Roles</a>
+        <a asp-page="./Permissions" aria-current="@Current(ManageNavPages.PermissionsNavClass(ViewContext))">Permissions</a>
+        <a asp-area="" asp-controller="Admin" asp-action="Users">Users and roles</a>
     }
-
-    @*<li class="nav-item"><a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">Email</a></li>*@
-    
-    <li class="nav-item"><a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">Password</a></li>
-    @*@if (hasExternalLogins)
-    {
-        <li id="external-logins" class="nav-item"><a id="external-login" class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins">External logins</a></li>
-    }
-    <li class="nav-item"><a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">Two-factor authentication</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">Personal data</a></li>*@
-</ul>
+</nav>

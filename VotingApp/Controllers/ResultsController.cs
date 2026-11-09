@@ -29,12 +29,26 @@ namespace VotingApp.Controllers
             this.areas = areas;
         }
 
-        public async Task<IActionResult> Round(Guid id)
+        public async Task<IActionResult> Round(Guid id, Guid? map)
         {
-            var ct = HttpContext.RequestAborted;
-            var summary = await results.GetSummaryAsync(id, ResultSheetStatus.Approved, ct);
-            if (summary == null) return NotFound();
-            return View(new RoundResultsPage { Summary = summary, Breakdown = await publicResults.GetBreakdownAsync(id, ct) });
+            var page = await BuildPageAsync(results, publicResults, id, map, Url.Action(nameof(Round), new { id }));
+            return page == null ? NotFound() : View(page);
+        }
+
+        /// <summary>Shared by the home page: everything the results partial needs for one round.</summary>
+        internal static async Task<RoundResultsPage> BuildPageAsync(ElectionResultsService results, PublicResultsService publicResults,
+            Guid roundId, Guid? mapContestantId, string pagePath)
+        {
+            var summary = await results.GetSummaryAsync(roundId, ResultSheetStatus.Approved);
+            if (summary == null) return null;
+            return new RoundResultsPage
+            {
+                Summary = summary,
+                Breakdown = await publicResults.GetBreakdownAsync(roundId),
+                Signature = await publicResults.GetSignatureAsync(roundId),
+                MapContestantId = summary.Contestants.Any(c => c.ContestantId == mapContestantId) ? mapContestantId : null,
+                PagePath = pagePath,
+            };
         }
 
         /// <summary>Drill-down: every polling station in one municipality.</summary>
@@ -46,6 +60,7 @@ namespace VotingApp.Controllers
             if (summary == null || municipality == null || municipality.Level != Domain.Entities.AreaHierarchy.Municipality) return NotFound();
 
             var breakdown = await publicResults.GetBreakdownAsync(roundId, ct);
+            ViewData["Signature"] = await publicResults.GetSignatureAsync(roundId, ct);
             return View(new MunicipalityResultsPage
             {
                 Summary = summary,
@@ -54,6 +69,11 @@ namespace VotingApp.Controllers
                 Stations = await publicResults.GetStationsAsync(roundId, id, ct),
             });
         }
+
+        /// <summary>Live-refresh fingerprint polled by results pages (a few bytes).</summary>
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public async Task<IActionResult> Signature(Guid id) =>
+            Content(await publicResults.GetSignatureAsync(id, HttpContext.RequestAborted), "text/plain");
 
         /// <summary>Open data: the national summary as JSON (cached for a few seconds).</summary>
         [ResponseCache(Duration = 10, Location = ResponseCacheLocation.Any)]

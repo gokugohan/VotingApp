@@ -1,0 +1,12 @@
+@model (string Name, string Avatar, string CssClass)
+@{
+    var initials = string.Concat((Model.Name ?? "?").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+}
+@if (!string.IsNullOrEmpty(Model.Avatar))
+{
+    <img class="avatar @Model.CssClass" src="~/images/candidates/@Model.Avatar" alt="" loading="lazy" width="96" height="96" />
+}
+else
+{
+    <span class="avatar avatar-fallback @Model.CssClass" aria-hidden="true">@initials</span>
+}

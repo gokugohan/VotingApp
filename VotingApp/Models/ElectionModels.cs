@@ -124,6 +124,14 @@ namespace VotingApp.Models
     {
         public RoundSummary Summary { get; set; }
         public RoundBreakdown Breakdown { get; set; }
+        /// <summary>Live-refresh fingerprint (see PublicResultsService.GetSignatureAsync).</summary>
+        public string Signature { get; set; }
+        /// <summary>Map mode: null = leading contestant per municipality; otherwise that contestant's vote share.</summary>
+        public Guid? MapContestantId { get; set; }
+        /// <summary>Other rounds to switch to (home page only).</summary>
+        public IReadOnlyList<PublishedRound> Rounds { get; set; }
+        /// <summary>URL of the page itself without query string (for the map mode form).</summary>
+        public string PagePath { get; set; }
     }
 
     public class MunicipalityResultsPage
@@ -131,6 +139,6 @@ namespace VotingApp.Models
         public RoundSummary Summary { get; set; }
         public IReadOnlyList<BallotContestant> Ballot { get; set; }
         public MunicipalityResult Municipality { get; set; }
-        public List<StationResult> Stations { get; set; }
+        public IReadOnlyList<StationResult> Stations { get; set; }
     }
 }

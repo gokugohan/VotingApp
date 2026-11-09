@@ -1,24 +1,10 @@
 ﻿@model VotingApp.Domain.Entities.PollingStation
-
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Name;
 }
-
-<h1>Details</h1>
-
-<div>
-    <h4>PollingStation</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Polling station names</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<div class="page-header"><h1>@Model.Name</h1></div>
+<div class="cluster">
+    <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@Model.Id">@Icon.Render("pencil") Rename</a>
+    <a class="btn btn-ghost" asp-action="Index">Back to list</a>
 </div>

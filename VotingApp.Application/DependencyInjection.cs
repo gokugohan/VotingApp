@@ -4,8 +4,6 @@ using VotingApp.Application.Candidates;
 using VotingApp.Application.Elections;
 using VotingApp.Application.Geography;
 using VotingApp.Application.PollingStations;
-using VotingApp.Application.Results;
-using VotingApp.Application.Votes;
 using VotingApp.Domain.Elections.Rules;
 
 namespace VotingApp.Application
@@ -15,6 +13,7 @@ namespace VotingApp.Application
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
             services.AddMemoryCache();
+            services.AddSingleton<RoundResultsCache>();
 
             // Stateless election rules.
             services.AddSingleton<PresidentialResultCalculator>();
@@ -26,8 +25,6 @@ namespace VotingApp.Application
             services.AddScoped<AreaService>();
             services.AddScoped<CandidateService>();
             services.AddScoped<PollingStationService>();
-            services.AddScoped<VoteEntryService>();
-            services.AddScoped<ResultsQueryService>();
             services.AddScoped<AuditLogService>();
             services.AddScoped<UserScopeService>();
             services.AddScoped<ElectionResultsService>();

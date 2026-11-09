@@ -1,115 +1,134 @@
-@model VotingApp.Models.SheetPageModel
-@using VotingApp.Domain.Elections.Rules
+@model SheetPageModel
 @{
     var ctx = Model.Context;
     var station = ctx.Station;
-    ViewData["Title"] = (Model.IsVerification ? "Verify" : "Enter") + " result sheet";
+    var verify = Model.IsVerification;
+    ViewData["Title"] = (verify ? "Verify" : "Enter") + " result sheet · " + station.PollingStation?.Name;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h2 class="mb-0">@(Model.IsVerification ? "Verify (second entry)" : "Enter result sheet")</h2>
-    <a asp-action="Index" asp-route-roundId="@ctx.Round.Id">Back to result sheets</a>
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <a asp-action="Index" asp-route-roundId="@ctx.Round.Id">Result sheets</a><span aria-hidden="true">/</span>
+    <span>@station.PollingStation?.Name</span>
+</nav>
+<div class="page-header">
+    <div class="eyebrow">@(verify ? "Second entry (verification)" : "Result sheet") · @ctx.Round.Election.Name</div>
+    <h1>@station.PollingStation?.Name</h1>
+    <p>@station.Area?.Name</p>
 </div>
-<p class="text-muted">
-    @ctx.Round.Election.Name, round @ctx.Round.Number &middot; @station.Area?.Name &middot; <strong>@station.PollingStation?.Name</strong>
-</p>
 
-@if (Model.IsVerification)
+@if (verify)
 {
-    <div class="alert alert-info">
-        Type the figures <strong>from the paper sheet</strong>, without looking at the first entry.
-        If every figure matches, the sheet becomes Verified; otherwise the differing fields are flagged for a supervisor.
+    <div class="alert alert-info" style="margin-bottom:1.5rem">@Icon.Render("info")
+        <div>Type every figure <strong>from the paper sheet</strong>. The first entry is hidden on purpose. If all figures match, the sheet is verified; if not, the differing fields are flagged for a supervisor.</div>
     </div>
 }
 else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
 {
-    <div class="alert @(ctx.Validation.HasErrors ? "alert-danger" : "alert-warning")">
-        <strong>Current sheet checks:</strong>
-        <ul class="mb-0">
-            @foreach (var issue in ctx.Validation.Issues)
-            {
-                <li>@(issue.Severity == IssueSeverity.Error ? "Error" : "Warning"): @issue.Message</li>
-            }
-        </ul>
+    <div class="alert @(ctx.Validation.HasErrors ? "alert-bad" : "alert-warn")" style="margin-bottom:1.5rem">@Icon.Render("alert")
+        <div>
+            <strong>Checks on the saved sheet</strong>
+            <ul style="margin:.25rem 0 0 1.1rem;padding:0">
+                @foreach (var issue in ctx.Validation.Issues)
+                {
+                    <li>@(issue.Severity == IssueSeverity.Error ? "Error" : "Warning"): @issue.Message</li>
+                }
+            </ul>
+        </div>
     </div>
 }
 
-<form asp-action="@(Model.IsVerification ? "Verify" : "Enter")" method="post" autocomplete="off" enctype="multipart/form-data">
-    <div asp-validation-summary="All" class="text-danger"></div>
+<form asp-action="@(verify ? "Verify" : "Enter")" method="post" autocomplete="off" enctype="multipart/form-data" class="stack-lg" novalidate>
+    <div asp-validation-summary="All" class="errors"></div>
     <input type="hidden" asp-for="Form.RoundId" />
     <input type="hidden" asp-for="Form.StationId" />
     <input type="hidden" asp-for="Form.SheetId" />
 
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header"><h4 class="card-title mb-0">Ballots</h4></div>
-                <div class="card-body">
-                    <div class="form-group"><label asp-for="Form.RegisteredVoters"></label><input asp-for="Form.RegisteredVoters" class="form-control" type="number" min="0" /></div>
-                    <div class="form-group"><label asp-for="Form.BallotsReceived"></label><input asp-for="Form.BallotsReceived" class="form-control js-recv" type="number" min="0" required /></div>
-                    <div class="form-group"><label asp-for="Form.BallotsUsed"></label><input asp-for="Form.BallotsUsed" class="form-control js-used" type="number" min="0" required /></div>
-                    <div class="form-group"><label asp-for="Form.BallotsSpoiled"></label><input asp-for="Form.BallotsSpoiled" class="form-control js-spoiled" type="number" min="0" required /></div>
-                    <div class="form-group"><label asp-for="Form.BallotsUnused"></label><input asp-for="Form.BallotsUnused" class="form-control js-unused" type="number" min="0" required /></div>
+    <div class="grid grid-2">
+        <fieldset class="card" style="margin:0">
+            <legend class="visually-hidden">Ballots</legend>
+            <div class="card-header"><h2>1. Ballots</h2></div>
+            <div class="card-body">
+                <div class="field"><label asp-for="Form.RegisteredVoters"></label><input asp-for="Form.RegisteredVoters" type="number" min="0" inputmode="numeric" /><span class="hint">If shown on the sheet.</span></div>
+                <div class="field"><label asp-for="Form.BallotsReceived"></label><input asp-for="Form.BallotsReceived" class="js-recv" type="number" min="0" inputmode="numeric" required /></div>
+                <div class="field"><label asp-for="Form.BallotsUsed"></label><input asp-for="Form.BallotsUsed" class="js-used" type="number" min="0" inputmode="numeric" required /></div>
+                <div class="form-grid">
+                    <div class="field"><label asp-for="Form.BallotsSpoiled"></label><input asp-for="Form.BallotsSpoiled" class="js-spoiled" type="number" min="0" inputmode="numeric" required /></div>
+                    <div class="field"><label asp-for="Form.BallotsUnused"></label><input asp-for="Form.BallotsUnused" class="js-unused" type="number" min="0" inputmode="numeric" required /></div>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header"><h4 class="card-title mb-0">Votes</h4></div>
-                <div class="card-body">
-                    @for (var i = 0; i < Model.Form.Votes.Count; i++)
-                    {
-                        <div class="form-group">
-                            <input type="hidden" asp-for="Form.Votes[i].ContestantId" />
-                            <input type="hidden" asp-for="Form.Votes[i].Name" />
-                            <label for="Form_Votes_@(i)__Votes">@Model.Form.Votes[i].Name</label>
-                            <input asp-for="Form.Votes[i].Votes" class="form-control js-vote" type="number" min="0" required />
-                        </div>
-                    }
-                    <div class="form-group"><label asp-for="Form.BlankVotes"></label><input asp-for="Form.BlankVotes" class="form-control js-vote" type="number" min="0" required /></div>
-                    <div class="form-group"><label asp-for="Form.InvalidVotes"></label><input asp-for="Form.InvalidVotes" class="form-control js-vote" type="number" min="0" required /></div>
-                    <p class="mb-0" id="live-check" aria-live="polite"></p>
+        </fieldset>
+
+        <fieldset class="card" style="margin:0">
+            <legend class="visually-hidden">Votes</legend>
+            <div class="card-header"><h2>2. Votes</h2></div>
+            <div class="card-body">
+                @for (var i = 0; i < Model.Form.Votes.Count; i++)
+                {
+                    <div class="field" style="grid-template-columns:1fr 9rem;align-items:center">
+                        <input type="hidden" asp-for="Form.Votes[i].ContestantId" />
+                        <input type="hidden" asp-for="Form.Votes[i].Name" />
+                        <label for="Form_Votes_@(i)__Votes" style="font-weight:600">@Model.Form.Votes[i].Name</label>
+                        <input asp-for="Form.Votes[i].Votes" class="js-vote" type="number" min="0" inputmode="numeric" required />
+                    </div>
+                }
+                <div class="field" style="grid-template-columns:1fr 9rem;align-items:center;border-top:1px solid var(--border);padding-top:1rem">
+                    <label asp-for="Form.BlankVotes"></label><input asp-for="Form.BlankVotes" class="js-vote" type="number" min="0" inputmode="numeric" required />
                 </div>
+                <div class="field" style="grid-template-columns:1fr 9rem;align-items:center">
+                    <label asp-for="Form.InvalidVotes"></label><input asp-for="Form.InvalidVotes" class="js-vote" type="number" min="0" inputmode="numeric" required />
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    @if (!verify)
+    {
+        <section class="card">
+            <div class="card-header"><h2>3. Signed sheet <span class="muted small" style="font-weight:400">(optional)</span></h2></div>
+            <div class="card-body">
+                <div class="field" style="margin:0">
+                    <label asp-for="Form.Scan">Photo or scan</label>
+                    <input asp-for="Form.Scan" type="file" accept="image/jpeg,image/png,application/pdf" capture="environment" />
+                    <span class="hint">JPEG, PNG or PDF, up to 8 MB. Published with the results once approved, so anyone can compare it with the typed figures.</span>
+                    @if (!string.IsNullOrEmpty(ctx.Sheet?.ScanPath))
+                    {
+                        <span class="hint">Already attached: <a href="@ctx.Sheet.ScanPath" target="_blank" rel="noopener">view current scan</a>. Uploading replaces it.</span>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <div class="card" style="position:sticky;bottom:0;z-index:5">
+        <div class="card-body spread" style="padding:.85rem 1.25rem">
+            <p id="live-check" aria-live="polite" style="margin:0" class="small"></p>
+            <div class="cluster">
+                <a asp-action="Index" asp-route-roundId="@ctx.Round.Id" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary">@(verify ? "Submit verification" : "Save sheet")</button>
             </div>
         </div>
     </div>
-    @if (!Model.IsVerification)
-    {
-        <div class="card">
-            <div class="card-body">
-                <label asp-for="Form.Scan"></label>
-                <input asp-for="Form.Scan" type="file" class="form-control-file" accept="image/jpeg,image/png,application/pdf" />
-                <small class="form-text text-muted">
-                    Optional. Published with the results once the sheet is approved, so anyone can compare it with the typed figures.
-                    @if (!string.IsNullOrEmpty(ctx.Sheet?.ScanPath))
-                    {
-                        <span>A scan is already attached: <a href="@ctx.Sheet.ScanPath" target="_blank" rel="noopener">view</a>. Uploading replaces it.</span>
-                    }
-                </small>
-            </div>
-        </div>
-    }
-    <button type="submit" class="btn btn-primary">@(Model.IsVerification ? "Submit verification" : "Save sheet")</button>
 </form>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
-        // Live arithmetic check, as a typing aid only; the server validates again on save.
+        // Live arithmetic check while typing (the server validates again on save).
         (function () {
             function n(el) { var v = parseInt(el && el.value, 10); return isNaN(v) ? null : v; }
+            var out = document.getElementById("live-check");
             function check() {
                 var votes = 0, missing = false;
                 document.querySelectorAll(".js-vote").forEach(function (el) { var v = n(el); if (v === null) missing = true; else votes += v; });
                 var used = n(document.querySelector(".js-used")), recv = n(document.querySelector(".js-recv"));
                 var spoiled = n(document.querySelector(".js-spoiled")), unused = n(document.querySelector(".js-unused"));
-                var msgs = [];
-                if (!missing && used !== null && votes !== used) msgs.push("Votes add up to " + votes + " but ballots used is " + used + ".");
+                var problems = [];
+                if (!missing && used !== null && votes !== used) problems.push("Votes add up to " + votes + ", but ballots used is " + used + ".");
                 if (recv !== null && used !== null && spoiled !== null && unused !== null && recv !== used + spoiled + unused)
-                    msgs.push("Received (" + recv + ") is not used + spoiled + unused (" + (used + spoiled + unused) + ").");
-                var el = document.getElementById("live-check");
-                el.className = msgs.length ? "mb-0 text-danger" : "mb-0 text-success";
-                el.textContent = msgs.length ? msgs.join(" ") : (missing ? "" : "Figures add up.");
+                    problems.push("Ballots received (" + recv + ") is not used + spoiled + unused (" + (used + spoiled + unused) + ").");
+                out.style.color = problems.length ? "var(--bad-text)" : "var(--ok-text)";
+                out.textContent = problems.length ? problems.join(" ") : (missing || used === null ? "Enter every figure from the sheet." : "Figures add up.");
+                if (missing || used === null) out.style.color = "var(--muted)";
             }
             document.querySelectorAll("input[type=number]").forEach(function (el) { el.addEventListener("input", check); });
             check();

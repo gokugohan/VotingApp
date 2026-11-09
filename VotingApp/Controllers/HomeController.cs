@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VotingApp.Application.Elections;
 using VotingApp.Application.Geography;
-using VotingApp.Domain.Elections;
 using VotingApp.Models;
 
 namespace VotingApp.Controllers
 {
     public class HomeController : BaseController
     {
-        // Dot as thousands separator, no decimals (e.g. 1.234.567). For display only.
-        private static readonly NumberFormatInfo VoteNumberFormat = new() { NumberDecimalDigits = 0, NumberGroupSeparator = "." };
-
         private readonly AreaService areas;
         private readonly PublicResultsService publicResults;
         private readonly ElectionResultsService results;
@@ -28,32 +23,19 @@ namespace VotingApp.Controllers
             this.results = results;
         }
 
-        /// <summary>Dashboard of approved results for a round (default: the most recent round in counting or later).</summary>
+        /// <summary>Results of a round (default: the most recent round in counting or later).</summary>
         [AllowAnonymous]
-        public async Task<IActionResult> Index(Guid? roundId)
+        public async Task<IActionResult> Index(Guid? roundId, Guid? map)
         {
-            var ct = HttpContext.RequestAborted;
-            var rounds = await publicResults.ListPublishedRoundsAsync(ct);
+            var rounds = await publicResults.ListPublishedRoundsAsync();
             var selected = rounds.FirstOrDefault(r => r.RoundId == roundId) ?? rounds.FirstOrDefault();
             if (roundId.HasValue && selected?.RoundId != roundId) return NotFound();
+            if (selected == null) return View((RoundResultsPage)null);
 
-            ViewData["Rounds"] = rounds;
-            ViewData["Round"] = selected;
-            if (selected != null)
-            {
-                var summary = await results.GetSummaryAsync(selected.RoundId, ResultSheetStatus.Approved, ct);
-                ViewData["Summary"] = summary;
-                ViewData["TotalVote"] = summary.ValidVotes.ToString("N", VoteNumberFormat);
-                ViewData["TotalVoteRaw"] = summary.ValidVotes.ToString(CultureInfo.InvariantCulture);
-                ViewData["candidates"] = await publicResults.GetBallotAsync(selected.RoundId, ct);
-            }
-            else
-            {
-                ViewData["TotalVote"] = "0";
-                ViewData["TotalVoteRaw"] = "0";
-                ViewData["candidates"] = Array.Empty<BallotContestant>();
-            }
-            return View(await areas.GetMunicipalitiesAsync(ct));
+            var page = await ResultsController.BuildPageAsync(results, publicResults, selected.RoundId, map,
+                Url.Action(nameof(Index)));
+            page.Rounds = rounds;
+            return View(page);
         }
 
         [AllowAnonymous]

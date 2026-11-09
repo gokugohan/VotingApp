@@ -1,0 +1,30 @@
+@model RoundSummary
+@{
+    // Parties with seats, coloured in ballot order (never by rank) with the validated palette;
+    // beyond 8 parties the rest share "Other" (named in the legend).
+    var winners = Model.Contestants.Where(c => c.Seats > 0).ToList();
+    var ballotPos = Model.Contestants.Select((c, i) => (c.ContestantId, i)).ToDictionary(x => x.ContestantId, x => x.i);
+    var slots = SeriesPalette.Assign(winners.Select(w => (w.ContestantId, ballotPos[w.ContestantId])), SeriesPalette.AdjacentCap);
+    var ordered = winners.OrderByDescending(w => w.Seats).ToList();
+    var total = Model.Parliamentary?.TotalSeats ?? 0;
+    var majority = total / 2 + 1;
+    var summary = string.Join(", ", ordered.Select(w => $"{w.Name} {w.Seats}"));
+}
+<div>
+    <h3>Seats <span class="muted small">(@total in total, @majority for a majority)</span></h3>
+    <div class="seats" role="img" aria-label="Projected seats: @summary">
+        @foreach (var w in ordered)
+        {
+            for (var i = 0; i < w.Seats; i++)
+            {
+                <span class="s-@slots[w.ContestantId]" title="@w.Name"></span>
+            }
+        }
+    </div>
+    <div class="legend">
+        @foreach (var w in ordered)
+        {
+            <span class="key"><span class="swatch s-@slots[w.ContestantId]"></span> @w.Name <strong>@w.Seats</strong></span>
+        }
+    </div>
+</div>

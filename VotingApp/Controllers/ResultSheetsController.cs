@@ -3,13 +3,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using VotingApp.Application.Common;
 using VotingApp.Application.Elections;
 using VotingApp.Application.Security;
 using VotingApp.Infrastructure;
 using VotingApp.Models;
-using VotingApp.SignalRHub;
 
 namespace VotingApp.Controllers
 {
@@ -22,17 +20,15 @@ namespace VotingApp.Controllers
         private readonly ResultSheetService sheets;
         private readonly ElectionAdminService elections;
         private readonly ElectionResultsService results;
-        private readonly IHubContext<VotingHub> hub;
         private readonly SheetScanStorage scans;
 
         public ResultSheetsController(ResultSheetService sheets, ElectionAdminService elections,
-            ElectionResultsService results, IHubContext<VotingHub> hub, SheetScanStorage scans)
+            ElectionResultsService results, SheetScanStorage scans)
         {
             this.scans = scans;
             this.sheets = sheets;
             this.elections = elections;
             this.results = results;
-            this.hub = hub;
         }
 
         /// <summary>Progress board for a round: every station in the user's scope with its sheet status.</summary>
@@ -84,7 +80,6 @@ namespace VotingApp.Controllers
                     Flash(result.Value.HasErrors
                         ? "Saved, but the figures do not add up. Check the paper sheet; it cannot be approved until corrected."
                         : "Saved. A second clerk must now verify it.", error: result.Value.HasErrors);
-                    await NotifyAsync("A result sheet was entered.");
                     return RedirectToAction(nameof(Index), new { roundId = model.RoundId });
                 }
                 if (result.Failure == FailureKind.Forbidden || result.Failure == FailureKind.NotFound) return FailurePage(result, model.RoundId);
@@ -119,7 +114,6 @@ namespace VotingApp.Controllers
                         ? "Verified: both entries match."
                         : "The entries differ in: " + string.Join(", ", result.Value.MismatchedFields) + ". A supervisor must check the paper sheet.",
                         error: !result.Value.Matched);
-                    await NotifyAsync("A result sheet was verified.");
                     return RedirectToAction(nameof(Index), new { roundId = model.RoundId });
                 }
                 if (result.Failure == FailureKind.Forbidden || result.Failure == FailureKind.NotFound) return FailurePage(result, model.RoundId);
@@ -135,7 +129,6 @@ namespace VotingApp.Controllers
         {
             var result = await sheets.ApproveAsync(sheetId, HttpContext.RequestAborted);
             Flash(result.Succeeded ? "Sheet approved and counted." : string.Join(" ", result.Errors), error: !result.Succeeded);
-            if (result.Succeeded) await NotifyAsync("Results updated.");
             return RedirectToAction(nameof(Index), new { roundId });
         }
 
@@ -146,7 +139,6 @@ namespace VotingApp.Controllers
         {
             var result = await sheets.ReopenAsync(sheetId, reason, HttpContext.RequestAborted);
             Flash(result.Succeeded ? "Sheet reopened for correction." : result.Error, error: !result.Succeeded);
-            if (result.Succeeded) await NotifyAsync("Results updated.");
             return RedirectToAction(nameof(Index), new { roundId });
         }
 
@@ -176,8 +168,5 @@ namespace VotingApp.Controllers
             Flash(result.Error, error: true);
             return RedirectToAction(nameof(Index), new { roundId });
         }
-
-        private Task NotifyAsync(string message) =>
-            hub.Clients.All.SendAsync(VotingHub.VotingDataEvent, message, HttpContext.RequestAborted);
     }
 }

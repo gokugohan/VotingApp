@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using VotingApp.Application.Geography;
 using VotingApp.Application.Abstractions;
 using VotingApp.Domain.Elections;
@@ -70,40 +69,57 @@ namespace VotingApp.Application.Elections
     public class PublicResultsService
     {
         private const int CodeLength = AreaHierarchy.MunicipalityCodeLength;
-        private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(15);
         private readonly IAppDbContext db;
-        private readonly IMemoryCache cache;
+        private readonly RoundResultsCache cache;
 
-        public PublicResultsService(IAppDbContext db, IMemoryCache cache)
+        public PublicResultsService(IAppDbContext db, RoundResultsCache cache)
         {
             this.db = db;
             this.cache = cache;
         }
 
-        public static string BreakdownKey(Guid roundId) => $"round-breakdown:{roundId}";
+        /// <summary>Cache scope for data that is not tied to one round (the list of published rounds).</summary>
+        public static readonly Guid AllRounds = Guid.Empty;
 
         /// <summary>
         /// Rounds the public dashboard can show (counting or later), newest first. The first one is the
         /// default ("featured") round.
         /// </summary>
-        public Task<List<PublishedRound>> ListPublishedRoundsAsync(CancellationToken ct = default) =>
-            db.ElectionRounds.AsNoTracking()
+        public Task<IReadOnlyList<PublishedRound>> ListPublishedRoundsAsync(CancellationToken ct = default) =>
+            cache.GetOrBuildAsync<IReadOnlyList<PublishedRound>>(AllRounds, "published-rounds", async () => await db.ElectionRounds.AsNoTracking()
                 .Where(r => r.Status >= ElectionStatus.Counting)
                 .OrderByDescending(r => r.VotingDate).ThenByDescending(r => r.Number)
                 .Select(r => new PublishedRound(r.Id, r.ElectionId, r.Election.Name, r.Number, r.Status, r.VotingDate))
-                .ToListAsync(ct);
+                .ToListAsync());
 
-        public async Task<IReadOnlyList<BallotContestant>> GetBallotAsync(Guid roundId, CancellationToken ct = default) =>
-            await db.RoundContestants.AsNoTracking()
+        public Task<IReadOnlyList<BallotContestant>> GetBallotAsync(Guid roundId, CancellationToken ct = default) =>
+            cache.GetOrBuildAsync<IReadOnlyList<BallotContestant>>(roundId, "ballot", async () => await db.RoundContestants.AsNoTracking()
                 .Where(rc => rc.ElectionRoundId == roundId)
                 .OrderBy(rc => rc.BallotPosition)
                 .Select(rc => new BallotContestant(rc.ContestantId, rc.Contestant.Name, rc.Contestant.Acronym, rc.BallotPosition))
-                .ToListAsync(ct);
+                .ToListAsync());
+
+        /// <summary>
+        /// Short fingerprint of the round's published state (counted sheets, last approval/lock, round status).
+        /// Live pages poll it and only re-fetch when it changes.
+        /// </summary>
+        public Task<string> GetSignatureAsync(Guid roundId, CancellationToken ct = default) =>
+            cache.GetOrBuildAsync(roundId, "signature", async () =>
+            {
+                var counted = db.ResultSheets.Where(s => s.ElectionRoundId == roundId && s.Status >= ResultSheetStatus.Approved);
+                var count = await counted.CountAsync();
+                var approved = await counted.MaxAsync(s => (DateTime?)s.ApprovedAt);
+                var locked = await counted.MaxAsync(s => (DateTime?)s.LockedAt);
+                var status = await db.ElectionRounds.Where(r => r.Id == roundId).Select(r => (int?)r.Status).FirstOrDefaultAsync();
+                return string.Join("-", count, approved?.Ticks ?? 0, locked?.Ticks ?? 0, status ?? -1);
+            });
 
         /// <summary>Counted votes and reporting progress per municipality (cached briefly).</summary>
-        public async Task<RoundBreakdown> GetBreakdownAsync(Guid roundId, CancellationToken ct = default)
+        public Task<RoundBreakdown> GetBreakdownAsync(Guid roundId, CancellationToken ct = default) =>
+            cache.GetOrBuildAsync(roundId, "breakdown", () => BuildBreakdownAsync(roundId, CancellationToken.None));
+
+        private async Task<RoundBreakdown> BuildBreakdownAsync(Guid roundId, CancellationToken ct)
         {
-            if (cache.TryGetValue(BreakdownKey(roundId), out RoundBreakdown cached)) return cached;
             if (!await db.ElectionRounds.AnyAsync(r => r.Id == roundId, ct)) return null;
 
             var ballot = await GetBallotAsync(roundId, ct);
@@ -142,18 +158,22 @@ namespace VotingApp.Application.Elections
                     perContestant);
             }).ToList();
 
-            var breakdown = new RoundBreakdown(roundId, ballot, rows);
-            cache.Set(BreakdownKey(roundId), breakdown, CacheDuration);
-            return breakdown;
+            return new RoundBreakdown(roundId, ballot, rows);
         }
 
         /// <summary>
         /// Every polling station in a municipality with its published figures. Sheets that are not yet
         /// approved show only their status, never their figures.
         /// </summary>
-        public async Task<List<StationResult>> GetStationsAsync(Guid roundId, string municipalityId, CancellationToken ct = default)
+        public async Task<IReadOnlyList<StationResult>> GetStationsAsync(Guid roundId, string municipalityId, CancellationToken ct = default)
         {
             if (municipalityId?.Length != CodeLength) return new List<StationResult>();
+            return await cache.GetOrBuildAsync<IReadOnlyList<StationResult>>(roundId, "stations:" + municipalityId,
+                async () => await BuildStationsAsync(roundId, municipalityId, CancellationToken.None));
+        }
+
+        private async Task<List<StationResult>> BuildStationsAsync(Guid roundId, string municipalityId, CancellationToken ct)
+        {
             var stations = await db.PollingStationAreas.AsNoTracking()
                 .Where(p => p.AreaId.StartsWith(municipalityId))
                 .Select(p => new { p.Id, Village = p.Area.Name, PostId = p.Area.ParentId, Station = p.PollingStation.Name })
@@ -186,7 +206,10 @@ namespace VotingApp.Application.Elections
         }
 
         /// <summary>Open data: one CSV row per counted (approved or locked) sheet, one column per contestant.</summary>
-        public async Task<string> ExportCountedSheetsCsvAsync(Guid roundId, CancellationToken ct = default)
+        public Task<string> ExportCountedSheetsCsvAsync(Guid roundId, CancellationToken ct = default) =>
+            cache.GetOrBuildAsync(roundId, "csv", () => BuildCsvAsync(roundId, CancellationToken.None));
+
+        private async Task<string> BuildCsvAsync(Guid roundId, CancellationToken ct)
         {
             var ballot = await GetBallotAsync(roundId, ct);
             var sheets = await db.ResultSheets.AsNoTracking()

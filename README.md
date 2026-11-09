@@ -45,13 +45,22 @@ Package versions are managed centrally in `Directory.Packages.props`.
 | `/Results/Municipalities/{roundId}` | Per-municipality results (JSON) |
 | `/Results/Csv/{roundId}` | One row per counted station sheet (CSV, UTF-8) |
 
-The home dashboard (charts and map) shows the same approved figures for the most recent round in counting or later, with a selector for other rounds; it refreshes when sheets are approved.
+The home page shows the same approved figures for the most recent round in counting or later, with a selector for other rounds. Results pages refresh themselves: they poll a few-byte signature (`/Results/Signature/{roundId}`) every 20 seconds and re-load only when results changed.
 
-The original quick vote entry (`/Votings`, one total per candidate per station) is superseded by result sheets and disabled by default so results are not recorded twice. Its data was copied into the "Imported results" election by the `AddElectionModel` migration. Set `Features__LegacyVoteEntry=true` only to re-enable it temporarily.
+The original quick vote entry (one total per candidate per station) has been removed in favour of result sheets. Its data remains in the `Votes` table and was copied into the "Imported results" election by the `AddElectionModel` migration.
 
 Only approved and locked sheets are published; stations still being checked show their status only. Sheet scans (JPEG/PNG/PDF, checked by file signature, max 8 MB) are stored under `wwwroot/uploads/sheets`.
 
 Admins configure roles under *Elections → Users and roles* (suggested: Clerk = enter, Verifier = verify, Municipal supervisor = verify + approve, National tabulation = approve + lock) and limit staff to municipalities under *User municipalities*.
+
+## User interface
+
+Server-rendered Razor pages with one hand-written stylesheet (`wwwroot/css/app.css`) and a small script (`wwwroot/js/site.js`); no CSS framework, chart library or web fonts, so pages stay light on slow and expensive mobile connections.
+
+- **Accessible**: WCAG AA contrast, visible focus, keyboard navigation, 44 px touch targets, skip link, reduced-motion support, tables as the alternative to every chart.
+- **Light and dark** themes (follows the device, with a toggle).
+- **Charts without a library**: contestant results are sorted HTML bars (one series, one colour, 50% majority marker for presidential rounds); the municipality map is SVG drawn on the server from `wwwroot/data/tl-all.topo.json`; parliament seats are a dot grid.
+- **Neutral colours**: navy and blue interface; contestant colours come from a colourblind-validated palette assigned in ballot order (never by rank, never party colours), at most 3 on the map and 8 for seats, with the rest shown as "Other" and named in the legend.
 
 ## Running locally
 
@@ -92,5 +101,7 @@ The compose stack applies migrations on start-up (`Database__MigrateOnStartup=tr
 | Database resilience | SQL transient-fault retries enabled |
 
 ## CI
+
+A results-night load test (public visitors plus clerks entering sheets, with pass/fail thresholds) lives in [`loadtest/`](loadtest/README.md).
 
 `.github/workflows/ci.yml` builds and tests, fails on vulnerable NuGet packages, checks that migrations match the model, publishes an idempotent migration SQL script as an artifact, builds the container image on every PR and pushes it to `ghcr.io` on `master` and tags. Dependabot keeps NuGet, Actions and the base image current.

@@ -1,201 +1,127 @@
-﻿@using Microsoft.Extensions.Configuration
-@inject IConfiguration Config
+﻿@using Microsoft.AspNetCore.Authorization
+@using VotingApp.Application.Security
+@inject IAuthorizationService Authz
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var isAdmin = signedIn && User.IsInRole(Permissions.AdminRole);
+    async Task<bool> Can(string policy) => signedIn && (await Authz.AuthorizeAsync(User, policy)).Succeeded;
+    var canResults = await Can(Permissions.EnterResults + "|" + Permissions.VerifyResults + "|" + Permissions.ApproveResults + "|" + Permissions.LockResults);
+    var canElections = await Can(Permissions.ManageElections);
+    var canCandidates = await Can(Permissions.ManageCandidates);
+    var canStations = await Can(Permissions.ManagePollingStations);
+    var canAudit = await Can(Permissions.ViewAuditLog);
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    string Current(params string[] names) => names.Contains(controller) ? "page" : null;
+    var title = ViewData["Title"] as string;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Voting App</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link href="~/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
-    <link href="~/css/font-awesome.min.css" rel="stylesheet" />
-    <link href="~/layout_dark/assets/css/nucleo-icons.css" rel="stylesheet" />
-    <link href="~/layout_dark/assets/css/black-dashboard.min.css" rel="stylesheet" />
-    <link href="~/css/site.css" rel="stylesheet" />
-    <style>
-        .main-panel {
-            background:transparent;
-        }
-        .main-panel > .content {
-            /*background-image: url('/images/rdtl-logo.png');*/
-           /* background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;*/
-        }
-
-        .card {
-            background: #27293da3 !important;
-        }
-
-        .hide {
-            display: none;
-        }
-
-
-        .form-control, .custom-file-label, .custom-file-label:after {
-            color: #495057 !important;
-        }
-
-        select option {
-            margin: 40px;
-            background: #27293d;
-            border-color: #e14eca;
-            color: #fff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
-        }
-
-        .modal h1, .modal h2, .modal h3, .modal h4, .modal h5, .modal h6,
-        .modal p {
-            color: #32325d;
-        }
-
-    </style>
-    @RenderSection("css", required: false)
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@(string.IsNullOrEmpty(title) ? "Election Results" : title + " · Election Results")</title>
+    <script>
+        // Apply the saved theme before first paint (no flash).
+        try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) { }
+    </script>
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.ico" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
 
+    <header class="site-header">
+        <div class="container bar">
+            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 12 2 2 4-4" /><path d="M5 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v12H5V7Z" /><path d="M22 19H2" /></svg>
+                <span>Election Results <span class="visually-hidden">Timor-Leste</span></span>
+            </a>
 
-    <div class="please-wait" style="display: none;">
-        <div class="load-wrapper" style="opacity: 0;">
-            <img src="~/images/please_wait.svg" />
-        </div>
-        <div class="please-wait-bg"></div>
-    </div>
+            <button type="button" class="btn btn-ghost nav-toggle" aria-controls="site-nav" aria-expanded="false" style="color:#fff">
+                @Icon.Render("menu") <span>Menu</span>
+            </button>
 
-    <div class="wrapper">
-        <div class="sidebar">
-            <div class="sidebar-wrapper">
-                <div class="logo">
-                    <a href="javascript:void(0)" class="simple-text logo-mini">
-                        <img src="~/images/helder1.jpg" alt="..." width="65" class="mr-3 rounded-circle img-thumbnail shadow-sm">
-                    </a>
-                    <a asp-action="Index" asp-controller="Home" class="simple-text logo-normal">
-                        Chebre
-                    </a>
-                </div>
-                <ul class="nav">
-                    <li class="active ">
-                        <a asp-action="Index" asp-controller="Home">
-                            <i class="fa fa-th-large mr-3 fa-fw"></i>
-                            <p>Dashboard</p>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="Areas">
-                            <i class="fa fa-address-card mr-3 fa-fw"></i>
-                            Areas
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="PollingStationAreas">
-                            <i class="fa fa-cubes mr-3 fa-fw"></i>
-                            Polling Stations
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="Candidates">
-                            <i class="fa fa-picture-o mr-3 fa-fw"></i>
-                            Candidates
-                        </a>
-                    </li>
-                    @if (Config.GetValue<bool>(VotingApp.Controllers.VotingsController.FeatureFlag))
-                    {
-                        <li>
-                            <a asp-action="Index" asp-controller="Votings">
-                                <i class="fa fa-picture-o mr-3 fa-fw"></i>
-                                Votings
-                            </a>
-                        </li>
-                    }
-                    <li>
-                        <a asp-action="Index" asp-controller="Elections">
-                            <i class="fa fa-check-square-o mr-3 fa-fw"></i>
-                            Elections
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="AuditLog" class="nav-link font-italic">
-                            <i class="fa fa-area-chart mr-3 fa-fw"></i>
-                            Logs
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+            <nav id="site-nav" class="nav" aria-label="Main">
+                <a asp-area="" asp-controller="Home" asp-action="Index" aria-current="@Current("Home", "Results")">@Icon.Render("chart") Results</a>
+                <a asp-area="" asp-controller="Elections" asp-action="Index" aria-current="@Current("Elections", "ResultSheets")">@Icon.Render("vote") Elections</a>
 
-
-        <div class="main-panel">
-            <!-- Navbar -->
-            <nav class="navbar navbar-expand-lg navbar-absolute navbar-transparent">
-                <div class="container-fluid">
-                    <div class="navbar-wrapper">
-                        <div class="navbar-toggle d-inline">
-                            <button type="button" class="navbar-toggler">
-                                <span class="navbar-toggler-bar bar1"></span>
-                                <span class="navbar-toggler-bar bar2"></span>
-                                <span class="navbar-toggler-bar bar3"></span>
-                            </button>
+                @if (signedIn && (canResults || canElections || canCandidates || canStations || canAudit || isAdmin))
+                {
+                    <details>
+                        <summary>@Icon.Render("database") Manage @Icon.Render("chevron-down")</summary>
+                        <div class="menu">
+                            @if (canResults || canElections)
+                            {
+                                <a asp-area="" asp-controller="Elections" asp-action="Index">@Icon.Render("file") Result sheets</a>
+                            }
+                            <span class="menu-label">Reference data</span>
+                            <a asp-area="" asp-controller="Candidates" asp-action="Index">@Icon.Render("user") Candidates</a>
+                            <a asp-area="" asp-controller="PollingStationAreas" asp-action="Index">@Icon.Render("pin") Polling stations</a>
+                            <a asp-area="" asp-controller="Areas" asp-action="Index">@Icon.Render("map") Areas</a>
+                            @if (isAdmin || canAudit)
+                            {
+                                <hr />
+                                <span class="menu-label">Administration</span>
+                                @if (isAdmin)
+                                {
+                                    <a asp-area="" asp-controller="Admin" asp-action="Users">@Icon.Render("users") Users and roles</a>
+                                    <a asp-area="" asp-controller="Elections" asp-action="Scopes">@Icon.Render("shield") User municipalities</a>
+                                }
+                                @if (canAudit)
+                                {
+                                    <a asp-area="" asp-controller="AuditLog" asp-action="Index">@Icon.Render("history") Audit log</a>
+                                }
+                            }
                         </div>
-                        <a class="navbar-brand" asp-action="Index" asp-controller="Home">@ViewData["title"]</a>
-                    </div>
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-bar navbar-kebab"></span>
-                        <span class="navbar-toggler-bar navbar-kebab"></span>
-                        <span class="navbar-toggler-bar navbar-kebab"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navigation">
-                        <ul class="navbar-nav ml-auto">
-                            
-                            <partial name="_LoginPartial" />
-                            
-                            <li class="separator d-lg-none"></li>
-                        </ul>
-                    </div>
-                </div>
+                    </details>
+                }
+
+                <button type="button" class="linklike theme-toggle" aria-label="Colour theme: system" title="Colour theme" style="color:#dbe5f1;text-decoration:none;min-height:44px;padding:0 .75rem">
+                    <span data-theme-icon="system">@Icon.Render("monitor")</span>
+                    <span data-theme-icon="light" hidden>@Icon.Render("sun")</span>
+                    <span data-theme-icon="dark" hidden>@Icon.Render("moon")</span>
+                </button>
+
+                @if (signedIn)
+                {
+                    <details>
+                        <summary>@Icon.Render("user") <span>@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity!.Name)</span> @Icon.Render("chevron-down")</summary>
+                        <div class="menu">
+                            <a asp-area="Identity" asp-page="/Account/Manage/Index">@Icon.Render("user") My account</a>
+                            <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                <button type="submit" class="linklike" style="text-decoration:none;display:flex;gap:.45rem;align-items:center">@Icon.Render("log-out") Sign out</button>
+                            </form>
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Login">@Icon.Render("log-in") Staff sign in</a>
+                }
             </nav>
-            <div class="modal modal-search fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModal" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <input type="text" class="form-control" id="inlineFormInputGroup" placeholder="SEARCH">
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <i class="tim-icons icon-simple-remove"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End Navbar -->
-
-            <div class="content">
-                <partial name="_Flash" />
-                @RenderBody()
-            </div>
-
-            <footer class="footer border-top">
-                <div class="container">
-                    &copy; 2022 - VotingApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                </div>
-            </footer>
-
         </div>
-    </div>
+    </header>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/layout_dark/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
-    <script src="~/layout_dark/assets/js/plugins/bootstrap-notify.js"></script>
-    <script src="~/layout_dark/assets/js/black-dashboard.min.js"></script>
+    <main id="main" tabindex="-1">
+        <div class="container page">
+            <partial name="_Flash" />
+            @RenderBody()
+        </div>
+    </main>
 
-    <script src="~/js/jquery.dataTables.min.js"></script>
-    <script src="~/js/dataTables.bootstrap4.min.js"></script>
-    <script src="~/js/signalr.min.js"></script>
-    <script src="~/js/voting_broadcasting.js"></script>
+    <footer class="site-footer">
+        <div class="container spread">
+            <span>Provisional results are unofficial until certified by the competent electoral authorities.</span>
+            <span class="cluster">
+                <a asp-area="" asp-controller="Elections" asp-action="Index">Open data</a>
+                <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </span>
+        </div>
+    </footer>
 
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-
-    @RenderSection("Scripts", required: false)
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

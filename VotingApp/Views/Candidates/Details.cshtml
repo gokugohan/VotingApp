@@ -1,26 +1,21 @@
 ﻿@model VotingApp.Domain.Entities.Candidate
-
 @{
-    ViewData["Title"] = "Details";
-    Layout = null;
+    ViewData["Title"] = Model.Name;
 }
-<dl class="row">
-    <dt class="col-sm-2">
-        @Html.DisplayNameFor(model => model.Name)
-    </dt>
-    <dd class="col-sm-10">
-        @Html.DisplayFor(model => model.Name)
-    </dd>
-    <dt class="col-sm-2">
-        @Html.DisplayNameFor(model => model.Description)
-    </dt>
-    <dd class="col-sm-10">
-        @Html.DisplayFor(model => model.Description)
-    </dd>
-    <dt class="col-sm-2">
-        @Html.DisplayNameFor(model => model.ShortBiography)
-    </dt>
-    <dd class="col-sm-10">
-        @Html.DisplayFor(model => model.ShortBiography)
-    </dd>
-</dl>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<article class="card" style="max-width:48rem">
+    <div class="card-body cluster" style="flex-wrap:nowrap;align-items:flex-start;gap:1.25rem">
+        <partial name="_Avatar" model='(Model.Name, Model.Avatar, "avatar-lg")' />
+        <div>
+            <h1 style="margin-bottom:.25rem">@Model.Name</h1>
+            @if (!string.IsNullOrEmpty(Model.Description)) { <p class="muted">@Model.Description</p> }
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.ShortBiography))
+    {
+        <div class="card-body" style="border-top:1px solid var(--border)">
+            <h2 style="font-size:1rem">Biography</h2>
+            <p style="white-space:pre-line;max-width:70ch">@Model.ShortBiography</p>
+        </div>
+    }
+</article>

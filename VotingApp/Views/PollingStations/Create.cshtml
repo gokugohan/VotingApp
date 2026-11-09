@@ -1,33 +1,20 @@
 ﻿@model VotingApp.Domain.Entities.PollingStation
-
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "New polling station name";
 }
-
-<h1>Create</h1>
-
-<h4>PollingStation</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Polling station names</a><span aria-hidden="true">/</span><span>New</span></nav>
+<div class="page-header"><h1>New polling station name</h1></div>
+<form asp-action="Create" method="post" class="card form-narrow">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="errors"></div>
+        <div class="field">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" required maxlength="200" />
+            <span asp-validation-for="Name" class="field-error"></span>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        </div>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+</form>

@@ -1,41 +1,48 @@
 @model List<VotingApp.Controllers.UserRolesRow>
 @{
-    ViewData["Title"] = "Users";
+    ViewData["Title"] = "Users and roles";
     var allRoles = (List<string>)ViewData["AllRoles"];
 }
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Users and roles</h2>
-    <span>
-        <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-success btn-sm"><i class="fa fa-plus"></i> Create user</a>
-        <a asp-action="Roles" class="btn btn-outline-secondary btn-sm">Roles and permissions</a>
-        <a asp-controller="Elections" asp-action="Scopes" class="btn btn-outline-secondary btn-sm">User municipalities</a>
-    </span>
+<div class="page-header spread">
+    <div>
+        <h1>Users and roles</h1>
+        <p>Accounts are created by administrators; there is no public registration.</p>
+    </div>
+    <div class="cluster">
+        <a asp-action="Roles" class="btn btn-secondary">@Icon.Render("shield") Roles and permissions</a>
+        <a asp-controller="Elections" asp-action="Scopes" class="btn btn-secondary">@Icon.Render("map") Municipalities</a>
+        <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary">@Icon.Render("plus") New user</a>
+    </div>
 </div>
+
 <div class="card">
-    <div class="card-body table-responsive">
+    <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>User</th><th>Last sign-in</th><th>Roles</th><th></th></tr></thead>
+            <thead><tr><th scope="col">User</th><th scope="col">Last sign-in</th><th scope="col">Roles</th><th scope="col"><span class="visually-hidden">Save</span></th></tr></thead>
             <tbody>
-            @foreach (var row in Model)
-            {
-                var formId = "roles-" + row.User.Id;
-                <tr>
-                    <td>@row.User.Email<br /><small class="text-muted">@row.User.FirstName @row.User.LastName</small></td>
-                    <td><small>@(row.User.LastLoginDateUtc?.ToString("yyyy-MM-dd HH:mm") ?? "never")</small></td>
-                    <td>
-                        <form id="@formId" asp-action="SetUserRoles" method="post">
-                            <input type="hidden" name="userId" value="@row.User.Id" />
-                            @foreach (var role in allRoles)
-                            {
-                                <label class="mr-3 mb-1 font-weight-normal">
-                                    <input type="checkbox" name="roleNames" value="@role" checked="@row.Roles.Contains(role)" /> @role
-                                </label>
-                            }
-                        </form>
-                    </td>
-                    <td><button type="submit" form="@formId" class="btn btn-primary btn-sm">Save</button></td>
-                </tr>
-            }
+                @foreach (var row in Model)
+                {
+                    var formId = "roles-" + row.User.Id;
+                    <tr>
+                        <th scope="row">@row.User.Email<div class="muted small" style="font-weight:400">@row.User.FirstName @row.User.LastName</div></th>
+                        <td class="small">@(row.User.LastLoginDateUtc.HasValue ? row.User.LastLoginDateUtc.Value.ToString("yyyy-MM-dd HH:mm") + " UTC" : "Never")</td>
+                        <td>
+                            <form id="@formId" asp-action="SetUserRoles" method="post">
+                                <input type="hidden" name="userId" value="@row.User.Id" />
+                                <fieldset style="border:0;margin:0;padding:0">
+                                    <legend class="visually-hidden">Roles for @row.User.Email</legend>
+                                    <div class="cluster" style="gap:.25rem 1rem">
+                                        @foreach (var role in allRoles)
+                                        {
+                                            <label class="check"><input type="checkbox" name="roleNames" value="@role" checked="@row.Roles.Contains(role)" /> @role</label>
+                                        }
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </td>
+                        <td class="actions-cell"><button type="submit" form="@formId" class="btn btn-secondary btn-sm">Save</button></td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>

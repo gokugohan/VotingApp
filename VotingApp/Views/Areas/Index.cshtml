@@ -1,175 +1,55 @@
-﻿@model VotingApp.Models.IndexAreaModel
-
+﻿@model IndexAreaModel
 @{
     ViewData["Title"] = "Areas";
+    var posts = Model.AdministrativePosts.ToLookup(p => p.ParentId);
+    var villages = Model.Villages.ToLookup(v => v.ParentId);
 }
-
-@section css{ 
-    <style>
-        #admin-post-child-area-container{
-            transition: 1s ease-in-out;
-        }
-    </style>
-}
-
-
-<div class="card rounded shadow border-0">
-    <div class="card-header">
-        <div class="text-center">
-            <h1>
-                @ViewData["Title"]
-                <a href="#!" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
-            </h1>
-
-            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-
-
-        </div>
-    </div>
-
-    
-    <div class="card-body p-5 rounded">
-        <div class="btn-group d-inline">
-            @foreach (var item in Model.Municipalities)
-            {
-                <a href="#!" class="btn-view-post-admin btn btn-sm" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
-            }
-        </div>
-        
-        <div class="row mt-5">
-            <!--<div class="col" id="municipality-container">
-        <div class="table-responsive">
-
-            <table class="table" id="table-municipalities">
-                <thead>
-                    <tr>
-                        <th>Municipality</th>-->
-            @*<th></th>*@
-            <!--</tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.Municipalities)
-                        {
-                            <tr>
-                                <td>
-                                    <a href="#!" class="btn-view-post-admin" data-id="@item.Id">@Html.DisplayFor(modelItem => item.Name)</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>-->
-            <div class="col hide" id="municipality-child-area-container">
-                <table class="table table-striped" id="table-areas-admin-post">
-                    <thead>
-                        <tr>
-                            <th>Administrative Post</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="text-center">Click on Municipality to list administrative post</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col hide" id="admin-post-child-area-container">
-                <table class="table table-striped" id="table-areas-village">
-                    <thead>
-                        <tr>
-                            <th>Village/Suco</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="text-center">Click on Administrative post to list Village/Suco</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
+<div class="page-header">
+    <h1>Administrative areas</h1>
+    <p>@Model.Municipalities.Count municipalities, @Model.AdministrativePosts.Count administrative posts and @Model.Villages.Count villages (sucos).</p>
 </div>
 
-<div class="modal fade" id="modal-view" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="staticBackdropLabel"></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <ul class="list-group" id="list-of-area"></ul>
+<div class="field" style="max-width:24rem">
+    <label for="area-search">Find an area</label>
+    <input id="area-search" type="search" placeholder="Type a name…" autocomplete="off" />
+</div>
+
+<div class="stack" id="area-tree">
+    @foreach (var m in Model.Municipalities.OrderBy(m => m.Name))
+    {
+        <details class="card" data-area-name="@m.Name.ToLowerInvariant()">
+            <summary class="card-body spread" style="cursor:pointer;list-style:none">
+                <span><strong>@m.Name</strong> <span class="muted small">@m.Id</span></span>
+                <span class="badge">@posts[m.Id].Count() posts</span>
+            </summary>
+            <div class="card-body" style="border-top:1px solid var(--border)">
+                <div class="grid grid-2">
+                    @foreach (var p in posts[m.Id].OrderBy(p => p.Name))
+                    {
+                        <div data-area-name="@p.Name.ToLowerInvariant()">
+                            <h3 style="font-size:1rem;margin-bottom:.25rem">@p.Name</h3>
+                            <p class="small muted" style="margin:0">@string.Join(" · ", villages[p.Id].OrderBy(v => v.Name).Select(v => v.Name))</p>
+                        </div>
+                    }
                 </div>
             </div>
-        </div>
-    </div>
+        </details>
+    }
 </div>
 
-
-@section scripts{
+@section Scripts {
     <script>
-        $(document).ready(function () {
-
-            $(".btn-add-new").on("click", function () {
-                $.notify({
-                    icon: "tim-icons icon-bell-55",
-                    message: "Upsss. Add new Area is disabled!"
+        (function () {
+            var input = document.getElementById("area-search");
+            var items = document.querySelectorAll("#area-tree > details");
+            input.addEventListener("input", function () {
+                var q = input.value.trim().toLowerCase();
+                items.forEach(function (d) {
+                    var match = !q || d.textContent.toLowerCase().indexOf(q) >= 0;
+                    d.hidden = !match;
+                    d.open = !!q && match;
                 });
-            })
-
-            $("body").on("click", ".btn-view-post-admin", function () {
-                let id = $(this).data("id");
-                $("#admin-post-child-area-container").addClass("hide");
-                $.ajax({
-                    url: "/Areas/GetArea?level=" + 3 + "&parentId=" + id,
-                    type: "get",
-                    success: function (response) {
-                        console.log(response);
-
-                        $("#municipality-child-area-container").removeClass("hide");
-
-                        var tbody = "";
-                        $.each(response.data, function (i, v) {
-                            tbody += "<tr>";
-                            tbody += "<td><a href='#!' data-id='" + v.id + "' data-title='" + v.name + "' class='btn-view-village'>" + v.name + "</a></td>";
-                            tbody += "</tr>";
-                        });
-
-
-                        $("#table-areas-admin-post tbody").html(tbody);
-                    }
-                })
-            })
-
-            $("body").on("click", ".btn-view-village", function () {
-                let id = $(this).data("id");
-                let title = $(this).data("title");
-                $.ajax({
-                    url: "/Areas/GetArea?level=" + 4 + "&parentId=" + id,
-                    type: "get",
-                    success: function (response) {
-
-                        $("#admin-post-child-area-container").removeClass("hide");
-
-                        var tbody = "";
-                        $.each(response.data, function (i, v) {
-                            tbody += "<tr>";
-                            tbody += "<td>" + v.name + "</td>";
-                            tbody += "</tr>";
-                        });
-
-                        $("#table-areas-village tbody").html(tbody);
-                    }
-                })
-            })
-
-            //$("table").DataTable();
-        });
+            });
+        })();
     </script>
 }

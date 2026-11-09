@@ -1,77 +1,131 @@
-@model VotingApp.Models.MunicipalityResultsPage
+@model MunicipalityResultsPage
 @{
-    var S = Model.Summary;
-    var M = Model.Municipality;
-    ViewData["Title"] = $"{M.Name}: {S.ElectionName}";
+    var s = Model.Summary;
+    var m = Model.Municipality;
+    ViewData["Title"] = $"{m.Name} · {s.ElectionName}";
     var names = Model.Ballot.ToDictionary(c => c.Id, c => c.Name);
+    var ranked = Model.Ballot.OrderByDescending(c => m.Votes[c.Id]).ToList();
+    string Short(BallotContestant c) => string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h2 class="mb-0">@M.Name</h2>
-    <a asp-action="Round" asp-route-id="@S.RoundId">Back to national results</a>
-</div>
-<p class="text-muted">@S.ElectionName @(S.RoundNumber > 1 ? $"(round {S.RoundNumber})" : "") &middot; provisional: only approved sheets are shown</p>
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <a asp-action="Round" asp-route-id="@s.RoundId">@s.ElectionName</a><span aria-hidden="true">/</span>
+    <span>@m.Name</span>
+</nav>
 
-<div class="row text-center mb-3">
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@M.ReportingPercent%</h3><small>stations reporting (@M.SheetsCounted of @M.PollingStations)</small></div></div>
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@M.ValidVotes.ToString("N0")</h3><small>valid votes</small></div></div>
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@(M.LeaderId.HasValue ? names[M.LeaderId.Value] : "-")</h3><small>leading</small></div></div>
-</div>
+<div data-live="@Url.Action("Signature", new { id = s.RoundId })" data-live-signature="@ViewData["Signature"]" class="stack-lg">
+    <div class="page-header" style="margin-bottom:0">
+        <div class="eyebrow">Municipality</div>
+        <h1>@m.Name</h1>
+        <div class="cluster small">
+            <span class="badge badge-warn">@Icon.Render("info") Provisional</span>
+            <span class="muted">Only approved polling station sheets are shown.</span>
+            <span class="muted" data-live-status aria-live="polite"></span>
+        </div>
+    </div>
 
-<div class="card">
-    <div class="card-body table-responsive">
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Administrative post</th>
-                    <th>Village</th>
-                    <th>Polling station</th>
-                    @foreach (var c in Model.Ballot)
-                    {
-                        <th class="text-right">@(string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym)</th>
-                    }
-                    <th class="text-right">Blank</th>
-                    <th class="text-right">Invalid</th>
-                    <th>Sheet</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var st in Model.Stations)
+    <section class="grid grid-4" aria-label="Key figures">
+        <div class="card stat">
+            <div class="label">Stations reporting</div>
+            <div class="value">@m.ReportingPercent.ToString("0.#")%</div>
+            <div class="meter" aria-hidden="true" style="margin-top:.5rem"><span style="width:@m.ReportingPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div>
+            <div class="sub">@m.SheetsCounted of @m.PollingStations stations</div>
+        </div>
+        <div class="card stat">
+            <div class="label">Valid votes</div>
+            <div class="value">@m.ValidVotes.ToString("N0")</div>
+        </div>
+        <div class="card stat" style="grid-column: span 2">
+            <div class="label">Leading</div>
+            <div class="value" style="font-size:1.35rem">@(m.LeaderId.HasValue ? names[m.LeaderId.Value] : (m.ValidVotes > 0 ? "Tie" : "No results yet"))</div>
+            @if (m.LeaderId.HasValue && m.ValidVotes > 0)
             {
-                <tr class="@(st.IsCounted ? "" : "text-muted")">
-                    <td>@st.AdministrativePost</td>
-                    <td>@st.Village</td>
-                    <td>@st.Station</td>
-                    @if (st.IsCounted)
-                    {
+                <div class="sub">@((m.Votes[m.LeaderId.Value] * 100m / m.ValidVotes).ToString("0.0"))% of valid votes</div>
+            }
+        </div>
+    </section>
+
+    <section class="card" aria-labelledby="totals-heading">
+        <div class="card-header"><h2 id="totals-heading">Votes in @m.Name</h2></div>
+        <div class="card-body">
+            <ol class="bars">
+                @foreach (var c in ranked)
+                {
+                    var v = m.Votes[c.Id];
+                    var pct = m.ValidVotes == 0 ? 0 : v * 100m / m.ValidVotes;
+                    <li>
+                        <div class="row1">
+                            <span class="name">@c.Name</span>
+                            <span class="figures"><strong>@pct.ToString("0.00")%</strong><span class="muted"> · @v.ToString("N0")</span></span>
+                        </div>
+                        <div class="track" aria-hidden="true"><div class="fill" style="width:@pct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></div></div>
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+
+    <section class="card" aria-labelledby="stations-heading">
+        <div class="card-header">
+            <h2 id="stations-heading">Polling stations</h2>
+            <a class="btn btn-secondary btn-sm no-print" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") CSV (all municipalities)</a>
+        </div>
+        <div class="table-wrap">
+            <table class="table table-compact">
+                <caption class="visually-hidden">Published figures for each polling station in @m.Name</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Station</th>
+                        <th scope="col">Village</th>
                         @foreach (var c in Model.Ballot)
                         {
-                            <td class="text-right">@(st.Votes.TryGetValue(c.Id, out var v) ? v.ToString("N0") : "0")</td>
+                            <th scope="col" class="num" title="@c.Name">@Short(c)</th>
                         }
-                        <td class="text-right">@st.BlankVotes.ToString("N0")</td>
-                        <td class="text-right">@st.InvalidVotes.ToString("N0")</td>
-                        <td>
-                            @if (!string.IsNullOrEmpty(st.ScanPath))
+                        <th scope="col" class="num">Blank</th>
+                        <th scope="col" class="num">Invalid</th>
+                        <th scope="col">Signed sheet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var st in Model.Stations)
+                    {
+                        <tr class="@(st.IsCounted ? "" : "is-pending")">
+                            <th scope="row">@st.Station</th>
+                            <td>@st.Village<div class="muted small">@st.AdministrativePost</div></td>
+                            @if (st.IsCounted)
                             {
-                                <a href="@st.ScanPath" target="_blank" rel="noopener">View signed sheet</a>
+                                foreach (var c in Model.Ballot)
+                                {
+                                    <td class="num">@(st.Votes.TryGetValue(c.Id, out var v) ? v.ToString("N0") : "0")</td>
+                                }
+                                <td class="num">@st.BlankVotes.ToString("N0")</td>
+                                <td class="num">@st.InvalidVotes.ToString("N0")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(st.ScanPath))
+                                    {
+                                        <a href="@st.ScanPath" target="_blank" rel="noopener">View @Icon.Render("external")<span class="visually-hidden"> signed sheet for @st.Station (opens in a new tab)</span></a>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">Not uploaded</span>
+                                    }
+                                </td>
                             }
                             else
                             {
-                                <span class="text-muted">no scan</span>
+                                <td colspan="@(Model.Ballot.Count + 3)">
+                                    <span class="badge">@(st.Status == null ? "Not yet received" : "Received, being checked")</span>
+                                </td>
                             }
-                        </td>
+                        </tr>
                     }
-                    else
+                    @if (Model.Stations.Count == 0)
                     {
-                        <td colspan="@(Model.Ballot.Count + 3)">@(st.Status == null ? "Not yet received" : "Received, being checked")</td>
+                        <tr><td colspan="@(Model.Ballot.Count + 5)" class="empty">No polling stations are registered in this municipality.</td></tr>
                     }
-                </tr>
-            }
-            @if (Model.Stations.Count == 0)
-            {
-                <tr><td colspan="@(Model.Ballot.Count + 6)">No polling stations registered in this municipality.</td></tr>
-            }
-            </tbody>
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>

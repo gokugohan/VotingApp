@@ -1,46 +1,35 @@
 ﻿@model IEnumerable<VotingApp.Domain.Entities.PollingStation>
-
 @{
-    ViewData["Title"] = "Poling Stations";
+    ViewData["Title"] = "Polling station names";
 }
-
-
-<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>
-
-<header class="text-center text-white mb-5">
-    <h1 class="display-4">@ViewData["Title"]</h1>
-    <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-</header>
-
-
-<div class="card rounded shadow border-0">
-    <div class="card-body p-5 bg-white rounded">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-controller="PollingStationAreas" asp-action="Index">Polling stations</a><span aria-hidden="true">/</span><span>Names</span></nav>
+<div class="page-header spread">
+    <div>
+        <h1>Polling station names</h1>
+        <p>The list of station names only. To place a station in a village, use <a asp-controller="PollingStationAreas" asp-action="Index">Polling stations</a>.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New name</a>
+</div>
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th scope="col">Name</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
                     <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Name)
-                        </th>
-                        <th></th>
+                        <th scope="row">@item.Name</th>
+                        <td class="actions-cell">
+                            <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@item.Id" aria-label="Rename @item.Name">@Icon.Render("pencil") Rename</a>
+                            <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@item.Id" aria-label="Delete @item.Name">@Icon.Render("trash") Delete</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Name)
-                            </td>
-                            <td>
-                                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="2" class="empty">No polling stations yet.</td></tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>

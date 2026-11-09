@@ -1,0 +1,7 @@
+# Overrides for the load-test stack (use together with ../docker-compose.yml).
+# All virtual users come from one IP, so the per-IP login limit is raised. Everything else,
+# including production logging, stays as in a real deployment.
+services:
+  app:
+    environment:
+      RateLimiting__LoginPerMinute: "1000"

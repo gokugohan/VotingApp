@@ -1,0 +1,43 @@
+@model RoundSummary
+@using System.Globalization
+@{
+    // One measure across contestants = one series: a single colour, sorted, no legend.
+    // Presidential: 0-100% scale so the 50% majority line is meaningful.
+    // Parliamentary: scaled to the leader so small parties stay readable.
+    var presidential = Model.Type == ElectionType.Presidential;
+    var max = presidential ? 100m : Math.Max(Model.Contestants.Select(c => c.PercentOfValid).DefaultIfEmpty(0).Max(), 1m);
+    string W(decimal pct) => (pct * 100m / max).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+}
+<ol class="bars" aria-label="Votes by contestant, most votes first">
+    @foreach (var c in Model.Contestants)
+    {
+        <li>
+            <div class="row1">
+                <span class="name">@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="muted">(@c.Acronym)</span> }</span>
+                <span class="figures">
+                    <strong>@c.PercentOfValid.ToString("0.00")%</strong>
+                    <span class="muted"> · @c.Votes.ToString("N0") votes</span>
+                    @if (c.Seats.HasValue)
+                    {
+                        <span> · <strong>@c.Seats</strong> @(c.Seats == 1 ? "seat" : "seats")</span>
+                    }
+                </span>
+            </div>
+            <div class="track" aria-hidden="true">
+                <div class="fill" style="width:@W(c.PercentOfValid)"></div>
+                @if (presidential)
+                {
+                    <div class="marker" style="left:50%"></div>
+                }
+            </div>
+        </li>
+    }
+</ol>
+@if (presidential)
+{
+    <div class="bars-note"><span class="tick" aria-hidden="true"></span> Line marks 50% of valid votes: more than this wins in the first round.</div>
+}
+else if (Model.Parliamentary != null)
+{
+    <div class="bars-note">Bars are scaled to the leading party. Parties below @Model.Parliamentary.ThresholdPercent.ToString("0.##")% of valid votes receive no seats.</div>
+}

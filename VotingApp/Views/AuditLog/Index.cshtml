@@ -1,96 +1,37 @@
 ﻿@model IEnumerable<VotingApp.Domain.Entities.Audit>
-
 @{
-    ViewData["Title"] = "Audit Log";
+    ViewData["Title"] = "Audit log";
 }
-
-<div class="card rounded shadow border-0">
-    <div class="card-header">
-        <div class="text-center">
-            <h1>
-                @ViewData["Title"]
-                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
-            </h1>
-
-            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-
-
-        </div>
-    </div>
-
-    <div class="card-body p-5 rounded">
-        <div class="table-responsive">
-            <table class="table" id="table-logs">
-                <thead>
+<div class="page-header">
+    <h1>Audit log</h1>
+    <p>Every change saved through the application, newest first (latest 1,000). Times are UTC for entries recorded after the 2026 upgrade.</p>
+</div>
+<div class="card">
+    <div class="table-wrap">
+        <table class="table table-compact">
+            <thead><tr><th scope="col">When</th><th scope="col">Change</th><th scope="col">Record</th><th scope="col">User</th><th scope="col">Details</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
                     <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.UserId)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Type)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.TableName)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.DateTime)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.OldValues)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.NewValues)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.AffectedColumns)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.PrimaryKey)
-                        </th>
+                        <td class="nowrap small">@a.DateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td><span class="badge @(a.Type == "Delete" ? "badge-bad" : a.Type == "Create" ? "badge-ok" : "badge-info")">@a.Type</span></td>
+                        <td>@a.TableName<div class="muted small" style="font-family:var(--mono);overflow-wrap:anywhere">@a.PrimaryKey</div></td>
+                        <td class="small" style="font-family:var(--mono)">@(a.UserId ?? "system")</td>
+                        <td>
+                            <details>
+                                <summary class="small" style="cursor:pointer">@(string.IsNullOrEmpty(a.AffectedColumns) ? "Values" : a.AffectedColumns)</summary>
+                                @if (!string.IsNullOrEmpty(a.OldValues)) { <div class="small"><strong>Before:</strong> <code style="overflow-wrap:anywhere">@a.OldValues</code></div> }
+                                @if (!string.IsNullOrEmpty(a.NewValues)) { <div class="small"><strong>After:</strong> <code style="overflow-wrap:anywhere">@a.NewValues</code></div> }
+                            </details>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.UserId)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Type)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.TableName)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.DateTime)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.OldValues)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.NewValues)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.AffectedColumns)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.PrimaryKey)
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="empty">No changes recorded yet.</td></tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
-
-
-@section scripts{ 
-
-    <script>
-        $(document).ready(function () {
-            $("#table-logs").DataTable();
-        })
-    </script>
-}

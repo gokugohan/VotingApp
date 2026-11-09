@@ -1,50 +1,27 @@
 ﻿@model VotingApp.ViewModels.DeleteCandidateViewModel
-
 @{
-    ViewData["Title"] = "Delete";
-    Layout = null;
+    ViewData["Title"] = "Delete " + Model.Candidate.Name;
+    var hasVotes = Model.VoteList != null && Model.VoteList.Count > 0;
 }
-
-<div class="container">
-
-    <h3>
-        Are you sure you want to delete this?
-        <br />
-
-        <small>Total Votes: @ViewData["TotalCandidateVote"]</small>
-    </h3>
-
-    @if (Model.VoteList.Count > 0)
-    {
-
-        <ol>
-            @foreach (var item in Model.VoteList)
-            {
-                <li>Pooling Station(@item.PollingStationArea.Area.Name) : @item.Total</li>
-            }
-        </ol>
-    }
-
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Candidate.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Candidate.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Candidate.Description)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Candidate.Description)
-        </dd>
-    </dl>
-
-
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" />
-    </form>
-
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>@Model.Candidate.Name</span></nav>
+<div class="page-header"><h1>Delete candidate</h1></div>
+<div class="card form-narrow">
+    <div class="card-body stack">
+        <div class="cluster"><partial name="_Avatar" model="(Model.Candidate.Name, Model.Candidate.Avatar, (string)null)" /><strong>@Model.Candidate.Name</strong></div>
+        @if (hasVotes)
+        {
+            <div class="alert alert-warn">@Icon.Render("alert")
+                <div>This candidate has <strong>@ViewData["TotalCandidateVote"]</strong> recorded votes at @Model.VoteList.Count polling stations, so it cannot be deleted.</div>
+            </div>
+        }
+        else
+        {
+            <p>The profile and photo reference will be removed. This cannot be undone.</p>
+        }
+        <form asp-action="Delete" method="post" class="actions">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger" disabled="@hasVotes">@Icon.Render("trash") Delete</button>
+            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        </form>
+    </div>
 </div>

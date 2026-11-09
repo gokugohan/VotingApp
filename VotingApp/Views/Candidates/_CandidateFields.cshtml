@@ -1,0 +1,25 @@
+@model (string Name, string Description, string ShortBiography, string Avatar)
+@* Shared fields for create and edit; the parent form posts Name, Description, ShortBiography, Image. *@
+<div class="field">
+    <label for="Name">Name</label>
+    <input id="Name" name="Name" value="@Model.Name" required maxlength="200" />
+    @Html.ValidationMessage("Name", null, new { @class = "field-error" })
+</div>
+<div class="field">
+    <label for="Description">Short description <span class="muted">(optional)</span></label>
+    <input id="Description" name="Description" value="@Model.Description" maxlength="300" placeholder="e.g. Party, profession or region" />
+</div>
+<div class="field">
+    <label for="ShortBiography">Biography <span class="muted">(optional)</span></label>
+    <textarea id="ShortBiography" name="ShortBiography" rows="6">@Model.ShortBiography</textarea>
+</div>
+<div class="field">
+    <label for="Image">Photo <span class="muted">(optional)</span></label>
+    @if (!string.IsNullOrEmpty(Model.Avatar))
+    {
+        <div class="cluster"><partial name="_Avatar" model="(Model.Name, Model.Avatar, (string)null)" /><span class="hint">Uploading a new photo replaces the current one.</span></div>
+    }
+    <input id="Image" name="Image" type="file" accept="image/jpeg,image/png,image/gif,image/webp" />
+    <span class="hint">JPG, PNG, GIF or WEBP, under 2 MB.</span>
+    @Html.ValidationMessage("Image", null, new { @class = "field-error" })
+</div>

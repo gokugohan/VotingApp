@@ -1,0 +1,49 @@
+@model (string SelectedVillageId, string SelectedVillageName)
+@* Municipality -> administrative post -> village. Posts the village id as AreaId. *@
+<div class="form-grid">
+    <div class="field">
+        <label for="loc-municipality">Municipality</label>
+        <select id="loc-municipality" asp-items="ViewBag.Municipalities"><option value="">Choose…</option></select>
+    </div>
+    <div class="field">
+        <label for="loc-post">Administrative post</label>
+        <select id="loc-post" disabled><option value="">Choose a municipality first</option></select>
+    </div>
+</div>
+<div class="field">
+    <label for="AreaId">Village (suco)</label>
+    <select id="AreaId" name="AreaId" required>
+        @if (!string.IsNullOrEmpty(Model.SelectedVillageId))
+        {
+            <option value="@Model.SelectedVillageId" selected>@Model.SelectedVillageName</option>
+        }
+        else
+        {
+            <option value="">Choose an administrative post first</option>
+        }
+    </select>
+    @Html.ValidationMessage("AreaId", null, new { @class = "field-error" })
+</div>
+<script>
+    (function () {
+        var muni = document.getElementById("loc-municipality"), post = document.getElementById("loc-post"), village = document.getElementById("AreaId");
+        function fill(select, items, placeholder) {
+            select.innerHTML = "";
+            var first = document.createElement("option"); first.value = ""; first.textContent = placeholder; select.appendChild(first);
+            items.forEach(function (a) { var o = document.createElement("option"); o.value = a.id; o.textContent = a.name; select.appendChild(o); });
+            select.disabled = items.length === 0;
+        }
+        function load(url, select, placeholder) {
+            select.disabled = true;
+            return fetch(url).then(function (r) { return r.json(); }).then(function (items) { fill(select, items, placeholder); });
+        }
+        muni.addEventListener("change", function () {
+            fill(village, [], "Choose an administrative post first");
+            if (muni.value) load("@Url.Action("GetPostAdministratives")/" + encodeURIComponent(muni.value), post, "Choose…");
+            else fill(post, [], "Choose a municipality first");
+        });
+        post.addEventListener("change", function () {
+            if (post.value) load("@Url.Action("GetVillages")/" + encodeURIComponent(post.value), village, "Choose…");
+        });
+    })();
+</script>

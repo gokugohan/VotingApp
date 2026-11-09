@@ -1,40 +1,58 @@
-@model VotingApp.Models.CreateElectionModel
+@model CreateElectionModel
 @{
     ViewData["Title"] = "New election";
 }
-<h2>New election</h2>
-<div class="card">
-    <div class="card-body">
-        <form asp-action="Create" method="post" style="max-width: 32rem">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name"></label>
-                <input asp-for="Name" class="form-control" placeholder="e.g. Presidential Election 2027" />
-            </div>
-            <div class="form-group">
-                <label asp-for="Type"></label>
-                <select asp-for="Type" asp-items="Html.GetEnumSelectList<VotingApp.Domain.Elections.ElectionType>()" class="form-control"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="ElectionDate"></label>
-                <input asp-for="ElectionDate" class="form-control" />
-            </div>
-            <div class="form-row">
-                <div class="form-group col">
-                    <label asp-for="TotalSeats"></label>
-                    <input asp-for="TotalSeats" class="form-control" />
-                </div>
-                <div class="form-group col">
-                    <label asp-for="ThresholdPercent"></label>
-                    <input asp-for="ThresholdPercent" class="form-control" />
-                </div>
-            </div>
-            <small class="form-text text-muted mb-3">Seats and threshold apply to parliamentary elections only. Check them against the electoral law in force.</small>
-            <button type="submit" class="btn btn-primary">Create</button>
-            <a asp-action="Index" class="btn btn-link">Cancel</a>
-        </form>
-    </div>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>New election</span></nav>
+<div class="page-header">
+    <h1>New election</h1>
+    <p>The first round is created with the election. Add contestants next, then open it for voting and counting.</p>
 </div>
+
+<div class="card form-narrow">
+    <form asp-action="Create" method="post" class="card-body">
+        <div asp-validation-summary="ModelOnly" class="errors"></div>
+        <div class="field">
+            <label asp-for="Name">Name</label>
+            <input asp-for="Name" placeholder="e.g. Presidential Election 2027" />
+            <span asp-validation-for="Name" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Type">Type</label>
+            <select asp-for="Type" asp-items="Html.GetEnumSelectList<ElectionType>()" id="election-type"></select>
+        </div>
+        <div class="field">
+            <label asp-for="ElectionDate"></label>
+            <input asp-for="ElectionDate" />
+            <span asp-validation-for="ElectionDate" class="field-error"></span>
+        </div>
+        <fieldset class="form-grid" id="parliament-fields" style="border:0;padding:0;margin:0">
+            <legend class="label" style="margin-bottom:.5rem">Parliamentary rules</legend>
+            <div class="field">
+                <label asp-for="TotalSeats">Seats</label>
+                <input asp-for="TotalSeats" />
+                <span asp-validation-for="TotalSeats" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="ThresholdPercent">Threshold (% of valid votes)</label>
+                <input asp-for="ThresholdPercent" step="0.01" />
+                <span asp-validation-for="ThresholdPercent" class="field-error"></span>
+            </div>
+            <p class="hint" style="grid-column:1/-1">Defaults: 65 seats, 4% threshold. Check them against the electoral law in force.</p>
+        </fieldset>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">Create election</button>
+            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        </div>
+    </form>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var type = document.getElementById("election-type"), fields = document.getElementById("parliament-fields");
+            function sync() { fields.hidden = type.value !== "@((int)ElectionType.Parliamentary)"; }
+            type.addEventListener("change", sync); sync();
+        })();
+    </script>
 }

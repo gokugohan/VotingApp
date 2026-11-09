@@ -25,7 +25,6 @@ using VotingApp.Authorization.Handlers;
 using VotingApp.Infrastructure;
 using VotingApp.Infrastructure.Identity;
 using VotingApp.Infrastructure.Persistence;
-using VotingApp.SignalRHub;
 
 namespace VotingApp.Web
 {
@@ -39,11 +38,11 @@ namespace VotingApp.Web
             services.AddControllersWithViews().AddNewtonsoftJson(o =>
                 o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
-            services.AddSignalR();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<ImageStorage>();
             services.AddScoped<SheetScanStorage>();
+            services.AddSingleton<VotingApp.Web.Ui.TimorMap>();
             services.AddDatabaseDeveloperPageExceptionFilter();
 
             // ---- Identity ----
@@ -168,7 +167,6 @@ namespace VotingApp.Web
             app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
             app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
             app.MapRazorPages();
-            app.MapHub<VotingHub>("/voting-data-broadcast");
             return app;
         }
 

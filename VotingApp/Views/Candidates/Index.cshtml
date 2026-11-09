@@ -1,225 +1,50 @@
 ﻿@model IEnumerable<VotingApp.Domain.Entities.Candidate>
-
+@using VotingApp.Application.Security
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService Authz
 @{
     ViewData["Title"] = "Candidates";
+    var canManage = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User, Permissions.ManageCandidates)).Succeeded;
 }
-
-@section css{
-    <style>
-        .card-img-top-container{
-            max-height:250px;
-            overflow:hidden;
-        }
-        .custom-file-label {
-            border: 1px solid #2b3553;
-        }
-
-            .custom-file-label, .custom-file-label:after {
-                color: #495057 !important;
-            }
-
-        textarea.form-control {
-            border: 1px solid #2b3553;
-        }
-
-    </style>
-}
-
-
-@*<a asp-action="Create" class="btn btn-success rounded-pill shadow-sm pull-right mb-3"><i class="fa fa-plus"></i> Create New</a>*@
-
-
-<div class="card rounded shadow border-0">
-    <div class="card-header">
-        <div class="text-center">
-            <h1>
-                @ViewData["Title"]
-                <a asp-action="Create" class="btn-add-new btn btn-link btn-icon float-right text-white"><i class="fa fa-plus"></i></a>
-            </h1>
-
-            <p class="font-italic mb-0">Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...</p>
-
-
-        </div>
+<div class="page-header spread">
+    <div>
+        <h1>Candidates</h1>
+        <p>Profiles with photo and biography. Link a profile to a contestant when setting up an election.</p>
     </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New candidate</a>
+    }
+</div>
 
-
-    <div class="card-body p-5 rounded">
-        <div class="row text-center">
-
-            @foreach (var item in Model)
-            {
-                <div class="card col-xl-3 col-sm-6">
-                    <div class="card-img-top-container">
-                        @if (string.IsNullOrEmpty(item.Avatar))
+@if (!Model.Any())
+{
+    <div class="card"><div class="empty"><h3>No candidates yet</h3></div></div>
+}
+else
+{
+    <div class="grid grid-3">
+        @foreach (var c in Model)
+        {
+            <article class="card">
+                <div class="card-body cluster" style="flex-wrap:nowrap;align-items:flex-start;gap:1rem">
+                    <partial name="_Avatar" model="(c.Name, c.Avatar, (string)null)" />
+                    <div style="min-width:0">
+                        <h2 style="font-size:1.05rem;margin:0"><a asp-action="Details" asp-route-id="@c.Id">@c.Name</a></h2>
+                        @if (!string.IsNullOrEmpty(c.Description))
                         {
-                            <img src="~/images/no-photo.jpg" alt="@item.Name" class="card-img-top">
-                        }
-                        else
-                        {
-                            <img src="~/images/candidates/@item.Avatar" alt="@item.Name" class="card-img-top">
-
-                        }
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">
-                            <a href="#!" class="text-white btn-view-candidate"
-                               data-id="@item.Id" data-title="@item.Name">@item.Name</a>
-                        </h3>
-                        <h6 class="card-subtitle mb-2 text-muted">@item.Description</h6>
-                        <p class="card-text">@item.ShortBiography</p>
-                        
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <a href="#!" data-id="@item.Id" data-title="@item.Name"
-                               class="btn btn-sm btn-info card-link btn-edit-candidate">
-                                <i class="fa fa-edit"></i>
-                            </a>
-                            <a href="#!" data-id="@item.Id" data-title="@item.Name"
-                               class="btn btn-sm btn-danger card-link btn-delete-candidate">
-                                <i class="fa fa-trash"></i>
-                            </a>
-                        }
-                        else
-                        {
-                            <a href="#!" data-id="@item.Id" data-title="@item.Name"
-                               class="btn btn-sm btn-primary card-link btn-view-candidate">
-                                <i class="fa fa-eye"></i>
-                            </a>
+                            <p class="muted small" style="margin:.25rem 0 0">@c.Description</p>
                         }
                     </div>
                 </div>
-                @*<div class="col-xl-3 col-sm-6 mb-5">
-
-                        <div class="card card-user">
-                            <div class="card-body">
-                                <p class="card-text">
-                                </p><div class="author">
-                                    <div class="block block-one"></div>
-                                    <div class="block block-two"></div>
-                                    <div class="block block-three"></div>
-                                    <div class="block block-four"></div>
-                                    <a href="#!" class="btn-view-candidate" data-id="@item.Id" data-title="@item.Name">
-                                        @if (string.IsNullOrEmpty(item.Avatar))
-                                        {
-                                            <img src="~/images/no-photo.jpg" alt="@item.Name" class="avatar">
-                                        }
-                                        else
-                                        {
-                                            <img src="~/images/candidates/@item.Avatar" alt="@item.Name" class="avatar">
-
-                                        }
-                                        <h5 class="title">@item.Name</h5>
-                                    </a>
-                                    <p class="description">
-                                        @item.Description
-                                    </p>
-                                </div>
-
-                            </div>
-                            <div class="card-footer">
-                                <div class="button-container">
-                                    @if (User.Identity.IsAuthenticated)
-                                    {
-                                        <a href="#!" data-id="@item.Id" data-title="@item.Name" class="btn btn-icon btn-round btn-edit-candidate">
-                                            <i class="fa fa-edit"></i>
-                                        </a>
-                                        <a href="#!" data-id="@item.Id" data-title="@item.Name" class="btn btn-icon text-danger btn-round btn-delete-candidate">
-                                            <i class="fa fa-trash"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a href="#!" data-id="@item.Id" data-title="@item.Name" class="btn btn-icon btn-round btn-view-candidate">
-                                            <i class="fa fa-eye"></i>
-                                        </a>
-                                    }
-
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>*@
-
-            }
-        </div>
+                @if (canManage)
+                {
+                    <div class="card-footer cluster">
+                        <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@c.Id">@Icon.Render("pencil") Edit</a>
+                        <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@c.Id">@Icon.Render("trash") Delete</a>
+                    </div>
+                }
+            </article>
+        }
     </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="modal-view" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="staticBackdropLabel"></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
-</div>
-
-@section scripts{
-    <script>
-        $(document).ready(function () {
-            $("body").on("change", ".custom-file-input", function () {
-                var fileName = $(this).val().split("\\").pop();
-                $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
-            });
-
-            $("body").on("click", ".btn-view-candidate", function () {
-                showPreLoader();
-                $("#modal-view .modal-title").html("Details of " + $(this).data("title"));
-                $.ajax({
-                    url: "/Candidates/Details/" + $(this).data("id"),
-                    method: "get",
-                    success: function (response) {
-
-                        $("#modal-view .modal-body").html(response);
-                        $("#modal-view").modal("show");
-
-                    }
-                }).done(function (e) {
-                    hidePreLoader();
-                })
-            });
-
-            $("body").on("click", ".btn-edit-candidate", function () {
-                showPreLoader();
-                $("#modal-view .modal-title").html("Edit " + $(this).data("title"));
-                $.ajax({
-                    url: "/Candidates/Edit/" + $(this).data("id"),
-                    method: "get",
-                    success: function (response) {
-
-                        $("#modal-view .modal-body").html(response);
-                        $("#modal-view").modal("show");
-
-                    }
-                }).done(function (e) {
-                    hidePreLoader();
-                })
-            });
-
-            $("body").on("click", ".btn-delete-candidate", function () {
-                showPreLoader();
-                $("#modal-view .modal-title").html("Delete " + $(this).data("title"));
-                $.ajax({
-                    url: "/Candidates/Delete/" + $(this).data("id"),
-                    method: "get",
-                    success: function (response) {
-
-                        $("#modal-view .modal-body").html(response);
-                        $("#modal-view").modal("show");
-
-                    }
-                }).done(function (e) {
-                    hidePreLoader();
-                })
-            });
-        })
-    </script>
 }
