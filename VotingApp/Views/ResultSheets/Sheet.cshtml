@@ -34,7 +34,7 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
     </div>
 }
 
-<form asp-action="@(Model.IsVerification ? "Verify" : "Enter")" method="post" autocomplete="off">
+<form asp-action="@(Model.IsVerification ? "Verify" : "Enter")" method="post" autocomplete="off" enctype="multipart/form-data">
     <div asp-validation-summary="All" class="text-danger"></div>
     <input type="hidden" asp-for="Form.RoundId" />
     <input type="hidden" asp-for="Form.StationId" />
@@ -73,6 +73,22 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
             </div>
         </div>
     </div>
+    @if (!Model.IsVerification)
+    {
+        <div class="card">
+            <div class="card-body">
+                <label asp-for="Form.Scan"></label>
+                <input asp-for="Form.Scan" type="file" class="form-control-file" accept="image/jpeg,image/png,application/pdf" />
+                <small class="form-text text-muted">
+                    Optional. Published with the results once the sheet is approved, so anyone can compare it with the typed figures.
+                    @if (!string.IsNullOrEmpty(ctx.Sheet?.ScanPath))
+                    {
+                        <span>A scan is already attached: <a href="@ctx.Sheet.ScanPath" target="_blank" rel="noopener">view</a>. Uploading replaces it.</span>
+                    }
+                </small>
+            </div>
+        </div>
+    }
     <button type="submit" class="btn btn-primary">@(Model.IsVerification ? "Submit verification" : "Save sheet")</button>
 </form>
 

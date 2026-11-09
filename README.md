@@ -35,6 +35,18 @@ Package versions are managed centrally in `Directory.Packages.props`.
 4. **Approve**: municipal supervisor. Only approved/locked sheets count in the public results (`/Results/Round/{roundId}`, JSON at `/Results/Summary/{roundId}`).
 5. **Lock**: national tabulation. Presidential runoffs are created from approved first-round results.
 
+### Public results (open data)
+
+| Page / endpoint | Content |
+|---|---|
+| `/Results/Round/{roundId}` | National provisional results, outcome (majority/runoff or seat projection), reporting %, table by municipality |
+| `/Results/Municipality?roundId=…&id=TLS001` | Every polling station in a municipality with its published figures and a link to the photo/scan of the signed sheet |
+| `/Results/Summary/{roundId}` | National summary (JSON) |
+| `/Results/Municipalities/{roundId}` | Per-municipality results (JSON) |
+| `/Results/Csv/{roundId}` | One row per counted station sheet (CSV, UTF-8) |
+
+Only approved and locked sheets are published; stations still being checked show their status only. Sheet scans (JPEG/PNG/PDF, checked by file signature, max 8 MB) are stored under `wwwroot/uploads/sheets`.
+
 Admins configure roles under *Elections → Users and roles* (suggested: Clerk = enter, Verifier = verify, Municipal supervisor = verify + approve, National tabulation = approve + lock) and limit staff to municipalities under *User municipalities*.
 
 ## Running locally

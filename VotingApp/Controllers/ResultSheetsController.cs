@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using VotingApp.Application.Common;
 using VotingApp.Application.Elections;
 using VotingApp.Application.Security;
-using VotingApp.Authorization;
+using VotingApp.Infrastructure;
 using VotingApp.Models;
 using VotingApp.SignalRHub;
 
@@ -23,10 +23,12 @@ namespace VotingApp.Controllers
         private readonly ElectionAdminService elections;
         private readonly ElectionResultsService results;
         private readonly IHubContext<VotingHub> hub;
+        private readonly SheetScanStorage scans;
 
         public ResultSheetsController(ResultSheetService sheets, ElectionAdminService elections,
-            ElectionResultsService results, IHubContext<VotingHub> hub)
+            ElectionResultsService results, IHubContext<VotingHub> hub, SheetScanStorage scans)
         {
+            this.scans = scans;
             this.sheets = sheets;
             this.elections = elections;
             this.results = results;
@@ -59,11 +61,24 @@ namespace VotingApp.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Policy = Permissions.EnterResults)]
+        [RequestSizeLimit(SheetScanStorage.MaxBytes + 1024 * 1024)]
         public async Task<IActionResult> Enter([Bind(Prefix = "Form")] SheetFormModel model)
         {
+            string scanExtension = null;
+            if (model.Scan != null)
+            {
+                scanExtension = await SheetScanStorage.DetectAsync(model.Scan, HttpContext.RequestAborted);
+                if (scanExtension == null) ModelState.AddModelError("Form.Scan", "The scan must be a JPEG, PNG or PDF file under 8 MB.");
+            }
             if (ModelState.IsValid)
             {
                 var result = await sheets.SubmitEntryAsync(model.RoundId, model.StationId, model.ToInput(), HttpContext.RequestAborted);
+                if (result.Succeeded && scanExtension != null)
+                {
+                    var sheetId = await sheets.FindSheetIdAsync(model.RoundId, model.StationId, HttpContext.RequestAborted);
+                    var path = await scans.SaveAsync(model.Scan, scanExtension, HttpContext.RequestAborted);
+                    if (sheetId.HasValue) await sheets.AttachScanAsync(sheetId.Value, path, HttpContext.RequestAborted);
+                }
                 if (result.Succeeded)
                 {
                     Flash(result.Value.HasErrors

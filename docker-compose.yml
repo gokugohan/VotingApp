@@ -35,8 +35,10 @@ services:
     volumes:
       - dpkeys:/keys
       - uploads:/app/wwwroot/images/candidates
+      - sheetscans:/app/wwwroot/uploads/sheets
 
 volumes:
   sqldata:
   dpkeys:
   uploads:
+  sheetscans:

@@ -1,16 +1,18 @@
-@model VotingApp.Application.Elections.RoundSummary
+@model VotingApp.Models.RoundResultsPage
 @using VotingApp.Domain.Elections
 @using VotingApp.Domain.Elections.Rules
 @{
-    ViewData["Title"] = $"{Model.ElectionName}: results";
-    var names = Model.Contestants.ToDictionary(c => c.ContestantId, c => c.Name);
+    var S = Model.Summary;
+    var B = Model.Breakdown;
+    ViewData["Title"] = $"{S.ElectionName}: results";
+    var names = S.Contestants.ToDictionary(c => c.ContestantId, c => c.Name);
     string Name(Guid? id) => id.HasValue && names.TryGetValue(id.Value, out var n) ? n : "?";
-    var isFinal = Model.RoundStatus == ElectionStatus.Certified;
+    var isFinal = S.RoundStatus == ElectionStatus.Certified;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-2">
-    <h2 class="mb-0">@Model.ElectionName @(Model.RoundNumber > 1 ? $"(round {Model.RoundNumber})" : "")</h2>
-    <a asp-action="Summary" asp-route-id="@Model.RoundId" class="btn btn-outline-secondary btn-sm">Download JSON</a>
+    <h2 class="mb-0">@S.ElectionName @(S.RoundNumber > 1 ? $"(round {S.RoundNumber})" : "")</h2>
+    <a asp-action="Summary" asp-route-id="@S.RoundId" class="btn btn-outline-secondary btn-sm">Download JSON</a>
 </div>
 
 <div class="alert @(isFinal ? "alert-success" : "alert-warning")">
@@ -25,15 +27,15 @@
 </div>
 
 <div class="row text-center mb-3">
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.ReportingPercent%</h3><small>stations reporting (@Model.SheetsCounted of @Model.PollingStations)</small></div></div>
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.ValidVotes.ToString("N0")</h3><small>valid votes</small></div></div>
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.BlankVotes.ToString("N0")</h3><small>blank</small></div></div>
-    <div class="col"><div class="card card-body"><h3 class="mb-0">@Model.InvalidVotes.ToString("N0")</h3><small>invalid</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@S.ReportingPercent%</h3><small>stations reporting (@S.SheetsCounted of @S.PollingStations)</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@S.ValidVotes.ToString("N0")</h3><small>valid votes</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@S.BlankVotes.ToString("N0")</h3><small>blank</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@S.InvalidVotes.ToString("N0")</h3><small>invalid</small></div></div>
 </div>
 
-@if (Model.Presidential != null && Model.SheetsCounted > 0)
+@if (S.Presidential != null && S.SheetsCounted > 0)
 {
-    var p = Model.Presidential;
+    var p = S.Presidential;
     <div class="alert alert-info">
         @switch (p.Outcome)
         {
@@ -49,9 +51,9 @@
         }
     </div>
 }
-@if (Model.Parliamentary != null && Model.SheetsCounted > 0)
+@if (S.Parliamentary != null && S.SheetsCounted > 0)
 {
-    var pr = Model.Parliamentary;
+    var pr = S.Parliamentary;
     <div class="alert alert-info">
         Projected allocation of @pr.TotalSeats seats (D'Hondt, @pr.ThresholdPercent% threshold) from the votes counted so far.
         @if (pr.LastSeatWinnerId.HasValue)
@@ -66,21 +68,21 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>@(Model.Type == ElectionType.Presidential ? "Candidate" : "Party / coalition")</th>
+                    <th>@(S.Type == ElectionType.Presidential ? "Candidate" : "Party / coalition")</th>
                     <th class="text-right">Votes</th>
                     <th class="text-right">% of valid</th>
-                    @if (Model.Parliamentary != null) { <th class="text-right">Seats</th> }
+                    @if (S.Parliamentary != null) { <th class="text-right">Seats</th> }
                     <th style="width: 35%"></th>
                 </tr>
             </thead>
             <tbody>
-            @foreach (var c in Model.Contestants)
+            @foreach (var c in S.Contestants)
             {
                 <tr>
                     <td>@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="text-muted">(@c.Acronym)</span> }</td>
                     <td class="text-right">@c.Votes.ToString("N0")</td>
                     <td class="text-right">@c.PercentOfValid.ToString("0.00")%</td>
-                    @if (Model.Parliamentary != null) { <td class="text-right"><strong>@c.Seats</strong></td> }
+                    @if (S.Parliamentary != null) { <td class="text-right"><strong>@c.Seats</strong></td> }
                     <td>
                         <div class="progress" style="height: 0.75rem" role="img" aria-label="@c.PercentOfValid.ToString("0.0")% of valid votes">
                             <div class="progress-bar" style="width: @c.PercentOfValid.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div>
@@ -90,9 +92,51 @@
             }
             </tbody>
         </table>
-        <p class="text-muted small mb-0">Updated @Model.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC. This page refreshes every 30 seconds.</p>
+        <p class="text-muted small mb-0">Updated @S.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC. This page refreshes every 30 seconds.</p>
     </div>
 </div>
+
+@if (B != null && B.Municipalities.Count > 0)
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">By municipality</h4>
+            <span>
+                <a asp-action="Csv" asp-route-id="@S.RoundId" class="btn btn-outline-secondary btn-sm">Download station results (CSV)</a>
+                <a asp-action="Municipalities" asp-route-id="@S.RoundId" class="btn btn-outline-secondary btn-sm">JSON</a>
+            </span>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Municipality</th>
+                        <th class="text-right">Reporting</th>
+                        <th>Leading</th>
+                        @foreach (var c in B.Ballot)
+                        {
+                            <th class="text-right">@(string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var m in B.Municipalities)
+                {
+                    <tr>
+                        <td><a asp-action="Municipality" asp-route-roundId="@S.RoundId" asp-route-id="@m.MunicipalityId">@m.Name</a></td>
+                        <td class="text-right">@m.ReportingPercent% <small class="text-muted">(@m.SheetsCounted/@m.PollingStations)</small></td>
+                        <td>@(m.LeaderId.HasValue ? Name(m.LeaderId) : "-")</td>
+                        @foreach (var c in B.Ballot)
+                        {
+                            <td class="text-right">@m.Votes[c.Id].ToString("N0")</td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
 
 @section Scripts {
     <script>setTimeout(function () { window.location.reload(); }, 30000);</script>

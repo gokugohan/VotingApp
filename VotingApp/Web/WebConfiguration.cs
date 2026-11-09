@@ -43,6 +43,7 @@ namespace VotingApp.Web
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<ImageStorage>();
+            services.AddScoped<SheetScanStorage>();
             services.AddDatabaseDeveloperPageExceptionFilter();
 
             // ---- Identity ----

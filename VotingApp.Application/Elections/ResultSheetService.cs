@@ -254,6 +254,24 @@ namespace VotingApp.Application.Elections
             return saved;
         }
 
+        /// <summary>Attaches the photo/scan of the signed paper sheet (published with the sheet once approved).</summary>
+        public async Task<OperationResult> AttachScanAsync(Guid sheetId, string scanPath, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(scanPath)) return OperationResult.Fail(FailureKind.Validation, "No file.");
+            var sheet = await LoadSheetInScopeAsync(sheetId, ct);
+            if (!sheet.Succeeded) return sheet;
+            if (sheet.Value.Status == ResultSheetStatus.Locked)
+                return OperationResult.Fail(FailureKind.Conflict, "The sheet is locked.");
+            sheet.Value.ScanPath = scanPath;
+            var saved = await SaveAsync(ct);
+            if (saved.Succeeded && sheet.Value.Status >= ResultSheetStatus.Approved) results.Invalidate(sheet.Value.ElectionRoundId);
+            return saved;
+        }
+
+        public async Task<Guid?> FindSheetIdAsync(Guid roundId, Guid pollingStationAreaId, CancellationToken ct = default) =>
+            await db.ResultSheets.Where(s => s.ElectionRoundId == roundId && s.PollingStationAreaId == pollingStationAreaId)
+                .Select(s => (Guid?)s.Id).FirstOrDefaultAsync(ct);
+
         /// <summary>National tabulation: locks every approved sheet of the round. Requires national scope.</summary>
         public async Task<OperationResult<int>> LockApprovedAsync(Guid roundId, CancellationToken ct = default)
         {

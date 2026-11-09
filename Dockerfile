@@ -27,8 +27,8 @@ ENV ASPNETCORE_HTTP_PORTS=8080 \
     DataProtection__KeysPath=/keys \
     DisableHttpsRedirection=true
 COPY --from=build /app/publish .
-# Writable locations for the non-root user: data-protection keys and uploaded candidate images.
-RUN mkdir -p /keys /app/wwwroot/images/candidates && chown -R $APP_UID /keys /app/wwwroot/images/candidates
+# Writable locations for the non-root user: data-protection keys, candidate images, sheet scans.
+RUN mkdir -p /keys /app/wwwroot/images/candidates /app/wwwroot/uploads/sheets \n    && chown -R $APP_UID /keys /app/wwwroot/images/candidates /app/wwwroot/uploads
 USER $APP_UID
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

@@ -61,10 +61,11 @@ namespace VotingApp.Application.Elections
 
         public void Invalidate(Guid roundId)
         {
-            foreach (ResultSheetStatus status in Enum.GetValues(typeof(ResultSheetStatus)))
+            foreach (var status in Enum.GetValues<ResultSheetStatus>())
             {
                 cache.Remove(Key(roundId, status));
             }
+            cache.Remove(PublicResultsService.BreakdownKey(roundId));
         }
 
         /// <summary>

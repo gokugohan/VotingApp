@@ -1,0 +1,77 @@
+@model VotingApp.Models.MunicipalityResultsPage
+@{
+    var S = Model.Summary;
+    var M = Model.Municipality;
+    ViewData["Title"] = $"{M.Name}: {S.ElectionName}";
+    var names = Model.Ballot.ToDictionary(c => c.Id, c => c.Name);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0">@M.Name</h2>
+    <a asp-action="Round" asp-route-id="@S.RoundId">Back to national results</a>
+</div>
+<p class="text-muted">@S.ElectionName @(S.RoundNumber > 1 ? $"(round {S.RoundNumber})" : "") &middot; provisional: only approved sheets are shown</p>
+
+<div class="row text-center mb-3">
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@M.ReportingPercent%</h3><small>stations reporting (@M.SheetsCounted of @M.PollingStations)</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@M.ValidVotes.ToString("N0")</h3><small>valid votes</small></div></div>
+    <div class="col"><div class="card card-body"><h3 class="mb-0">@(M.LeaderId.HasValue ? names[M.LeaderId.Value] : "-")</h3><small>leading</small></div></div>
+</div>
+
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Administrative post</th>
+                    <th>Village</th>
+                    <th>Polling station</th>
+                    @foreach (var c in Model.Ballot)
+                    {
+                        <th class="text-right">@(string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym)</th>
+                    }
+                    <th class="text-right">Blank</th>
+                    <th class="text-right">Invalid</th>
+                    <th>Sheet</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var st in Model.Stations)
+            {
+                <tr class="@(st.IsCounted ? "" : "text-muted")">
+                    <td>@st.AdministrativePost</td>
+                    <td>@st.Village</td>
+                    <td>@st.Station</td>
+                    @if (st.IsCounted)
+                    {
+                        @foreach (var c in Model.Ballot)
+                        {
+                            <td class="text-right">@(st.Votes.TryGetValue(c.Id, out var v) ? v.ToString("N0") : "0")</td>
+                        }
+                        <td class="text-right">@st.BlankVotes.ToString("N0")</td>
+                        <td class="text-right">@st.InvalidVotes.ToString("N0")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(st.ScanPath))
+                            {
+                                <a href="@st.ScanPath" target="_blank" rel="noopener">View signed sheet</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">no scan</span>
+                            }
+                        </td>
+                    }
+                    else
+                    {
+                        <td colspan="@(Model.Ballot.Count + 3)">@(st.Status == null ? "Not yet received" : "Received, being checked")</td>
+                    }
+                </tr>
+            }
+            @if (Model.Stations.Count == 0)
+            {
+                <tr><td colspan="@(Model.Ballot.Count + 6)">No polling stations registered in this municipality.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

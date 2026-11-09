@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 using VotingApp.Application.Elections;
 using VotingApp.Domain.Elections;
 using VotingApp.Domain.Elections.Rules;
@@ -68,6 +69,10 @@ namespace VotingApp.Models
 
         public List<ContestantVoteField> Votes { get; set; } = new();
 
+        /// <summary>Optional photo/scan of the signed paper sheet (JPEG, PNG or PDF).</summary>
+        [Display(Name = "Photo or scan of the signed sheet")]
+        public IFormFile Scan { get; set; }
+
         public SheetFiguresInput ToInput() => new(
             RegisteredVoters, BallotsReceived, BallotsUsed, BallotsSpoiled, BallotsUnused,
             BlankVotes ?? 0, InvalidVotes ?? 0,
@@ -113,5 +118,19 @@ namespace VotingApp.Models
     {
         public AppUser User { get; set; }
         public IReadOnlyCollection<string> MunicipalityIds { get; set; }
+    }
+
+    public class RoundResultsPage
+    {
+        public RoundSummary Summary { get; set; }
+        public RoundBreakdown Breakdown { get; set; }
+    }
+
+    public class MunicipalityResultsPage
+    {
+        public RoundSummary Summary { get; set; }
+        public IReadOnlyList<BallotContestant> Ballot { get; set; }
+        public MunicipalityResult Municipality { get; set; }
+        public List<StationResult> Stations { get; set; }
     }
 }

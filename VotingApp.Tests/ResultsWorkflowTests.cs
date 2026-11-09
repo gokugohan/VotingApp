@@ -265,6 +265,74 @@ namespace VotingApp.Tests
         }
     }
 
+    public class PublicResultsServiceTests
+    {
+        /// <summary>Aileu sheet approved (A=300,B=200,C=100); Ainaro sheet only entered (A=1,B=2,C=3).</summary>
+        private static async Task<(Fixture F, Guid Round, Guid[] Ids, PublicResultsService Svc)> ArrangeAsync()
+        {
+            var f = new Fixture();
+            f.User.IsAdmin = true;
+            var (round, ids) = await f.PresidentialInCountingAsync();
+            f.User.UserId = "clerk-1";
+            await f.Sheets.SubmitEntryAsync(round, Fixture.StationAileu, Fixture.Sheet(ids, 300, 200, 100));
+            await f.Sheets.SubmitEntryAsync(round, Fixture.StationAinaro, Fixture.Sheet(ids, 1, 2, 3));
+            var aileu = (await f.Db.ResultSheets.SingleAsync(s => s.PollingStationAreaId == Fixture.StationAileu)).Id;
+            f.User.UserId = "clerk-2";
+            await f.Sheets.SubmitVerificationAsync(aileu, Fixture.Sheet(ids, 300, 200, 100));
+            f.User.UserId = "supervisor";
+            Assert.True((await f.Sheets.ApproveAsync(aileu)).Succeeded);
+            return (f, round, ids, new PublicResultsService(f.Db, new MemoryCache(new MemoryCacheOptions())));
+        }
+
+        [Fact]
+        public async Task Breakdown_counts_only_approved_sheets_per_municipality()
+        {
+            var (f, round, ids, svc) = await ArrangeAsync();
+            using var _ = f;
+            var b = await svc.GetBreakdownAsync(round);
+
+            var aileu = b.Municipalities.Single(m => m.Name == "Aileu");
+            var ainaro = b.Municipalities.Single(m => m.Name == "Ainaro");
+            Assert.Equal((1, 1, 600L), (aileu.PollingStations, aileu.SheetsCounted, aileu.ValidVotes));
+            Assert.Equal(ids[0], aileu.LeaderId);
+            Assert.Equal("tl-an", aileu.MapKey);
+            Assert.Equal((1, 0, 0L), (ainaro.PollingStations, ainaro.SheetsCounted, ainaro.ValidVotes));
+            Assert.Null(ainaro.LeaderId);
+        }
+
+        [Fact]
+        public async Task Station_list_never_reveals_unapproved_figures()
+        {
+            var (f, round, ids, svc) = await ArrangeAsync();
+            using var _ = f;
+            var ainaro = Assert.Single(await svc.GetStationsAsync(round, "TLS002"));
+            Assert.Equal(ResultSheetStatus.Entered, ainaro.Status);
+            Assert.False(ainaro.IsCounted);
+            Assert.Empty(ainaro.Votes);
+            Assert.Null(ainaro.BallotsUsed);
+
+            var aileu = Assert.Single(await svc.GetStationsAsync(round, "TLS001"));
+            Assert.Equal(300, aileu.Votes[ids[0]]);
+            Assert.Equal("Aileu Vila", aileu.AdministrativePost);
+        }
+
+        [Fact]
+        public async Task Csv_has_one_row_per_counted_sheet_and_neutralises_formulas()
+        {
+            var (f, round, ids, svc) = await ArrangeAsync();
+            using var _ = f;
+            (await f.Db.PollingStations.SingleAsync(p => p.Name == "EB Seloi")).Name = "=HYPERLINK(\"x\"), Seloi";
+            await f.Db.SaveChangesAsync();
+
+            var lines = (await svc.ExportCountedSheetsCsvAsync(round)).TrimEnd().Split(Environment.NewLine);
+            Assert.Equal(2, lines.Length); // header + Aileu only
+            Assert.EndsWith(",A,B,C", lines[0]);
+            Assert.StartsWith("TLS001,Aileu,Aileu Vila,Seloi Malere,", lines[1]);
+            Assert.Contains("\"'=HYPERLINK(\"\"x\"\"), Seloi\"", lines[1]);
+            Assert.EndsWith(",300,200,100", lines[1]);
+        }
+    }
+
     public class VoteEntryServiceTests
     {
         [Fact]
