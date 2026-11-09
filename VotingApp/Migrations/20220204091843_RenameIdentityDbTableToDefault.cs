@@ -61,6 +61,7 @@ namespace VotingApp.Migrations
             migrationBuilder.DeleteData(
                 table: "UserRoles",
                 keyColumns: new[] { "UserId", "RoleId" },
+                keyColumnTypes: new[] { "nvarchar(450)", "nvarchar(450)" }, // required by EF Core 5+ for unmapped tables
                 keyValues: new object[] { "c5ee8d66-03fb-4248-9e65-8f4fac0bfa8f", "05e3cfa4-cf4d-4755-bc6c-1caee9258628" });
 
             migrationBuilder.DeleteData(
@@ -71,6 +72,7 @@ namespace VotingApp.Migrations
             migrationBuilder.DeleteData(
                 table: "Role",
                 keyColumn: "Id",
+                keyColumnType: "nvarchar(450)", // required by EF Core 5+ for unmapped tables
                 keyValue: "05e3cfa4-cf4d-4755-bc6c-1caee9258628");
 
             migrationBuilder.DropColumn(
