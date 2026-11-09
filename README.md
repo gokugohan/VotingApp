@@ -45,6 +45,10 @@ Package versions are managed centrally in `Directory.Packages.props`.
 | `/Results/Municipalities/{roundId}` | Per-municipality results (JSON) |
 | `/Results/Csv/{roundId}` | One row per counted station sheet (CSV, UTF-8) |
 
+The home dashboard (charts and map) shows the same approved figures for the most recent round in counting or later, with a selector for other rounds; it refreshes when sheets are approved.
+
+The original quick vote entry (`/Votings`, one total per candidate per station) is superseded by result sheets and disabled by default so results are not recorded twice. Its data was copied into the "Imported results" election by the `AddElectionModel` migration. Set `Features__LegacyVoteEntry=true` only to re-enable it temporarily.
+
 Only approved and locked sheets are published; stations still being checked show their status only. Sheet scans (JPEG/PNG/PDF, checked by file signature, max 8 MB) are stored under `wwwroot/uploads/sheets`.
 
 Admins configure roles under *Elections → Users and roles* (suggested: Clerk = enter, Verifier = verify, Municipal supervisor = verify + approve, National tabulation = approve + lock) and limit staff to municipalities under *User municipalities*.

@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using VotingApp.Application.Candidates;
 using VotingApp.Application.PollingStations;
 using VotingApp.Application.Results;
@@ -15,23 +18,51 @@ using VotingApp.SignalRHub;
 
 namespace VotingApp.Controllers
 {
-    /// <summary>Quick vote entry (legacy Votes table) and the public dashboard's JSON endpoints.</summary>
+    /// <summary>
+    /// Legacy quick vote entry (Votes table) and its read-only JSON endpoints. Superseded by the
+    /// result-sheet workflow; entry is disabled unless Features:LegacyVoteEntry is true, so results are
+    /// not recorded in two places. The dashboard now reads result sheets (DashboardController).
+    /// </summary>
     public class VotingsController : BaseController
     {
+        public const string FeatureFlag = "Features:LegacyVoteEntry";
+        private static readonly string[] EntryActions = { nameof(Index), nameof(Candidate), nameof(SaveVote), nameof(Details) };
         private readonly VoteEntryService votes;
         private readonly ResultsQueryService results;
         private readonly CandidateService candidates;
         private readonly PollingStationService stations;
         private readonly IHubContext<VotingHub> hub;
+        private readonly bool entryEnabled;
 
         public VotingsController(VoteEntryService votes, ResultsQueryService results, CandidateService candidates,
-            PollingStationService stations, IHubContext<VotingHub> hub)
+            PollingStationService stations, IHubContext<VotingHub> hub, IConfiguration configuration)
         {
+            this.entryEnabled = configuration.GetValue<bool>(FeatureFlag);
             this.votes = votes;
             this.results = results;
             this.candidates = candidates;
             this.stations = stations;
             this.hub = hub;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            var action = (string)context.RouteData.Values["action"];
+            if (!entryEnabled && EntryActions.Contains(action, StringComparer.OrdinalIgnoreCase))
+            {
+                if (HttpMethods.IsPost(context.HttpContext.Request.Method))
+                {
+                    context.Result = StatusCode(StatusCodes.Status410Gone,
+                        new { success = false, message = "Quick vote entry is disabled. Use result sheets." });
+                }
+                else
+                {
+                    Flash("Quick vote entry has been replaced by polling station result sheets (enter, verify, approve).");
+                    context.Result = RedirectToAction(nameof(ElectionsController.Index), "Elections");
+                }
+                return;
+            }
+            base.OnActionExecuting(context);
         }
 
         [AllowAnonymous]

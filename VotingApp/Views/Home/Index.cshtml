@@ -1,4 +1,4 @@
-﻿@model IEnumerable<VotingApp.Data.Area>
+﻿@model IEnumerable<VotingApp.Domain.Entities.Area>
 @{
     ViewData["Title"] = "Voting App Demo";
 
@@ -10,7 +10,10 @@
     //{
     //    Layout = "_Layout";
     //}
-    var total_vote = String.Format("{0:#.##0,##}", @ViewData["TotalVote"]);
+    var total_vote = ViewData["TotalVote"];
+    var round = ViewData["Round"] as VotingApp.Application.Elections.PublishedRound;
+    var rounds = (System.Collections.Generic.List<VotingApp.Application.Elections.PublishedRound>)ViewData["Rounds"];
+    var summary = ViewData["Summary"] as VotingApp.Application.Elections.RoundSummary;
 }
 
 
@@ -78,8 +81,35 @@
     <div class="card-header ">
         <div class="row">
             <div class="col-sm-6 text-left">
-                <h2 class="card-title">"Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."</h2>
-                <h5 class="card-category">"There is no one who loves pain itself, who seeks after it and wants to have it, simply because it is pain..."</h5>
+                @if (round == null)
+                {
+                    <h2 class="card-title">No results yet</h2>
+                    <h5 class="card-category">Results appear here once an election round is counting. See <a asp-controller="Elections" asp-action="Index">Elections</a>.</h5>
+                }
+                else
+                {
+                    <h2 class="card-title">@round.Label</h2>
+                    <h5 class="card-category">
+                        Provisional: approved polling station sheets only
+                        @if (summary != null)
+                        {
+                            <span>&middot; @summary.ReportingPercent% of stations reporting (@summary.SheetsCounted of @summary.PollingStations)</span>
+                        }
+                        &middot; <a asp-controller="Results" asp-action="Round" asp-route-id="@round.RoundId">detailed results and open data</a>
+                    </h5>
+                    @if (rounds.Count > 1)
+                    {
+                        <form method="get" class="form-inline mt-2">
+                            <label for="roundId" class="mr-2">Election</label>
+                            <select id="roundId" name="roundId" class="form-control form-control-sm" onchange="this.form.submit()">
+                                @foreach (var r in rounds)
+                                {
+                                    <option value="@r.RoundId" selected="@(r.RoundId == round.RoundId)">@r.Label</option>
+                                }
+                            </select>
+                        </form>
+                    }
+                }
 
             </div>
             <div class="col-sm-6">
@@ -181,7 +211,8 @@
 </div>
 
 
-<input type="hidden" value="@ViewBag.TotalVote" id="TotalVote" />
+@* Raw number: the scripts compute percentages from it (the displayed total uses a thousands separator). *@
+<input type="hidden" value="@ViewData["TotalVoteRaw"]" id="TotalVote" />
 @section scripts{
     <script src="https://code.highcharts.com/maps/highmaps.js"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -202,12 +233,19 @@
 
     <script>
 
+        // All dashboard data is for this election round (approved result sheets only).
+        const roundId = "@(round?.RoundId.ToString() ?? "")";
+
         $(document).ready(function () {
+            if (!roundId) {
+                return; // nothing published yet
+            }
 
             connection.on("OnbroadcastVotingDataListener", function (message) {
                 GetVotesMunicipalityByCandidate(null, "Votings By Municipality");
                 display_table_candidates_votings();
                 get_candidate_voting_municipalities();
+                get_data_for_map("VOTINGS BY MUNICIPALITY");
             });
 
 
@@ -222,7 +260,7 @@
 
             var candidate_ids = [];
             $.ajax({
-                url: "/Candidates/GetCandidadesAjax",
+                url: "/Dashboard/Contestants/" + roundId,
                 type: "get",
                 success: function (response) {
                     var candidate_button_groups_top = '<a href="#!" id="btn-view-all-votes" class="btn btn-sm btn-primary active btn-simple btn-view-candidate-votes" data-display-all="1" data-name="Voting by Municipality">All by Municipality</a>';
@@ -385,7 +423,7 @@
             function display_table_candidates_votings() {
                 showPreLoader();
                 $.ajax({
-                    url: "/Votings/GetTotalVoteOfCandidates",
+                    url: "/Dashboard/Totals/" + roundId,
                     type: "get",
                     success: function (response) {
                         var tbody = "";
@@ -511,9 +549,9 @@
 
             function GetVotesMunicipalityByCandidate(id, title) {
                 //showPreLoader();
-                var url = "/Votings/ListVotingInMunicipality";
+                var url = "/Dashboard/ByMunicipality/" + roundId;
                 if (id != null) {
-                    url = "/Votings/ListVotingInMunicipality/" + id;
+                    url += "?contestantId=" + encodeURIComponent(id);
                 }
                 $.ajax({
                     url: url,
@@ -565,7 +603,7 @@
                 }
 
                 $.ajax({
-                    url: "/Votings/GetCandidateMunicipalitVotes",
+                    url: "/Dashboard/Series/" + roundId,
                     method: "get",
                     success: function(response) {
                         $.each(response, function (i, v) {
@@ -670,41 +708,20 @@
             }
 
 
-            function get_vote_by_municipality(municipalityCode) {
-                $.ajax({
-                    url: "/Votings/getCandidatesByMunicipality/" + municipalityCode,
-                    method: "get",
-                    success: function (response) {
-                        //console.log(response);
-                        let map_series_data = [];
-                        $.each(response, function (i, v) {
-                            map_series_data.push([
-                                v.areaKey,
-                                v.total
-                            ]);
-                            //renderMap(data);
-                        });
-
-                    },
-                    error: function (err) {
-                        console.log(err);
-                    }
-                });
-            }
-
-
             // Maps
             /*get_data_for_map();*/
 
             function get_data_for_map(title) {
                 let map_series_data = [];
                 $.ajax({
-                    url: "/Votings/ListVotingInMunicipality",
+                    url: "/Dashboard/ByMunicipality/" + roundId,
                     method: "get",
                     success: function (response) {
 
                         $.each(response, function (i, v) {
-
+                            if (!v.value || !v.value.areaKey) {
+                                return; // no votes yet, or no map shape for this municipality
+                            }
                             map_series_data.push([
                                 v.value.areaKey,
                                 v.value.totalVote

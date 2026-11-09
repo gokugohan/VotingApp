@@ -285,6 +285,21 @@ namespace VotingApp.Tests
         }
 
         [Fact]
+        public async Task Dashboard_lists_only_rounds_in_counting_or_later_newest_first()
+        {
+            var (f, round, _, svc) = await ArrangeAsync();
+            using var __ = f;
+            f.User.UserId = "manager";
+            // A newer election still in set-up must not become the featured round.
+            await f.Admin.CreateAsync(new CreateElectionInput("Parliamentary 2028", ElectionType.Parliamentary, new DateTime(2028, 5, 1), null, null));
+
+            var rounds = await svc.ListPublishedRoundsAsync();
+            var featured = Assert.Single(rounds);
+            Assert.Equal(round, featured.RoundId);
+            Assert.Equal("Presidential 2027", featured.Label);
+        }
+
+        [Fact]
         public async Task Breakdown_counts_only_approved_sheets_per_municipality()
         {
             var (f, round, ids, svc) = await ArrangeAsync();

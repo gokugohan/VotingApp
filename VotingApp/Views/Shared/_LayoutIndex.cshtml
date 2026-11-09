@@ -1,4 +1,6 @@
-﻿@inject SignInManager<VotingApp.Infrastructure.Identity.AppUser> SignInManager
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+@inject SignInManager<VotingApp.Infrastructure.Identity.AppUser> SignInManager
 @inject UserManager<VotingApp.Infrastructure.Identity.AppUser> UserManager
 @using Microsoft.AspNetCore.Identity
 
@@ -129,13 +131,16 @@
                                         Candidates
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a asp-action="Index" asp-controller="Votings"
-                                       class="nav-link">
-                                        <i class="fa fa-picture-o mr-3 fa-fw"></i>
-                                        Votings
-                                    </a>
-                                </li>
+                                @if (Config.GetValue<bool>(VotingApp.Controllers.VotingsController.FeatureFlag))
+                                {
+                                    <li class="nav-item">
+                                        <a asp-action="Index" asp-controller="Votings"
+                                           class="nav-link">
+                                            <i class="fa fa-picture-o mr-3 fa-fw"></i>
+                                            Votings
+                                        </a>
+                                    </li>
+                                }
                                 <li class="nav-link ">
                                     <a asp-action="Index" asp-controller="AuditLog"
                                        class="nav-link">

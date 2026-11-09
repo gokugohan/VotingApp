@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Config
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -97,12 +99,15 @@
                             Candidates
                         </a>
                     </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="Votings">
-                            <i class="fa fa-picture-o mr-3 fa-fw"></i>
-                            Votings
-                        </a>
-                    </li>
+                    @if (Config.GetValue<bool>(VotingApp.Controllers.VotingsController.FeatureFlag))
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="Votings">
+                                <i class="fa fa-picture-o mr-3 fa-fw"></i>
+                                Votings
+                            </a>
+                        </li>
+                    }
                     <li>
                         <a asp-action="Index" asp-controller="Elections">
                             <i class="fa fa-check-square-o mr-3 fa-fw"></i>

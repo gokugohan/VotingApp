@@ -39,6 +39,11 @@ namespace VotingApp.Application.Elections
         }
     }
 
+    public sealed record PublishedRound(Guid RoundId, Guid ElectionId, string ElectionName, int RoundNumber, ElectionStatus Status, DateTime VotingDate)
+    {
+        public string Label => RoundNumber > 1 ? $"{ElectionName} (round {RoundNumber})" : ElectionName;
+    }
+
     public sealed record RoundBreakdown(Guid RoundId, IReadOnlyList<BallotContestant> Ballot, IReadOnlyList<MunicipalityResult> Municipalities);
 
     public sealed record StationResult(
@@ -76,6 +81,17 @@ namespace VotingApp.Application.Elections
         }
 
         public static string BreakdownKey(Guid roundId) => $"round-breakdown:{roundId}";
+
+        /// <summary>
+        /// Rounds the public dashboard can show (counting or later), newest first. The first one is the
+        /// default ("featured") round.
+        /// </summary>
+        public Task<List<PublishedRound>> ListPublishedRoundsAsync(CancellationToken ct = default) =>
+            db.ElectionRounds.AsNoTracking()
+                .Where(r => r.Status >= ElectionStatus.Counting)
+                .OrderByDescending(r => r.VotingDate).ThenByDescending(r => r.Number)
+                .Select(r => new PublishedRound(r.Id, r.ElectionId, r.Election.Name, r.Number, r.Status, r.VotingDate))
+                .ToListAsync(ct);
 
         public async Task<IReadOnlyList<BallotContestant>> GetBallotAsync(Guid roundId, CancellationToken ct = default) =>
             await db.RoundContestants.AsNoTracking()
