@@ -21,26 +21,30 @@ namespace VotingApp.Controllers
         private readonly ElectionResultsService results;
         private readonly PublicResultsService publicResults;
         private readonly AreaService areas;
+        private readonly PartyListService lists;
 
-        public ResultsController(ElectionResultsService results, PublicResultsService publicResults, AreaService areas)
+        public ResultsController(ElectionResultsService results, PublicResultsService publicResults, AreaService areas, PartyListService lists)
         {
             this.results = results;
             this.publicResults = publicResults;
             this.areas = areas;
+            this.lists = lists;
         }
 
         public async Task<IActionResult> Round(Guid id, Guid? map)
         {
-            var page = await BuildPageAsync(results, publicResults, id, map, Url.Action(nameof(Round), new { id }));
+            var page = await BuildPageAsync(results, publicResults, lists, id, map, Url.Action(nameof(Round), new { id }));
             return page == null ? NotFound() : View(page);
         }
 
         /// <summary>Shared by the home page: everything the results partial needs for one round.</summary>
         internal static async Task<RoundResultsPage> BuildPageAsync(ElectionResultsService results, PublicResultsService publicResults,
-            Guid roundId, Guid? mapContestantId, string pagePath)
+            PartyListService lists, Guid roundId, Guid? mapContestantId, string pagePath)
         {
             var summary = await results.GetSummaryAsync(roundId, ResultSheetStatus.Approved);
             if (summary == null) return null;
+            var elected = summary.Parliamentary == null || summary.SheetsCounted == 0 ? null
+                : await lists.GetElectedForRoundAsync(roundId, summary.Contestants.Select(c => (c.ContestantId, c.Name, c.Seats ?? 0)).ToList());
             return new RoundResultsPage
             {
                 Summary = summary,
@@ -48,6 +52,7 @@ namespace VotingApp.Controllers
                 Signature = await publicResults.GetSignatureAsync(roundId),
                 MapContestantId = summary.Contestants.Any(c => c.ContestantId == mapContestantId) ? mapContestantId : null,
                 PagePath = pagePath,
+                Elected = elected,
             };
         }
 

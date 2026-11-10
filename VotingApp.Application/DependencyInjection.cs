@@ -31,6 +31,7 @@ namespace VotingApp.Application
             services.AddScoped<ElectionAdminService>();
             services.AddScoped<ResultSheetService>();
             services.AddScoped<PublicResultsService>();
+            services.AddScoped<PartyListService>();
             return services;
         }
     }

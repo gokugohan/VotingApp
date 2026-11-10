@@ -1,0 +1,84 @@
+@model PartyListPage
+@{
+    var list = Model.List;
+    var c = list.Contestant;
+    ViewData["Title"] = "List · " + c.Name;
+    var editable = list.Election.Status == ElectionStatus.Setup;
+    var errors = list.Issues.Where(i => i.Severity == IssueSeverity.Error).ToList();
+    var warnings = list.Issues.Where(i => i.Severity == IssueSeverity.Warning).ToList();
+    var women = list.Effective.Count(x => x.Gender == Gender.Female);
+}
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <a asp-controller="Elections" asp-action="Details" asp-route-id="@list.Election.Id">@list.Election.Name</a><span aria-hidden="true">/</span>
+    <span>@c.Name list</span>
+</nav>
+<div class="page-header spread">
+    <div>
+        <div class="eyebrow">Candidate list</div>
+        <h1>@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="muted">(@c.Acronym)</span> }</h1>
+        <p>Closed list: seats won are filled from the top of the effective list, in order. Substitutes replace elected members who leave.</p>
+    </div>
+    <a class="btn btn-secondary" asp-action="Details" asp-route-id="@c.Id">@Icon.Render("list") View list</a>
+</div>
+
+<section class="grid grid-4" aria-label="List summary" style="margin-bottom:1.5rem">
+    <div class="card stat"><div class="label">Effective</div><div class="value">@list.Effective.Count</div><div class="sub">for @list.Election.TotalSeats seats</div></div>
+    <div class="card stat"><div class="label">Substitutes</div><div class="value">@list.Substitutes.Count</div></div>
+    <div class="card stat"><div class="label">Women (effective)</div><div class="value">@women</div><div class="sub">@(list.Effective.Count == 0 ? "" : (women * 100 / list.Effective.Count) + "%")</div></div>
+    <div class="card stat"><div class="label">Gender rule</div>
+        <div class="value" style="font-size:1.2rem">
+            @if (list.Effective.Count == 0) { <span class="badge">Empty</span> }
+            else if (errors.Count == 0) { <span class="badge badge-ok">@Icon.Render("check") Met</span> }
+            else { <span class="badge badge-bad">@Icon.Render("x-circle") Not met</span> }
+        </div>
+        <div class="sub">One woman in every 3 positions</div>
+    </div>
+</section>
+
+@if (errors.Count > 0 || warnings.Count > 0)
+{
+    <div class="alert @(errors.Count > 0 ? "alert-bad" : "alert-warn")" style="margin-bottom:1.5rem">@Icon.Render("alert")
+        <div>
+            <strong>@(errors.Count > 0 ? "The election cannot be opened until this list meets the rules." : "Check this list.")</strong>
+            <ul style="margin:.25rem 0 0 1.1rem;padding:0">
+                @foreach (var i in errors.Concat(warnings)) { <li>@i.Message</li> }
+            </ul>
+        </div>
+    </div>
+}
+
+@if (!editable)
+{
+    <div class="alert alert-info">@Icon.Render("lock") <div>The election is open, so lists are fixed. <a asp-action="Details" asp-route-id="@c.Id">View the list</a>.</div></div>
+}
+else
+{
+    <form asp-action="Edit" method="post" class="stack-lg">
+        <div asp-validation-summary="All" class="errors"></div>
+        <input type="hidden" asp-for="Form.ContestantId" />
+        <p class="hint" style="margin:0">
+            One person per line, in list order, followed by a comma and <strong>F</strong> or <strong>M</strong>, for example <code>Maria da Costa, F</code>.
+            You can paste straight from a spreadsheet (name and gender columns). Positions are numbered by line order.
+        </p>
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header"><h2><label for="Form_Effective">Effective candidates</label></h2></div>
+                <div class="card-body">
+                    <textarea asp-for="Form.Effective" rows="22" spellcheck="false" style="font-family:var(--mono);font-size:.9rem" placeholder="Maria da Costa, F&#10;João Pereira, M&#10;Ana Soares, F"></textarea>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2><label for="Form_Substitutes">Substitutes</label></h2></div>
+                <div class="card-body">
+                    <textarea asp-for="Form.Substitutes" rows="22" spellcheck="false" style="font-family:var(--mono);font-size:.9rem"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">Save list</button>
+            <a asp-controller="Elections" asp-action="Details" asp-route-id="@list.Election.Id" class="btn btn-ghost">Back to election</a>
+        </div>
+    </form>
+}

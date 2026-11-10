@@ -132,6 +132,22 @@ namespace VotingApp.Models
         public IReadOnlyList<PublishedRound> Rounds { get; set; }
         /// <summary>URL of the page itself without query string (for the map mode form).</summary>
         public string PagePath { get; set; }
+        /// <summary>Parliamentary only: who fills the projected seats.</summary>
+        public IReadOnlyList<PartyElected> Elected { get; set; }
+    }
+
+    public class PartyListForm
+    {
+        public Guid ContestantId { get; set; }
+        /// <summary>One person per line: "Full name, F" or "Full name, M".</summary>
+        public string Effective { get; set; }
+        public string Substitutes { get; set; }
+    }
+
+    public class PartyListPage
+    {
+        public PartyList List { get; set; }
+        public PartyListForm Form { get; set; }
     }
 
     public class MunicipalityResultsPage

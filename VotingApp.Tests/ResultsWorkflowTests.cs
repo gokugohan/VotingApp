@@ -32,6 +32,7 @@ namespace VotingApp.Tests
         public RoundResultsCache Cache { get; } = new();
         public AppDbContext Db { get; }
         public ElectionResultsService Results { get; }
+        public PartyListService Lists { get; private set; }
         public ElectionAdminService Admin { get; }
         public ResultSheetService Sheets { get; }
         public UserScopeService Scopes { get; }
@@ -42,7 +43,8 @@ namespace VotingApp.Tests
             Db = new AppDbContext(options, User);
             Results = new ElectionResultsService(Db, Cache,
                 new PresidentialResultCalculator(), new ParliamentarySeatAllocator());
-            Admin = new ElectionAdminService(Db, Results);
+            Lists = new PartyListService(Db, new PartyListValidator(), Cache);
+            Admin = new ElectionAdminService(Db, Results, Lists);
             Scopes = new UserScopeService(Db, User);
             Sheets = new ResultSheetService(Db, User, Scopes, new ResultSheetValidator(), Results);
 

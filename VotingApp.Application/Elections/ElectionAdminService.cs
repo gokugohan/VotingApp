@@ -20,11 +20,13 @@ namespace VotingApp.Application.Elections
     {
         private readonly IAppDbContext db;
         private readonly ElectionResultsService results;
+        private readonly PartyListService lists;
 
-        public ElectionAdminService(IAppDbContext db, ElectionResultsService results)
+        public ElectionAdminService(IAppDbContext db, ElectionResultsService results, PartyListService lists)
         {
             this.db = db;
             this.results = results;
+            this.lists = lists;
         }
 
         public Task<List<Election>> ListAsync(CancellationToken ct = default) =>
@@ -136,6 +138,18 @@ namespace VotingApp.Application.Elections
                 return OperationResult.Fail(FailureKind.Conflict, "Status can only move forward.");
             if (status > ElectionStatus.Setup && election.Contestants.Count < 2)
                 return OperationResult.Fail(FailureKind.Validation, "Add at least two contestants before opening the election.");
+            if (election.Type == ElectionType.Parliamentary && current.Status == ElectionStatus.Setup && status > ElectionStatus.Setup)
+            {
+                // Lists are fixed once voting starts: every party needs a complete, quota-compliant list.
+                var names = election.Contestants.ToDictionary(c => c.Id, c => c.Name);
+                var invalid = (await lists.GetStatusesAsync(election.Id, ct)).Where(s => !s.IsValid).ToList();
+                if (invalid.Count > 0)
+                {
+                    return OperationResult.Fail(FailureKind.Validation,
+                        "Fix these party lists before opening the election: " +
+                        string.Join("; ", invalid.Select(s => $"{names[s.ContestantId]} ({s.Problem})")));
+                }
+            }
 
             // The election's status mirrors its current (latest) round.
             current.Status = status;

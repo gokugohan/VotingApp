@@ -15,9 +15,11 @@ namespace VotingApp.Controllers
         private readonly AreaService areas;
         private readonly PublicResultsService publicResults;
         private readonly ElectionResultsService results;
+        private readonly PartyListService lists;
 
-        public HomeController(AreaService areas, PublicResultsService publicResults, ElectionResultsService results)
+        public HomeController(AreaService areas, PublicResultsService publicResults, ElectionResultsService results, PartyListService lists)
         {
+            this.lists = lists;
             this.areas = areas;
             this.publicResults = publicResults;
             this.results = results;
@@ -32,7 +34,7 @@ namespace VotingApp.Controllers
             if (roundId.HasValue && selected?.RoundId != roundId) return NotFound();
             if (selected == null) return View((RoundResultsPage)null);
 
-            var page = await ResultsController.BuildPageAsync(results, publicResults, selected.RoundId, map,
+            var page = await ResultsController.BuildPageAsync(results, publicResults, lists, selected.RoundId, map,
                 Url.Action(nameof(Index)));
             page.Rounds = rounds;
             return View(page);

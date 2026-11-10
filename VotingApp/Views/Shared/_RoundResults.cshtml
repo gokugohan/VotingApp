@@ -151,6 +151,36 @@
         </section>
     </div>
 
+    @* ---------- Elected members (parliamentary) ---------- *@
+    @if (Model.Elected != null && Model.Elected.Count > 0)
+    {
+        <section class="card" aria-labelledby="elected-heading">
+            <div class="card-header">
+                <h2 id="elected-heading">Elected members@(isFinal ? "" : " (projected)")</h2>
+                <span class="muted small">Seats filled from the top of each party's list</span>
+            </div>
+            <div class="card-body grid grid-3">
+                @foreach (var party in Model.Elected)
+                {
+                    <div>
+                        <h3 style="font-size:1rem;margin-bottom:.35rem">@party.Name <span class="muted" style="font-weight:400">· @party.Seats @(party.Seats == 1 ? "seat" : "seats")</span></h3>
+                        <ol class="small" style="margin:0;padding-left:1.4rem">
+                            @foreach (var m in party.Members)
+                            {
+                                <li value="@m.Position">@m.FullName</li>
+                            }
+                        </ol>
+                        @if (party.Unfilled > 0)
+                        {
+                            <div class="badge badge-bad" style="margin-top:.35rem">@Icon.Render("alert") @party.Unfilled seat@(party.Unfilled == 1 ? "" : "s") without a candidate on the list</div>
+                        }
+                        <a class="small" asp-controller="PartyLists" asp-action="Details" asp-route-id="@party.ContestantId">Full list</a>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
     @* ---------- Table by municipality (also the accessible alternative to the map) ---------- *@
     <section class="card" aria-labelledby="municipality-table-heading">
         <div class="card-header">

@@ -1,0 +1,41 @@
+@model PartyList
+@{
+    var c = Model.Contestant;
+    ViewData["Title"] = c.Name + " list";
+}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <span>@Model.Election.Name</span><span aria-hidden="true">/</span><span>@c.Name</span>
+</nav>
+<div class="page-header">
+    <div class="eyebrow">Candidate list · @Model.Election.Name</div>
+    <h1>@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="muted">(@c.Acronym)</span> }</h1>
+    @if (Model.Election.Status == ElectionStatus.Setup)
+    {
+        <span class="badge badge-warn">Draft: not public until the election opens</span>
+    }
+</div>
+
+<div class="grid grid-2">
+    @foreach (var (title, people) in new[] { ("Effective candidates", Model.Effective), ("Substitutes", Model.Substitutes) })
+    {
+        <section class="card">
+            <div class="card-header"><h2>@title</h2><span class="badge">@people.Count</span></div>
+            <div class="table-wrap">
+                <table class="table table-compact">
+                    <thead><tr><th scope="col" class="num" style="width:3.5rem">#</th><th scope="col">Name</th><th scope="col">Gender</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in people)
+                        {
+                            <tr><td class="num">@p.Position</td><td>@p.FullName</td><td>@(p.Gender == Gender.Female ? "Woman" : "Man")</td></tr>
+                        }
+                        @if (people.Count == 0)
+                        {
+                            <tr><td colspan="3" class="empty">None</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>

@@ -4,6 +4,8 @@
     var current = Model.Rounds.OrderByDescending(r => r.Number).First();
     ElectionStatus? next = current.Status == ElectionStatus.Certified ? null : current.Status + 1;
     var canEditBallot = Model.Status == ElectionStatus.Setup && Model.Rounds.Count == 1;
+    var listStatuses = ViewData["ListStatuses"] as Dictionary<Guid, PartyListStatus> ?? new Dictionary<Guid, PartyListStatus>();
+    var parliamentary = Model.Type == ElectionType.Parliamentary;
     var steps = Enum.GetValues<ElectionStatus>();
     string NextHelp(ElectionStatus s) => s switch
     {
@@ -35,14 +37,27 @@
                 </div>
                 <div class="table-wrap">
                     <table class="table">
-                        <thead><tr><th scope="col" class="num" style="width:3rem">#</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <thead><tr><th scope="col" class="num" style="width:3rem">#</th><th scope="col">Name</th><th scope="col">@(parliamentary ? "Candidate list" : "Type")</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
                         <tbody>
                             @foreach (var rc in round.Contestants.OrderBy(c => c.BallotPosition))
                             {
                                 <tr>
                                     <td class="num">@rc.BallotPosition</td>
                                     <th scope="row">@rc.Contestant.Name @if (!string.IsNullOrEmpty(rc.Contestant.Acronym)) { <span class="muted">(@rc.Contestant.Acronym)</span> }</th>
-                                    <td>@rc.Contestant.Type</td>
+                                    <td>
+                                        @if (parliamentary && listStatuses.TryGetValue(rc.ContestantId, out var ls))
+                                        {
+                                            <div class="cluster" style="gap:.4rem">
+                                                @if (ls.IsValid) { <span class="badge badge-ok">@Icon.Render("check") @ls.Effective + @ls.Substitutes</span> }
+                                                else { <span class="badge badge-bad" title="@ls.Problem">@Icon.Render("alert") @(ls.Effective == 0 ? "No list" : "Rules not met")</span> }
+                                                <a asp-controller="PartyLists" asp-action="@(canEditBallot ? "Edit" : "Details")" asp-route-id="@rc.ContestantId">@(canEditBallot ? "Edit list" : "View list")</a>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @rc.Contestant.Type
+                                        }
+                                    </td>
                                     <td class="actions-cell">
                                         @if (canEditBallot)
                                         {

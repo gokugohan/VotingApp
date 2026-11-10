@@ -30,10 +30,12 @@ Package versions are managed centrally in `Directory.Packages.props`.
 ## Results workflow
 
 1. **Set up** (*Elections → New election*): presidential or parliamentary, contestants, then move the round to **Counting**.
+   Parliamentary elections need each party's closed list first (*Edit list* on the election page; paste one person per line as `Name, F` or `Name, M`). Lists must have at least one woman in every three effective positions; drafts can be saved, but the election cannot open until every list passes. Lists are fixed once voting starts and are public from then on.
 2. **Enter**: a clerk types a polling station's paper sheet (ballot reconciliation, blank/invalid, votes per contestant). Arithmetic errors are flagged and block approval.
 3. **Verify**: a *different* person re-types the sheet blind. Matching entries mark it Verified; differences are named for a supervisor.
 4. **Approve**: municipal supervisor. Only approved/locked sheets count in the public results (`/Results/Round/{roundId}`, JSON at `/Results/Summary/{roundId}`).
 5. **Lock**: national tabulation. Presidential runoffs are created from approved first-round results.
+6. **Elected members** (parliamentary): each party's projected seats are filled from the top of its effective list and shown on the public results; a party that wins more seats than it has candidates is flagged.
 
 ### Public results (open data)
 
