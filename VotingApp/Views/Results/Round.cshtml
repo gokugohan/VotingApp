@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = Model.Summary.ElectionName;
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>@Model.Summary.ElectionName</span>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]">
+    <a asp-controller="Elections" asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span><span>@Model.Summary.ElectionName</span>
 </nav>
 <partial name="_RoundResults" model="Model" />

@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Authorization
 @using VotingApp.Application.Security
+@using VotingApp.Web.Localization
 @inject IAuthorizationService Authz
 @{
     var signedIn = User.Identity?.IsAuthenticated == true;
@@ -15,12 +16,12 @@
     var title = ViewData["Title"] as string;
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@T.Lang">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>@(string.IsNullOrEmpty(title) ? "Election Results" : title + " · Election Results")</title>
+    <title>@(string.IsNullOrEmpty(title) ? T["Election Results"] : title + " · " + T["Election Results"])</title>
     <script>
         // Apply the saved theme before first paint (no flash).
         try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) { }
@@ -30,56 +31,73 @@
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">@T["Skip to content"]</a>
 
     <header class="site-header">
         <div class="container bar">
             <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 12 2 2 4-4" /><path d="M5 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v12H5V7Z" /><path d="M22 19H2" /></svg>
-                <span>Election Results <span class="visually-hidden">Timor-Leste</span></span>
+                <span>@T["Election Results"] <span class="visually-hidden">Timor-Leste</span></span>
             </a>
 
             <button type="button" class="btn btn-ghost nav-toggle" aria-controls="site-nav" aria-expanded="false" style="color:#fff">
-                @Icon.Render("menu") <span>Menu</span>
+                @Icon.Render("menu") <span>@T["Menu"]</span>
             </button>
 
-            <nav id="site-nav" class="nav" aria-label="Main">
-                <a asp-area="" asp-controller="Home" asp-action="Index" aria-current="@Current("Home", "Results")">@Icon.Render("chart") Results</a>
-                <a asp-area="" asp-controller="Elections" asp-action="Index" aria-current="@Current("Elections", "ResultSheets")">@Icon.Render("vote") Elections</a>
+            <nav id="site-nav" class="nav" aria-label="@T["Main"]">
+                <a asp-area="" asp-controller="Home" asp-action="Index" aria-current="@Current("Home", "Results")">@Icon.Render("chart") @T["Results"]</a>
+                <a asp-area="" asp-controller="Elections" asp-action="Index" aria-current="@Current("Elections", "ResultSheets")">@Icon.Render("vote") @T["Elections"]</a>
 
                 @if (signedIn && (canResults || canElections || canCandidates || canStations || canAudit || isAdmin))
                 {
                     <details>
-                        <summary>@Icon.Render("database") Manage @Icon.Render("chevron-down")</summary>
+                        <summary>@Icon.Render("database") @T["Manage"] @Icon.Render("chevron-down")</summary>
                         <div class="menu">
                             @if (canResults || canElections)
                             {
-                                <a asp-area="" asp-controller="Elections" asp-action="Index">@Icon.Render("file") Result sheets</a>
+                                <a asp-area="" asp-controller="Elections" asp-action="Index">@Icon.Render("file") @T["Result sheets"]</a>
                             }
-                            <span class="menu-label">Reference data</span>
-                            <a asp-area="" asp-controller="Candidates" asp-action="Index">@Icon.Render("user") Candidates</a>
-                            <a asp-area="" asp-controller="Parties" asp-action="Index">@Icon.Render("landmark") Parties and coalitions</a>
-                            <a asp-area="" asp-controller="PollingStationAreas" asp-action="Index">@Icon.Render("pin") Polling stations</a>
-                            <a asp-area="" asp-controller="Areas" asp-action="Index">@Icon.Render("map") Areas</a>
+                            <span class="menu-label">@T["Reference data"]</span>
+                            <a asp-area="" asp-controller="Candidates" asp-action="Index">@Icon.Render("user") @T["Candidates"]</a>
+                            <a asp-area="" asp-controller="Parties" asp-action="Index">@Icon.Render("landmark") @T["Parties and coalitions"]</a>
+                            <a asp-area="" asp-controller="PollingStationAreas" asp-action="Index">@Icon.Render("pin") @T["Polling stations"]</a>
+                            <a asp-area="" asp-controller="Areas" asp-action="Index">@Icon.Render("map") @T["Areas"]</a>
                             @if (isAdmin || canAudit)
                             {
                                 <hr />
-                                <span class="menu-label">Administration</span>
+                                <span class="menu-label">@T["Administration"]</span>
                                 @if (isAdmin)
                                 {
-                                    <a asp-area="" asp-controller="Admin" asp-action="Users">@Icon.Render("users") Users and roles</a>
-                                    <a asp-area="" asp-controller="Elections" asp-action="Scopes">@Icon.Render("shield") User municipalities</a>
+                                    <a asp-area="" asp-controller="Admin" asp-action="Users">@Icon.Render("users") @T["Users and roles"]</a>
+                                    <a asp-area="" asp-controller="Elections" asp-action="Scopes">@Icon.Render("shield") @T["User municipalities"]</a>
                                 }
                                 @if (canAudit)
                                 {
-                                    <a asp-area="" asp-controller="AuditLog" asp-action="Index">@Icon.Render("history") Audit log</a>
+                                    <a asp-area="" asp-controller="AuditLog" asp-action="Index">@Icon.Render("history") @T["Audit log"]</a>
                                 }
                             }
                         </div>
                     </details>
                 }
 
-                <button type="button" class="linklike theme-toggle" aria-label="Colour theme: system" title="Colour theme" style="color:#dbe5f1;text-decoration:none;min-height:44px;padding:0 .75rem">
+                <details>
+                    <summary aria-label="@T["Language"]">@Icon.Render("globe") <span>@TranslationCatalog.Languages.First(l => l.Code == T.Lang).NativeName</span></summary>
+                    <div class="menu">
+                        @foreach (var language in TranslationCatalog.Languages)
+                        {
+                            <form method="post" asp-area="" asp-controller="Language" asp-action="Set">
+                                <input type="hidden" name="lang" value="@language.Code" />
+                                <input type="hidden" name="returnUrl" value="@(Context.Request.Path + Context.Request.QueryString)" />
+                                <button type="submit" class="linklike" lang="@language.Code" style="text-decoration:none;display:flex;gap:.45rem;align-items:center" aria-current="@(language.Code == T.Lang ? "true" : null)">
+                                    @if (language.Code == T.Lang) { @Icon.Render("check") } else { <span style="width:1.1em"></span> }
+                                    @language.NativeName
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </details>
+
+                <button type="button" class="linklike theme-toggle" aria-label="@T["Colour theme"]" title="@T["Colour theme"]" data-label="@T["Colour theme"]" data-system="@T["System"]" data-light="@T["Light"]" data-dark="@T["Dark"]" style="color:#dbe5f1;text-decoration:none;min-height:44px;padding:0 .75rem">
                     <span data-theme-icon="system">@Icon.Render("monitor")</span>
                     <span data-theme-icon="light" hidden>@Icon.Render("sun")</span>
                     <span data-theme-icon="dark" hidden>@Icon.Render("moon")</span>
@@ -90,16 +108,16 @@
                     <details>
                         <summary>@Icon.Render("user") <span>@(User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity!.Name)</span> @Icon.Render("chevron-down")</summary>
                         <div class="menu">
-                            <a asp-area="Identity" asp-page="/Account/Manage/Index">@Icon.Render("user") My account</a>
+                            <a asp-area="Identity" asp-page="/Account/Manage/Index">@Icon.Render("user") @T["My account"]</a>
                             <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                <button type="submit" class="linklike" style="text-decoration:none;display:flex;gap:.45rem;align-items:center">@Icon.Render("log-out") Sign out</button>
+                                <button type="submit" class="linklike" style="text-decoration:none;display:flex;gap:.45rem;align-items:center">@Icon.Render("log-out") @T["Sign out"]</button>
                             </form>
                         </div>
                     </details>
                 }
                 else
                 {
-                    <a asp-area="Identity" asp-page="/Account/Login">@Icon.Render("log-in") Staff sign in</a>
+                    <a asp-area="Identity" asp-page="/Account/Login">@Icon.Render("log-in") @T["Staff sign in"]</a>
                 }
             </nav>
         </div>
@@ -114,10 +132,10 @@
 
     <footer class="site-footer">
         <div class="container spread">
-            <span>Provisional results are unofficial until certified by the competent electoral authorities.</span>
+            <span>@T["Provisional results are unofficial until certified by the competent electoral authorities."]</span>
             <span class="cluster">
-                <a asp-area="" asp-controller="Elections" asp-action="Index">Open data</a>
-                <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                <a asp-area="" asp-controller="Elections" asp-action="Index">@T["Open data"]</a>
+                <a asp-area="" asp-controller="Home" asp-action="Privacy">@T["Privacy"]</a>
             </span>
         </div>
     </footer>

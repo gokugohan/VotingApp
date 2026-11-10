@@ -68,6 +68,12 @@ Server-rendered Razor pages with one hand-written stylesheet (`wwwroot/css/app.c
 - **Charts without a library**: contestant results are sorted HTML bars (one series, one colour, 50% majority marker for presidential rounds); the municipality map is SVG drawn on the server from `wwwroot/data/tl-all.topo.json`; parliament seats are a dot grid.
 - **Neutral colours**: navy and blue interface; contestant colours come from a colourblind-validated palette assigned in ballot order (never by rank, never party colours), at most 3 on the map and 8 for seats, with the rest shown as "Other" and named in the legend.
 
+## Languages
+
+Public pages are available in English, Portuguese and Tetun (switcher in the header; remembered in a cookie, otherwise the browser's language is used). Translations live in `VotingApp/Resources/i18n/pt.json` and `tet.json`, keyed by the English text; anything untranslated falls back to English. A test fails if a view text is missing from either file or a translation drops a `{0}` placeholder or markup.
+
+**The Tetun translation is a draft** and should be reviewed by a native speaker against the terminology used by CNE and STAE. Staff pages are still English only.
+
 ## Running locally
 
 Requires the .NET 8 SDK and SQL Server (Express or LocalDB).

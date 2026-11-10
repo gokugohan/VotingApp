@@ -1,25 +1,25 @@
-﻿@model IEnumerable<VotingApp.Domain.Entities.Candidate>
+@model IEnumerable<VotingApp.Domain.Entities.Candidate>
 @using VotingApp.Application.Security
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService Authz
 @{
-    ViewData["Title"] = "Candidates";
+    ViewData["Title"] = T["Candidates"];
     var canManage = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User, Permissions.ManageCandidates)).Succeeded;
 }
 <div class="page-header spread">
     <div>
-        <h1>Candidates</h1>
-        <p>Profiles with photo and biography. Link a profile to a contestant when setting up an election.</p>
+        <h1>@T["Candidates"]</h1>
+        <p>@T["Profiles with photo and biography. Link a profile to a contestant when setting up an election."]</p>
     </div>
     @if (canManage)
     {
-        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New candidate</a>
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") @T["New candidate"]</a>
     }
 </div>
 
 @if (!Model.Any())
 {
-    <div class="card"><div class="empty"><h3>No candidates yet</h3></div></div>
+    <div class="card"><div class="empty"><h3>@T["No candidates yet"]</h3></div></div>
 }
 else
 {
@@ -40,8 +40,8 @@ else
                 @if (canManage)
                 {
                     <div class="card-footer cluster">
-                        <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@c.Id">@Icon.Render("pencil") Edit</a>
-                        <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@c.Id">@Icon.Render("trash") Delete</a>
+                        <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@c.Id">@Icon.Render("pencil") @T["Edit"]</a>
+                        <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@c.Id">@Icon.Render("trash") @T["Delete"]</a>
                     </div>
                 }
             </article>

@@ -25,15 +25,15 @@
     }
     string Describe(MunicipalityResult m)
     {
-        if (m == null) return "no data";
-        if (m.ValidVotes == 0) return "no results yet";
+        if (m == null) return T["no data"];
+        if (m.ValidVotes == 0) return T["no results yet"];
         var detail = shareMode
             ? $"{names[Model.MapContestantId.Value]} {Share(m):0.0}%"
-            : (m.LeaderId.HasValue ? $"leading: {names[m.LeaderId.Value]}" : "tie");
-        return $"{detail}, {m.ReportingPercent:0.#}% of stations reporting";
+            : (m.LeaderId.HasValue ? T["leading: {0}", names[m.LeaderId.Value]] : T["tie"]);
+        return detail + ", " + T["{0}% of stations reporting", m.ReportingPercent.ToString("0.#")];
     }
 }
-<svg class="map" viewBox="@Map.ViewBox" role="group" aria-label="Map of Timor-Leste by municipality. The table below has the same figures.">
+<svg class="map" viewBox="@Map.ViewBox" role="group" aria-label="@T["Map of Timor-Leste by municipality. The table below has the same figures."]">
     @foreach (var shape in Map.Shapes)
     {
         byKey.TryGetValue(shape.Key, out var m);
@@ -51,7 +51,7 @@
     }
 </svg>
 
-<div class="legend" aria-label="Map legend">
+<div class="legend" aria-label="@T["Map legend"]">
     @if (shareMode)
     {
         <span class="key">0%</span>
@@ -66,8 +66,8 @@
         }
         if (leaders.Any(id => slots[id] == "other"))
         {
-            <span class="key"><span class="swatch s-other"></span> Other: @string.Join(", ", leaders.Where(id => slots[id] == "other").Select(id => names[id]))</span>
+            <span class="key"><span class="swatch s-other"></span> @T["Other:"] @string.Join(", ", leaders.Where(id => slots[id] == "other").Select(id => names[id]))</span>
         }
     }
-    <span class="key"><span class="swatch s-none"></span> No results yet</span>
+    <span class="key"><span class="swatch s-none"></span> @T["No results yet"]</span>
 </div>

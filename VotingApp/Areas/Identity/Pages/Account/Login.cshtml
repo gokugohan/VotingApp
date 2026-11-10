@@ -1,26 +1,26 @@
-﻿@page
+@page
 @model LoginModel
 @{
-    ViewData["Title"] = "Staff sign in";
+    ViewData["Title"] = T["Staff sign in"];
 }
 <div class="card" style="max-width:26rem;margin:2rem auto">
     <form id="account" method="post" class="card-body">
-        <h1 style="font-size:1.5rem">Staff sign in</h1>
-        <p class="muted small">For election staff. Viewing results does not need an account.</p>
+        <h1 style="font-size:1.5rem">@T["Staff sign in"]</h1>
+        <p class="muted small">@T["For election staff. Viewing results does not need an account."]</p>
         <div asp-validation-summary="All" class="errors"></div>
         <div class="field">
-            <label asp-for="Input.Email">E-mail</label>
+            <label asp-for="Input.Email">@T["E-mail"]</label>
             <input asp-for="Input.Email" autocomplete="username" autofocus />
             <span asp-validation-for="Input.Email" class="field-error"></span>
         </div>
         <div class="field">
-            <label asp-for="Input.Password">Password</label>
+            <label asp-for="Input.Password">@T["Password"]</label>
             <input asp-for="Input.Password" autocomplete="current-password" />
             <span asp-validation-for="Input.Password" class="field-error"></span>
         </div>
-        <label class="check" style="margin-bottom:1rem"><input asp-for="Input.RememberMe" /> Keep me signed in on this device</label>
-        <button type="submit" class="btn btn-primary" style="width:100%">@Icon.Render("log-in") Sign in</button>
-        <p class="hint" style="margin:1rem 0 0">Forgot your password or locked out? Ask an administrator. After 5 wrong attempts the account is locked for 15 minutes.</p>
+        <label class="check" style="margin-bottom:1rem"><input asp-for="Input.RememberMe" /> @T["Keep me signed in on this device"]</label>
+        <button type="submit" class="btn btn-primary" style="width:100%">@Icon.Render("log-in") @T["Sign in"]</button>
+        <p class="hint" style="margin:1rem 0 0">@T["Forgot your password or locked out? Ask an administrator. After 5 wrong attempts the account is locked for 15 minutes."]</p>
     </form>
 </div>
 @section Scripts {

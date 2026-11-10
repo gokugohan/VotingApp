@@ -1,6 +1,6 @@
-﻿@model RoundResultsPage
+@model RoundResultsPage
 @{
-    ViewData["Title"] = Model?.Summary.ElectionName ?? "Results";
+    ViewData["Title"] = Model?.Summary.ElectionName ?? T["Results"];
 }
 
 @if (Model == null)
@@ -8,9 +8,9 @@
     <div class="card">
         <div class="empty">
             @Icon.Render("vote", "icon")
-            <h1 style="font-size:1.4rem;margin-top:.5rem">No results to show yet</h1>
-            <p>Results appear here once an election round is being counted.</p>
-            <a class="btn btn-secondary" asp-controller="Elections" asp-action="Index">See all elections</a>
+            <h1 style="font-size:1.4rem;margin-top:.5rem">@T["No results to show yet"]</h1>
+            <p>@T["Results appear here once an election round is being counted."]</p>
+            <a class="btn btn-secondary" asp-controller="Elections" asp-action="Index">@T["See all elections"]</a>
         </div>
     </div>
 }

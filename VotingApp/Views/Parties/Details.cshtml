@@ -8,37 +8,37 @@
     var canManage = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User, Permissions.ManageElections)).Succeeded;
     var withSeats = history.Any(h => h.Seats.HasValue);
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Parties and coalitions</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Parties and coalitions"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
 <div class="page-header spread">
     <div>
-        <div class="eyebrow">@Model.Kind</div>
+        <div class="eyebrow">@T[Model.Kind.ToString()]</div>
         <h1>@Model.Name @if (!string.IsNullOrEmpty(Model.Acronym)) { <span class="muted">(@Model.Acronym)</span> }</h1>
         @if (!string.IsNullOrEmpty(Model.Notes)) { <p>@Model.Notes</p> }
     </div>
     @if (canManage)
     {
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">@Icon.Render("pencil") Edit</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">@Icon.Render("pencil") @T["Edit"]</a>
     }
 </div>
 
 <section class="card" aria-labelledby="history-heading">
-    <div class="card-header"><h2 id="history-heading">Results over time</h2><span class="muted small">Approved polling station sheets only</span></div>
+    <div class="card-header"><h2 id="history-heading">@T["Results over time"]</h2><span class="muted small">@T["Approved polling station sheets only"]</span></div>
     @if (history.Count == 0)
     {
-        <div class="empty">No published results yet.</div>
+        <div class="empty">@T["No published results yet."]</div>
     }
     else
     {
         <div class="card-body">
             @{ var max = Math.Max(history.Max(h => h.PercentOfValid), 1m); }
-            <ol class="bars" aria-label="Share of valid votes by election, newest first">
+            <ol class="bars" aria-label="@T["Share of valid votes by election, newest first"]">
                 @foreach (var h in history)
                 {
                     <li>
                         <div class="row1">
                             <span class="name"><a asp-controller="Results" asp-action="Round" asp-route-id="@h.RoundId">@h.ElectionName</a> <span class="muted small">@h.ElectionDate.Year</span></span>
                             <span class="figures"><strong>@h.PercentOfValid.ToString("0.00")%</strong>
-                                @if (h.Seats.HasValue) { <span> · <strong>@h.Seats</strong> seats</span> }
+                                @if (h.Seats.HasValue) { <span> · <strong>@h.Seats</strong> @T["seats"]</span> }
                             </span>
                         </div>
                         <div class="track" aria-hidden="true"><div class="fill" style="width:@((h.PercentOfValid * 100m / max).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div></div>
@@ -48,8 +48,8 @@
         </div>
         <div class="table-wrap">
             <table class="table">
-                <caption class="visually-hidden">Results of @Model.Name in each election</caption>
-                <thead><tr><th scope="col">Election</th><th scope="col">Name on the ballot</th><th scope="col" class="num">Votes</th><th scope="col" class="num">% of valid</th>@if (withSeats) { <th scope="col" class="num">Seats</th> }<th scope="col">Status</th></tr></thead>
+                <caption class="visually-hidden">@T["Results of {0} in each election", Model.Name]</caption>
+                <thead><tr><th scope="col">@T["Election"]</th><th scope="col">@T["Name on the ballot"]</th><th scope="col" class="num">@T["Votes"]</th><th scope="col" class="num">@T["% of valid"]</th>@if (withSeats) { <th scope="col" class="num">@T["Seats"]</th> }<th scope="col">@T["Status"]</th></tr></thead>
                 <tbody>
                     @foreach (var h in history)
                     {
@@ -60,8 +60,8 @@
                             <td class="num">@h.PercentOfValid.ToString("0.00")%</td>
                             @if (withSeats) { <td class="num">@h.Seats</td> }
                             <td>
-                                @if (h.RoundStatus == ElectionStatus.Certified) { <span class="badge badge-ok">Certified</span> }
-                                else { <span class="badge badge-warn">Provisional · @h.ReportingPercent.ToString("0.#")% reporting</span> }
+                                @if (h.RoundStatus == ElectionStatus.Certified) { <span class="badge badge-ok">@T["Certified"]</span> }
+                                else { <span class="badge badge-warn">@T["Provisional"] · @T["{0}% reporting", h.ReportingPercent.ToString("0.#")]</span> }
                             </td>
                         </tr>
                     }

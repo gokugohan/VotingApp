@@ -43,6 +43,8 @@ namespace VotingApp.Web
             services.AddScoped<ImageStorage>();
             services.AddScoped<SheetScanStorage>();
             services.AddSingleton<VotingApp.Web.Ui.TimorMap>();
+            services.AddSingleton<VotingApp.Web.Localization.TranslationCatalog>();
+            services.AddScoped<VotingApp.Web.Localization.Texts>();
             services.AddDatabaseDeveloperPageExceptionFilter();
 
             // ---- Identity ----

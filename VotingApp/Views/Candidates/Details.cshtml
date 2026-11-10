@@ -1,8 +1,8 @@
-﻿@model VotingApp.Domain.Entities.Candidate
+@model VotingApp.Domain.Entities.Candidate
 @{
     ViewData["Title"] = Model.Name;
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Candidates"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
 <article class="card" style="max-width:48rem">
     <div class="card-body cluster" style="flex-wrap:nowrap;align-items:flex-start;gap:1.25rem">
         <partial name="_Avatar" model='(Model.Name, Model.Avatar, "avatar-lg")' />
@@ -14,7 +14,7 @@
     @if (!string.IsNullOrEmpty(Model.ShortBiography))
     {
         <div class="card-body" style="border-top:1px solid var(--border)">
-            <h2 style="font-size:1rem">Biography</h2>
+            <h2 style="font-size:1rem">@T["Biography"]</h2>
             <p style="white-space:pre-line;max-width:70ch">@Model.ShortBiography</p>
         </div>
     }

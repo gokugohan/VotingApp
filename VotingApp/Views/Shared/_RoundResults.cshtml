@@ -6,7 +6,7 @@
     var names = s.Contestants.ToDictionary(c => c.ContestantId, c => c.Name);
     string Name(Guid? id) => id.HasValue && names.TryGetValue(id.Value, out var n) ? n : "-";
     var isFinal = s.RoundStatus == ElectionStatus.Certified;
-    var typeLabel = s.Type == ElectionType.Presidential ? "Presidential election" : "Parliamentary election";
+    var typeLabel = s.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"];
     ViewData["Comparison"] = Model.Comparison;
 }
 
@@ -14,26 +14,26 @@
 
     <div class="page-header spread" style="margin-bottom:0">
         <div>
-            <div class="eyebrow">@typeLabel@(s.RoundNumber > 1 ? $" · Round {s.RoundNumber} (runoff)" : "")</div>
+            <div class="eyebrow">@typeLabel@(s.RoundNumber > 1 ? " · " + T["Runoff"] : "")</div>
             <h1>@s.ElectionName</h1>
             <div class="cluster small">
                 @if (isFinal)
                 {
-                    <span class="badge badge-ok">@Icon.Render("check-circle") Certified</span>
+                    <span class="badge badge-ok">@Icon.Render("check-circle") @T["Certified"]</span>
                 }
                 else
                 {
-                    <span class="badge badge-warn">@Icon.Render("info") Provisional</span>
-                    <span class="live"><span class="pulse" aria-hidden="true"></span> Live</span>
+                    <span class="badge badge-warn">@Icon.Render("info") @T["Provisional"]</span>
+                    <span class="live"><span class="pulse" aria-hidden="true"></span> @T["Live"]</span>
                 }
-                <span class="muted">Updated @s.GeneratedAtUtc.ToString("HH:mm") UTC</span>
+                <span class="muted">@T["Updated {0} UTC", s.GeneratedAtUtc.ToString("HH:mm")]</span>
                 <span class="muted" data-live-status aria-live="polite"></span>
             </div>
         </div>
         @if (Model.Rounds != null && Model.Rounds.Count > 1)
         {
             <form method="get" action="@Url.Action("Index", "Home")" class="no-print">
-                <label class="label" for="round-select">Election</label>
+                <label class="label" for="round-select">@T["Election"]</label>
                 <div class="cluster">
                     <select id="round-select" name="roundId" style="width:auto;max-width:22rem" onchange="this.form.submit()">
                         @foreach (var r in Model.Rounds)
@@ -41,31 +41,31 @@
                             <option value="@r.RoundId" selected="@(r.RoundId == s.RoundId)">@r.Label</option>
                         }
                     </select>
-                    <noscript><button class="btn btn-secondary btn-sm" type="submit">Show</button></noscript>
+                    <noscript><button class="btn btn-secondary btn-sm" type="submit">@T["Show"]</button></noscript>
                 </div>
             </form>
         }
     </div>
 
     @* ---------- Headline numbers ---------- *@
-    <section class="grid grid-4" aria-label="Key figures">
+    <section class="grid grid-4" aria-label="@T["Key figures"]">
         <div class="card stat">
-            <div class="label">Stations reporting</div>
+            <div class="label">@T["Stations reporting"]</div>
             <div class="value">@s.ReportingPercent.ToString("0.#")%</div>
-            <div class="meter" role="img" aria-label="@s.ReportingPercent.ToString("0.#") percent of polling stations reporting" style="margin-top:.5rem"><span style="width:@s.ReportingPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div>
-            <div class="sub">@s.SheetsCounted.ToString("N0") of @s.PollingStations.ToString("N0") stations</div>
+            <div class="meter" role="img" aria-label="@T["{0}% of polling stations reporting", s.ReportingPercent.ToString("0.#")]" style="margin-top:.5rem"><span style="width:@s.ReportingPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div>
+            <div class="sub">@T["{0} of {1} stations", s.SheetsCounted.ToString("N0"), s.PollingStations.ToString("N0")]</div>
         </div>
         <div class="card stat">
-            <div class="label">Valid votes</div>
+            <div class="label">@T["Valid votes"]</div>
             <div class="value">@s.ValidVotes.ToString("N0")</div>
-            <div class="sub">counted so far</div>
+            <div class="sub">@T["counted so far"]</div>
         </div>
         <div class="card stat">
-            <div class="label">Blank votes</div>
+            <div class="label">@T["Blank votes"]</div>
             <div class="value">@s.BlankVotes.ToString("N0")</div>
         </div>
         <div class="card stat">
-            <div class="label">Invalid votes</div>
+            <div class="label">@T["Invalid votes"]</div>
             <div class="value">@s.InvalidVotes.ToString("N0")</div>
         </div>
     </section>
@@ -73,7 +73,7 @@
     @* ---------- Outcome ---------- *@
     @if (!hasResults)
     {
-        <div class="alert alert-info">@Icon.Render("info") <div>No polling station sheets have been approved yet. Results appear here as soon as they are.</div></div>
+        <div class="alert alert-info">@Icon.Render("info") <div>@T["No polling station sheets have been approved yet. Results appear here as soon as they are."]</div></div>
     }
     else if (s.Presidential != null)
     {
@@ -84,19 +84,19 @@
                 @switch (p.Outcome)
                 {
                     case PresidentialOutcome.Elected:
-                        <strong>@Name(p.WinnerId)</strong><span> has more than half of the valid votes counted so far.</span>
+                        <span>@T.Html("<strong>{0}</strong> has more than half of the valid votes counted so far.", Name(p.WinnerId))</span>
                         break;
                     case PresidentialOutcome.Runoff:
-                        <span>No candidate has more than half of the valid votes counted so far (@p.MajorityThreshold.ToString("N0") needed). </span>
-                        <span>A runoff would be between <strong>@Name(p.RunoffContestantIds[0])</strong> and <strong>@Name(p.RunoffContestantIds[1])</strong>.</span>
+                        <span>@T["No candidate has more than half of the valid votes counted so far ({0} needed).", p.MajorityThreshold.ToString("N0")] </span>
+                        <span>@T.Html("A runoff would be between <strong>{0}</strong> and <strong>{1}</strong>.", Name(p.RunoffContestantIds[0]), Name(p.RunoffContestantIds[1]))</span>
                         break;
                     case PresidentialOutcome.TieRequiresResolution:
-                        <span>A tie between @string.Join(", ", p.TiedContestantIds.Select(id => Name(id))) decides the outcome and must be resolved under the law.</span>
+                        <span>@T["A tie between {0} decides the outcome and must be resolved under the law.", string.Join(", ", p.TiedContestantIds.Select(id => Name(id)))]</span>
                         break;
                 }
                 @if (!isFinal)
                 {
-                    <span class="muted"> Counting continues; this can change.</span>
+                    <span class="muted"> @T["Counting continues; this can change."]</span>
                 }
             </div>
         </div>
@@ -107,10 +107,10 @@
         <div class="alert alert-info" role="status">
             @Icon.Render("info")
             <div>
-                Projected allocation of <strong>@pr.TotalSeats seats</strong> (D'Hondt method, @pr.ThresholdPercent.ToString("0.##")% threshold) from the votes counted so far.
+                @T.Html("Projected allocation of <strong>{0} seats</strong> (D'Hondt method, {1}% threshold) from the votes counted so far.", pr.TotalSeats, pr.ThresholdPercent.ToString("0.##"))
                 @if (pr.LastSeatWinnerId.HasValue)
                 {
-                    <span>The last seat goes to <strong>@Name(pr.LastSeatWinnerId)</strong>@(pr.LastSeatDecidedByTie ? " (decided by a tie-break)" : ""); next in line: <strong>@Name(pr.NextInLineId)</strong>.</span>
+                    <span>@T.Html("The last seat goes to <strong>{0}</strong>; next in line: <strong>{1}</strong>.", Name(pr.LastSeatWinnerId), Name(pr.NextInLineId))@(pr.LastSeatDecidedByTie ? " " + T["(The last seat was decided by a tie-break.)"] : "")</span>
                 }
             </div>
         </div>
@@ -119,7 +119,7 @@
     <div class="grid grid-main">
         @* ---------- Contestant results ---------- *@
         <section class="card" aria-labelledby="results-heading">
-            <div class="card-header"><h2 id="results-heading">@(s.Type == ElectionType.Presidential ? "Candidates" : "Parties and coalitions")</h2></div>
+            <div class="card-header"><h2 id="results-heading">@(s.Type == ElectionType.Presidential ? T["Candidates"] : T["Parties and coalitions"])</h2></div>
             <div class="card-body stack-lg">
                 <partial name="_ContestantBars" model="s" />
                 @if (s.Parliamentary != null && hasResults)
@@ -132,18 +132,18 @@
         @* ---------- Map ---------- *@
         <section class="card" aria-labelledby="map-heading">
             <div class="card-header">
-                <h2 id="map-heading">By municipality</h2>
+                <h2 id="map-heading">@T["By municipality"]</h2>
                 <form method="get" action="@Model.PagePath" class="no-print">
                     <input type="hidden" name="roundId" value="@s.RoundId" />
-                    <label class="visually-hidden" for="map-mode">Map shows</label>
+                    <label class="visually-hidden" for="map-mode">@T["Map shows"]</label>
                     <select id="map-mode" name="map" style="width:auto;min-height:36px;padding:.25rem .5rem" onchange="this.form.submit()">
-                        <option value="">Leading @(s.Type == ElectionType.Presidential ? "candidate" : "party")</option>
+                        <option value="">@(s.Type == ElectionType.Presidential ? T["Leading candidate"] : T["Leading party"])</option>
                         @foreach (var c in b.Ballot)
                         {
-                            <option value="@c.Id" selected="@(c.Id == Model.MapContestantId)">Share: @c.Name</option>
+                            <option value="@c.Id" selected="@(c.Id == Model.MapContestantId)">@T["Share: {0}", c.Name]</option>
                         }
                     </select>
-                    <noscript><button class="btn btn-secondary btn-sm" type="submit">Show</button></noscript>
+                    <noscript><button class="btn btn-secondary btn-sm" type="submit">@T["Show"]</button></noscript>
                 </form>
             </div>
             <div class="card-body">
@@ -157,14 +157,14 @@
     {
         <section class="card" aria-labelledby="elected-heading">
             <div class="card-header">
-                <h2 id="elected-heading">Elected members@(isFinal ? "" : " (projected)")</h2>
-                <span class="muted small">Seats filled from the top of each party's list</span>
+                <h2 id="elected-heading">@(isFinal ? T["Elected members"] : T["Elected members (projected)"])</h2>
+                <span class="muted small">@T["Seats filled from the top of each party's list"]</span>
             </div>
             <div class="card-body grid grid-3">
                 @foreach (var party in Model.Elected)
                 {
                     <div>
-                        <h3 style="font-size:1rem;margin-bottom:.35rem">@party.Name <span class="muted" style="font-weight:400">· @party.Seats @(party.Seats == 1 ? "seat" : "seats")</span></h3>
+                        <h3 style="font-size:1rem;margin-bottom:.35rem">@party.Name <span class="muted" style="font-weight:400">· @(party.Seats == 1 ? T["1 seat"] : T["{0} seats", party.Seats])</span></h3>
                         <ol class="small" style="margin:0;padding-left:1.4rem">
                             @foreach (var m in party.Members)
                             {
@@ -173,9 +173,9 @@
                         </ol>
                         @if (party.Unfilled > 0)
                         {
-                            <div class="badge badge-bad" style="margin-top:.35rem">@Icon.Render("alert") @party.Unfilled seat@(party.Unfilled == 1 ? "" : "s") without a candidate on the list</div>
+                            <div class="badge badge-bad" style="margin-top:.35rem">@Icon.Render("alert") @T["Seats without a candidate on the list: {0}", party.Unfilled]</div>
                         }
-                        <a class="small" asp-controller="PartyLists" asp-action="Details" asp-route-id="@party.ContestantId">Full list</a>
+                        <a class="small" asp-controller="PartyLists" asp-action="Details" asp-route-id="@party.ContestantId">@T["Full list"]</a>
                     </div>
                 }
             </div>
@@ -185,23 +185,23 @@
     @* ---------- Table by municipality (also the accessible alternative to the map) ---------- *@
     <section class="card" aria-labelledby="municipality-table-heading">
         <div class="card-header">
-            <h2 id="municipality-table-heading">Municipality results</h2>
+            <h2 id="municipality-table-heading">@T["Municipality results"]</h2>
             <div class="cluster no-print">
-                <a class="btn btn-secondary btn-sm" asp-controller="Results" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") CSV by polling station</a>
+                <a class="btn btn-secondary btn-sm" asp-controller="Results" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") @T["CSV by polling station"]</a>
                 <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Municipalities" asp-route-id="@s.RoundId">JSON</a>
-                <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Summary" asp-route-id="@s.RoundId">Summary JSON</a>
+                <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Summary" asp-route-id="@s.RoundId">@T["Summary JSON"]</a>
             </div>
         </div>
         <div class="table-wrap">
             <table class="table">
-                <caption class="visually-hidden">Votes counted, stations reporting and leading contestant per municipality</caption>
+                <caption class="visually-hidden">@T["Votes counted, stations reporting and leading contestant per municipality"]</caption>
                 <thead>
                     <tr>
-                        <th scope="col">Municipality</th>
-                        <th scope="col">Stations reporting</th>
-                        <th scope="col">Leading</th>
-                        <th scope="col" class="num">Valid votes</th>
-                        <th scope="col"><span class="visually-hidden">Details</span></th>
+                        <th scope="col">@T["Municipality"]</th>
+                        <th scope="col">@T["Stations reporting"]</th>
+                        <th scope="col">@T["Leading"]</th>
+                        <th scope="col" class="num">@T["Valid votes"]</th>
+                        <th scope="col"><span class="visually-hidden">@T["Details"]</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -215,9 +215,9 @@
                                     <span class="small nowrap">@m.ReportingPercent.ToString("0.#")% <span class="muted">(@m.SheetsCounted/@m.PollingStations)</span></span>
                                 </div>
                             </td>
-                            <td>@(m.LeaderId.HasValue ? Name(m.LeaderId) : (m.ValidVotes > 0 ? "Tie" : "-"))</td>
+                            <td>@(m.LeaderId.HasValue ? Name(m.LeaderId) : (m.ValidVotes > 0 ? T["Tie"] : "-"))</td>
                             <td class="num">@m.ValidVotes.ToString("N0")</td>
-                            <td class="actions-cell"><a asp-controller="Results" asp-action="Municipality" asp-route-roundId="@s.RoundId" asp-route-id="@m.MunicipalityId" aria-label="Polling stations in @m.Name">Stations @Icon.Render("chevron-right")</a></td>
+                            <td class="actions-cell"><a asp-controller="Results" asp-action="Municipality" asp-route-roundId="@s.RoundId" asp-route-id="@m.MunicipalityId" aria-label="@T["Polling stations in {0}", m.Name]">@T["Stations"] @Icon.Render("chevron-right")</a></td>
                         </tr>
                     }
                 </tbody>

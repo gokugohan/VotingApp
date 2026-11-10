@@ -11,8 +11,8 @@
     var summary = string.Join(", ", ordered.Select(w => $"{w.Name} {w.Seats}"));
 }
 <div>
-    <h3>Seats <span class="muted small">(@total in total, @majority for a majority)</span></h3>
-    <div class="seats" role="img" aria-label="Projected seats: @summary">
+    <h3>@T["Seats"] <span class="muted small">@T["({0} in total, {1} for a majority)", total, majority]</span></h3>
+    <div class="seats" role="img" aria-label="@T["Projected seats: {0}", summary]">
         @foreach (var w in ordered)
         {
             for (var i = 0; i < w.Seats; i++)

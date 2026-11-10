@@ -8,46 +8,46 @@
     string Short(BallotContestant c) => string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym;
 }
 
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]">
+    <a asp-controller="Elections" asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span>
     <a asp-action="Round" asp-route-id="@s.RoundId">@s.ElectionName</a><span aria-hidden="true">/</span>
     <span>@m.Name</span>
 </nav>
 
 <div data-live="@Url.Action("Signature", new { id = s.RoundId })" data-live-signature="@ViewData["Signature"]" class="stack-lg">
     <div class="page-header" style="margin-bottom:0">
-        <div class="eyebrow">Municipality</div>
+        <div class="eyebrow">@T["Municipality"]</div>
         <h1>@m.Name</h1>
         <div class="cluster small">
-            <span class="badge badge-warn">@Icon.Render("info") Provisional</span>
-            <span class="muted">Only approved polling station sheets are shown.</span>
+            <span class="badge badge-warn">@Icon.Render("info") @T["Provisional"]</span>
+            <span class="muted">@T["Only approved polling station sheets are shown."]</span>
             <span class="muted" data-live-status aria-live="polite"></span>
         </div>
     </div>
 
-    <section class="grid grid-4" aria-label="Key figures">
+    <section class="grid grid-4" aria-label="@T["Key figures"]">
         <div class="card stat">
-            <div class="label">Stations reporting</div>
+            <div class="label">@T["Stations reporting"]</div>
             <div class="value">@m.ReportingPercent.ToString("0.#")%</div>
             <div class="meter" aria-hidden="true" style="margin-top:.5rem"><span style="width:@m.ReportingPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></span></div>
-            <div class="sub">@m.SheetsCounted of @m.PollingStations stations</div>
+            <div class="sub">@T["{0} of {1} stations", m.SheetsCounted, m.PollingStations]</div>
         </div>
         <div class="card stat">
-            <div class="label">Valid votes</div>
+            <div class="label">@T["Valid votes"]</div>
             <div class="value">@m.ValidVotes.ToString("N0")</div>
         </div>
         <div class="card stat" style="grid-column: span 2">
-            <div class="label">Leading</div>
-            <div class="value" style="font-size:1.35rem">@(m.LeaderId.HasValue ? names[m.LeaderId.Value] : (m.ValidVotes > 0 ? "Tie" : "No results yet"))</div>
+            <div class="label">@T["Leading"]</div>
+            <div class="value" style="font-size:1.35rem">@(m.LeaderId.HasValue ? names[m.LeaderId.Value] : (m.ValidVotes > 0 ? T["Tie"] : T["No results yet"]))</div>
             @if (m.LeaderId.HasValue && m.ValidVotes > 0)
             {
-                <div class="sub">@((m.Votes[m.LeaderId.Value] * 100m / m.ValidVotes).ToString("0.0"))% of valid votes</div>
+                <div class="sub">@T["{0}% of valid votes", (m.Votes[m.LeaderId.Value] * 100m / m.ValidVotes).ToString("0.0")]</div>
             }
         </div>
     </section>
 
     <section class="card" aria-labelledby="totals-heading">
-        <div class="card-header"><h2 id="totals-heading">Votes in @m.Name</h2></div>
+        <div class="card-header"><h2 id="totals-heading">@T["Votes in {0}", m.Name]</h2></div>
         <div class="card-body">
             <ol class="bars">
                 @foreach (var c in ranked)
@@ -68,23 +68,23 @@
 
     <section class="card" aria-labelledby="stations-heading">
         <div class="card-header">
-            <h2 id="stations-heading">Polling stations</h2>
-            <a class="btn btn-secondary btn-sm no-print" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") CSV (all municipalities)</a>
+            <h2 id="stations-heading">@T["Polling stations"]</h2>
+            <a class="btn btn-secondary btn-sm no-print" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") @T["CSV (all municipalities)"]</a>
         </div>
         <div class="table-wrap">
             <table class="table table-compact">
-                <caption class="visually-hidden">Published figures for each polling station in @m.Name</caption>
+                <caption class="visually-hidden">@T["Published figures for each polling station in {0}", m.Name]</caption>
                 <thead>
                     <tr>
-                        <th scope="col">Station</th>
-                        <th scope="col">Village</th>
+                        <th scope="col">@T["Station"]</th>
+                        <th scope="col">@T["Village"]</th>
                         @foreach (var c in Model.Ballot)
                         {
                             <th scope="col" class="num" title="@c.Name">@Short(c)</th>
                         }
-                        <th scope="col" class="num">Blank</th>
-                        <th scope="col" class="num">Invalid</th>
-                        <th scope="col">Signed sheet</th>
+                        <th scope="col" class="num">@T["Blank"]</th>
+                        <th scope="col" class="num">@T["Invalid"]</th>
+                        <th scope="col">@T["Signed sheet"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -104,25 +104,25 @@
                                 <td>
                                     @if (!string.IsNullOrEmpty(st.ScanPath))
                                     {
-                                        <a href="@st.ScanPath" target="_blank" rel="noopener">View @Icon.Render("external")<span class="visually-hidden"> signed sheet for @st.Station (opens in a new tab)</span></a>
+                                        <a href="@st.ScanPath" target="_blank" rel="noopener">@T["View"] @Icon.Render("external")<span class="visually-hidden"> @T["signed sheet for {0} (opens in a new tab)", st.Station]</span></a>
                                     }
                                     else
                                     {
-                                        <span class="muted">Not uploaded</span>
+                                        <span class="muted">@T["Not uploaded"]</span>
                                     }
                                 </td>
                             }
                             else
                             {
                                 <td colspan="@(Model.Ballot.Count + 3)">
-                                    <span class="badge">@(st.Status == null ? "Not yet received" : "Received, being checked")</span>
+                                    <span class="badge">@(st.Status == null ? T["Not yet received"] : T["Received, being checked"])</span>
                                 </td>
                             }
                         </tr>
                     }
                     @if (Model.Stations.Count == 0)
                     {
-                        <tr><td colspan="@(Model.Ballot.Count + 5)" class="empty">No polling stations are registered in this municipality.</td></tr>
+                        <tr><td colspan="@(Model.Ballot.Count + 5)" class="empty">@T["No polling stations are registered in this municipality."]</td></tr>
                     }
                 </tbody>
             </table>

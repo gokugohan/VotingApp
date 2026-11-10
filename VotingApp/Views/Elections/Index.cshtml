@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService Authz
 @{
-    ViewData["Title"] = "Elections";
+    ViewData["Title"] = T["Elections"];
     var canManage = (await Authz.AuthorizeAsync(User, Permissions.ManageElections)).Succeeded;
     var canWorkResults = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User,
         Permissions.EnterResults + "|" + Permissions.VerifyResults + "|" + Permissions.ApproveResults + "|" + Permissions.LockResults)).Succeeded;
@@ -18,18 +18,18 @@
 
 <div class="page-header spread">
     <div>
-        <h1>Elections</h1>
-        <p>Results, open data and, for staff, result sheet entry for each election round. Follow a party across elections under <a asp-controller="Parties" asp-action="Index">parties and coalitions</a>.</p>
+        <h1>@T["Elections"]</h1>
+        <p>@T["Results, open data and, for staff, result sheet entry for each election round."] <a asp-controller="Parties" asp-action="Index">@T["Follow a party across elections."]</a></p>
     </div>
     @if (canManage)
     {
-        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New election</a>
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") @T["New election"]</a>
     }
 </div>
 
 @if (!Model.Any())
 {
-    <div class="card"><div class="empty"><h3>No elections yet</h3>@if (canManage) { <p><a asp-action="Create">Create the first election</a></p> }</div></div>
+    <div class="card"><div class="empty"><h3>@T["No elections yet"]</h3>@if (canManage) { <p><a asp-action="Create">@T["Create the first election"]</a></p> }</div></div>
 }
 else
 {
@@ -39,8 +39,8 @@ else
             <article class="card">
                 <div class="card-body stack">
                     <div class="spread">
-                        <span class="eyebrow muted small" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">@(e.Type == ElectionType.Presidential ? "Presidential" : "Parliamentary") · @e.ElectionDate.ToString("d MMMM yyyy")</span>
-                        <span class="badge @StatusBadge(e.Status)">@e.Status</span>
+                        <span class="eyebrow muted small" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">@(e.Type == ElectionType.Presidential ? T["Presidential"] : T["Parliamentary"]) · @e.ElectionDate.ToString("d MMMM yyyy")</span>
+                        <span class="badge @StatusBadge(e.Status)">@T[e.Status.ToString()]</span>
                     </div>
                     <h2 style="margin:0">@e.Name</h2>
                     <ul style="list-style:none;margin:0;padding:0" class="stack">
@@ -48,17 +48,17 @@ else
                         {
                             <li class="spread" style="border-top:1px solid var(--border);padding-top:.75rem">
                                 <span>
-                                    <strong>@(e.Rounds.Count > 1 ? (r.Number == 1 ? "First round" : "Runoff") : "Results")</strong>
-                                    <span class="muted small"> · @r.VotingDate.ToString("d MMM yyyy") · @r.Status</span>
+                                    <strong>@(e.Rounds.Count > 1 ? (r.Number == 1 ? T["First round"] : T["Runoff"]) : T["Results"])</strong>
+                                    <span class="muted small"> · @r.VotingDate.ToString("d MMM yyyy") · @T[r.Status.ToString()]</span>
                                 </span>
                                 <span class="cluster">
                                     @if (r.Status >= ElectionStatus.Counting)
                                     {
-                                        <a class="btn btn-secondary btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@r.Id">@Icon.Render("chart") Results</a>
+                                        <a class="btn btn-secondary btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@r.Id">@Icon.Render("chart") @T["Results"]</a>
                                     }
                                     @if (canWorkResults)
                                     {
-                                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@r.Id">@Icon.Render("file") Result sheets</a>
+                                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@r.Id">@Icon.Render("file") @T["Result sheets"]</a>
                                     }
                                 </span>
                             </li>
@@ -67,7 +67,7 @@ else
                 </div>
                 @if (canManage)
                 {
-                    <div class="card-footer"><a asp-action="Details" asp-route-id="@e.Id">Manage election @Icon.Render("chevron-right")</a></div>
+                    <div class="card-footer"><a asp-action="Details" asp-route-id="@e.Id">@T["Manage election"] @Icon.Render("chevron-right")</a></div>
                 }
             </article>
         }

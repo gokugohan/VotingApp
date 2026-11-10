@@ -10,7 +10,7 @@
     var comparison = ViewData["Comparison"] as ResultsComparison;
     string Signed(decimal d) => (d > 0 ? "+" : d < 0 ? "−" : "±") + Math.Abs(d).ToString("0.0", CultureInfo.CurrentCulture);
 }
-<ol class="bars" aria-label="Votes by contestant, most votes first">
+<ol class="bars" aria-label="@T["Votes by contestant, most votes first"]">
     @foreach (var c in Model.Contestants)
     {
         <li>
@@ -18,22 +18,22 @@
                 <span class="name">@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="muted">(@c.Acronym)</span> }</span>
                 <span class="figures">
                     <strong>@c.PercentOfValid.ToString("0.00")%</strong>
-                    <span class="muted"> · @c.Votes.ToString("N0") votes</span>
+                    <span class="muted"> · @T["{0} votes", c.Votes.ToString("N0")]</span>
                     @if (c.Seats.HasValue)
                     {
-                        <span> · <strong>@c.Seats</strong> @(c.Seats == 1 ? "seat" : "seats")</span>
+                        <span> · <strong>@c.Seats</strong> @(c.Seats == 1 ? T["seat"] : T["seats"])</span>
                     }
                     @{ var prev = comparison?.For(c.ContestantId); }
                     @if (prev != null)
                     {
                         var dp = c.PercentOfValid - prev.PercentOfValid;
-                        <span class="change @(dp > 0 ? "up" : dp < 0 ? "down" : "")" title="@prev.PercentOfValid.ToString("0.00")% in @comparison.PreviousElectionName">
-                            @Signed(dp) pts@(c.Seats.HasValue && prev.Seats.HasValue ? $", {(c.Seats - prev.Seats > 0 ? "+" : c.Seats - prev.Seats < 0 ? "−" : "±")}{Math.Abs(c.Seats.Value - prev.Seats.Value)} seats" : "")
+                        <span class="change @(dp > 0 ? "up" : dp < 0 ? "down" : "")" title="@T["{0}% in {1}", prev.PercentOfValid.ToString("0.00"), comparison.PreviousElectionName]">
+                            @T["{0} pts", Signed(dp)]@(c.Seats.HasValue && prev.Seats.HasValue ? ", " + T["{0} seats", (c.Seats - prev.Seats > 0 ? "+" : c.Seats - prev.Seats < 0 ? "−" : "±") + Math.Abs(c.Seats.Value - prev.Seats.Value)] : "")
                         </span>
                     }
                     else if (comparison != null)
                     {
-                        <span class="change">new</span>
+                        <span class="change">@T["new"]</span>
                     }
                 </span>
             </div>
@@ -49,13 +49,13 @@
 </ol>
 @if (comparison != null)
 {
-    <div class="bars-note">Change compared with <a asp-controller="Results" asp-action="Round" asp-route-id="@comparison.PreviousRoundId">@comparison.PreviousElectionName</a> (@comparison.PreviousDate.Year), in percentage points of valid votes. "New" means no earlier result is linked.</div>
+    <div class="bars-note"><span>@T["Change compared with"] <a asp-controller="Results" asp-action="Round" asp-route-id="@comparison.PreviousRoundId">@comparison.PreviousElectionName</a> (@comparison.PreviousDate.Year). @T["In percentage points of valid votes; \"new\" means no earlier result is linked."]</span></div>
 }
 @if (presidential)
 {
-    <div class="bars-note"><span class="tick" aria-hidden="true"></span> Line marks 50% of valid votes: more than this wins in the first round.</div>
+    <div class="bars-note"><span class="tick" aria-hidden="true"></span> @T["Line marks 50% of valid votes: more than this wins in the first round."]</div>
 }
 else if (Model.Parliamentary != null)
 {
-    <div class="bars-note">Bars are scaled to the leading party. Parties below @Model.Parliamentary.ThresholdPercent.ToString("0.##")% of valid votes receive no seats.</div>
+    <div class="bars-note">@T["Bars are scaled to the leading party. Parties below {0}% of valid votes receive no seats.", Model.Parliamentary.ThresholdPercent.ToString("0.##")]</div>
 }

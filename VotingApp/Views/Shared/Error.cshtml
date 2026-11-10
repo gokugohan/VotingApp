@@ -1,16 +1,16 @@
-﻿@model ErrorViewModel
+@model ErrorViewModel
 @{
-    ViewData["Title"] = "Something went wrong";
+    ViewData["Title"] = T["Something went wrong"];
 }
 <div class="card form-narrow" style="margin:2rem auto">
     <div class="empty">
         @Icon.Render("alert")
-        <h1 style="font-size:1.4rem;margin-top:.5rem">Something went wrong</h1>
-        <p>The request could not be completed. Please try again in a moment.</p>
+        <h1 style="font-size:1.4rem;margin-top:.5rem">@T["Something went wrong"]</h1>
+        <p>@T["The request could not be completed. Please try again in a moment."]</p>
         @if (Model?.ShowRequestId == true)
         {
-            <p class="small">If you report this problem, quote reference <code>@Model.RequestId</code>.</p>
+            <p class="small">@T["If you report this problem, quote this reference:"] <code>@Model.RequestId</code></p>
         }
-        <a class="btn btn-secondary" asp-controller="Home" asp-action="Index">Back to results</a>
+        <a class="btn btn-secondary" asp-controller="Home" asp-action="Index">@T["Back to results"]</a>
     </div>
 </div>

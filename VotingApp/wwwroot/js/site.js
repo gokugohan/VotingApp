@@ -1,4 +1,4 @@
-﻿// Site behaviour: small, dependency-free, progressive enhancement only.
+// Site behaviour: small, dependency-free, progressive enhancement only.
 (function () {
     "use strict";
 
@@ -10,7 +10,7 @@
         if (theme === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", theme);
         try { if (theme === "system") localStorage.removeItem("theme"); else localStorage.setItem("theme", theme); } catch (e) { }
         document.querySelectorAll(".theme-toggle").forEach(function (btn) {
-            btn.setAttribute("aria-label", "Colour theme: " + theme);
+            btn.setAttribute("aria-label", (btn.getAttribute("data-label") || "Colour theme") + ": " + (btn.getAttribute("data-" + theme) || theme));
             btn.querySelectorAll("[data-theme-icon]").forEach(function (icon) {
                 icon.hidden = icon.getAttribute("data-theme-icon") !== theme;
             });
