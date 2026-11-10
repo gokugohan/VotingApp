@@ -7,6 +7,8 @@
     var presidential = Model.Type == ElectionType.Presidential;
     var max = presidential ? 100m : Math.Max(Model.Contestants.Select(c => c.PercentOfValid).DefaultIfEmpty(0).Max(), 1m);
     string W(decimal pct) => (pct * 100m / max).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+    var comparison = ViewData["Comparison"] as ResultsComparison;
+    string Signed(decimal d) => (d > 0 ? "+" : d < 0 ? "−" : "±") + Math.Abs(d).ToString("0.0", CultureInfo.CurrentCulture);
 }
 <ol class="bars" aria-label="Votes by contestant, most votes first">
     @foreach (var c in Model.Contestants)
@@ -21,6 +23,18 @@
                     {
                         <span> · <strong>@c.Seats</strong> @(c.Seats == 1 ? "seat" : "seats")</span>
                     }
+                    @{ var prev = comparison?.For(c.ContestantId); }
+                    @if (prev != null)
+                    {
+                        var dp = c.PercentOfValid - prev.PercentOfValid;
+                        <span class="change @(dp > 0 ? "up" : dp < 0 ? "down" : "")" title="@prev.PercentOfValid.ToString("0.00")% in @comparison.PreviousElectionName">
+                            @Signed(dp) pts@(c.Seats.HasValue && prev.Seats.HasValue ? $", {(c.Seats - prev.Seats > 0 ? "+" : c.Seats - prev.Seats < 0 ? "−" : "±")}{Math.Abs(c.Seats.Value - prev.Seats.Value)} seats" : "")
+                        </span>
+                    }
+                    else if (comparison != null)
+                    {
+                        <span class="change">new</span>
+                    }
                 </span>
             </div>
             <div class="track" aria-hidden="true">
@@ -33,6 +47,10 @@
         </li>
     }
 </ol>
+@if (comparison != null)
+{
+    <div class="bars-note">Change compared with <a asp-controller="Results" asp-action="Round" asp-route-id="@comparison.PreviousRoundId">@comparison.PreviousElectionName</a> (@comparison.PreviousDate.Year), in percentage points of valid votes. "New" means no earlier result is linked.</div>
+}
 @if (presidential)
 {
     <div class="bars-note"><span class="tick" aria-hidden="true"></span> Line marks 50% of valid votes: more than this wins in the first round.</div>

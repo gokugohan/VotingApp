@@ -1,0 +1,34 @@
+@model VotingApp.Controllers.PartyFormModel
+@{
+    var isNew = !Model.Id.HasValue;
+    ViewData["Title"] = isNew ? "New party" : "Edit " + Model.Name;
+}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Parties and coalitions</a><span aria-hidden="true">/</span><span>@(isNew ? "New" : Model.Name)</span></nav>
+<div class="page-header"><h1>@(isNew ? "New party or coalition" : "Edit party")</h1></div>
+<form asp-action="Save" method="post" class="card form-narrow">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="errors"></div>
+        <input type="hidden" asp-for="Id" />
+        <div class="field">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" />
+            <span class="hint">Renaming keeps the history: earlier ballots still show the name used at the time.</span>
+            <span asp-validation-for="Name" class="field-error"></span>
+        </div>
+        <div class="form-grid">
+            <div class="field"><label asp-for="Acronym"></label><input asp-for="Acronym" /></div>
+            <div class="field"><label asp-for="Kind">Type</label><select asp-for="Kind" asp-items="Html.GetEnumSelectList<PartyKind>()"></select></div>
+        </div>
+        <div class="field"><label asp-for="Notes">Notes <span class="muted">(optional)</span></label><textarea asp-for="Notes" rows="3"></textarea></div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+        </div>
+    </div>
+</form>
+@if (!isNew)
+{
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-narrow" style="margin-top:1rem" data-confirm="Delete this party record? Only possible if it has never been on a ballot.">
+        <button type="submit" class="btn btn-ghost">@Icon.Render("trash") Delete party</button>
+    </form>
+}

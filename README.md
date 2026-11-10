@@ -37,6 +37,8 @@ Package versions are managed centrally in `Directory.Packages.props`.
 5. **Lock**: national tabulation. Presidential runoffs are created from approved first-round results.
 6. **Elected members** (parliamentary): each party's projected seats are filled from the top of its effective list and shown on the public results; a party that wins more seats than it has candidates is flagged.
 
+**Parties over time.** Parties and coalitions have one lasting record (*Manage → Parties and coalitions*). When a party is put on a parliamentary ballot, pick its record (or type a new name and a record is created; names are matched ignoring case). A contestant can be re-linked later if a name was spelled differently. Results pages then show each contestant's change against the same round of the previous election of the same type (presidential candidates are matched through their candidate profile), and each party has a public history page.
+
 **Polling stations per election.** When an election opens, it keeps its own copy of the polling station list (name, village, post, municipality). Stations added, moved, renamed or closed afterwards never change an election that is running or decided; they apply to elections that open later. A station cannot be deleted while an uncertified election uses it.
 
 ### Public results (open data)

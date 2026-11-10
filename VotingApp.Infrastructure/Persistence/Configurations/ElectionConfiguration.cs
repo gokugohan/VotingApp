@@ -38,6 +38,7 @@ namespace VotingApp.Infrastructure.Persistence.Configurations
                 e.Property(x => x.Description).HasMaxLength(2000);
                 e.HasIndex(x => new { x.ElectionId, x.Name }).IsUnique();
                 e.HasOne(x => x.Candidate).WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Party).WithMany().HasForeignKey(x => x.PartyId).OnDelete(DeleteBehavior.Restrict);
                 e.HasMany(x => x.ListCandidates).WithOne(l => l.Contestant).HasForeignKey(l => l.ContestantId).OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -75,6 +76,14 @@ namespace VotingApp.Infrastructure.Persistence.Configurations
             {
                 e.HasIndex(x => new { x.ResultSheetId, x.ContestantId }).IsUnique();
                 e.HasOne(x => x.Contestant).WithMany().HasForeignKey(x => x.ContestantId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<Party>(e =>
+            {
+                e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+                e.Property(x => x.Acronym).HasMaxLength(30);
+                e.Property(x => x.Notes).HasMaxLength(2000);
+                e.HasIndex(x => x.Name).IsUnique();
             });
 
             builder.Entity<ElectionStation>(e =>

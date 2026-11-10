@@ -28,10 +28,12 @@ namespace VotingApp.Controllers
         private readonly UserManager<AppUser> users;
         private readonly PartyListService lists;
         private readonly StationRosterService rosters;
+        private readonly PartyService parties;
 
         public ElectionsController(ElectionAdminService elections, CandidateService candidates, UserScopeService scopes,
-            AreaService areas, UserManager<AppUser> users, PartyListService lists, StationRosterService rosters)
+            AreaService areas, UserManager<AppUser> users, PartyListService lists, StationRosterService rosters, PartyService parties)
         {
+            this.parties = parties;
             this.lists = lists;
             this.rosters = rosters;
             this.elections = elections;
@@ -74,6 +76,8 @@ namespace VotingApp.Controllers
             ViewData["Candidates"] = new SelectList(await candidates.ListAsync(HttpContext.RequestAborted), "Id", "Name");
             ViewData["ListStatuses"] = (await lists.GetStatusesAsync(id, HttpContext.RequestAborted)).ToDictionary(s => s.ContestantId);
             ViewData["Roster"] = await rosters.GetForElectionAsync(id, HttpContext.RequestAborted);
+            var registry = (await parties.ListAsync(HttpContext.RequestAborted)).Select(p => p.Party).ToList();
+            ViewData["Parties"] = registry;
             return View(election);
         }
 
@@ -88,9 +92,19 @@ namespace VotingApp.Controllers
                 return RedirectToAction(nameof(Details), new { id = model.ElectionId });
             }
             var result = await elections.AddContestantAsync(model.ElectionId,
-                new AddContestantInput(model.Type, model.Name, model.Acronym, model.CandidateId), HttpContext.RequestAborted);
-            Flash(result.Succeeded ? $"Added {model.Name}." : result.Error, error: !result.Succeeded);
+                new AddContestantInput(model.Type, model.Name, model.Acronym, model.CandidateId, model.PartyId), HttpContext.RequestAborted);
+            Flash(result.Succeeded ? "Added to the ballot." : result.Error, error: !result.Succeeded);
             return RedirectToAction(nameof(Details), new { id = model.ElectionId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.ManageElections)]
+        public async Task<IActionResult> LinkParty(Guid electionId, Guid contestantId, Guid? partyId)
+        {
+            var result = await parties.LinkContestantAsync(contestantId, partyId, HttpContext.RequestAborted);
+            Flash(result.Succeeded ? "Party link updated." : result.Error, error: !result.Succeeded);
+            return RedirectToAction(nameof(Details), new { id = electionId });
         }
 
         [HttpPost]

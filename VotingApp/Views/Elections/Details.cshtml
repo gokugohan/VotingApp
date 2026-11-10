@@ -7,6 +7,8 @@
     var listStatuses = ViewData["ListStatuses"] as Dictionary<Guid, PartyListStatus> ?? new Dictionary<Guid, PartyListStatus>();
     var parliamentary = Model.Type == ElectionType.Parliamentary;
     var roster = ViewData["Roster"] as StationRoster;
+    var registry = ViewData["Parties"] as List<Party> ?? new List<Party>();
+    var partyNames = registry.ToDictionary(p => p.Id, p => p.Name);
     var steps = Enum.GetValues<ElectionStatus>();
     string NextHelp(ElectionStatus s) => s switch
     {
@@ -44,7 +46,28 @@
                             {
                                 <tr>
                                     <td class="num">@rc.BallotPosition</td>
-                                    <th scope="row">@rc.Contestant.Name @if (!string.IsNullOrEmpty(rc.Contestant.Acronym)) { <span class="muted">(@rc.Contestant.Acronym)</span> }</th>
+                                    <th scope="row">@rc.Contestant.Name @if (!string.IsNullOrEmpty(rc.Contestant.Acronym)) { <span class="muted">(@rc.Contestant.Acronym)</span> }
+                                        @if (parliamentary)
+                                        {
+                                            <form asp-action="LinkParty" method="post" class="cluster" style="margin-top:.25rem;font-weight:400">
+                                                <input type="hidden" name="electionId" value="@Model.Id" />
+                                                <input type="hidden" name="contestantId" value="@rc.ContestantId" />
+                                                <label class="visually-hidden" for="party-@rc.ContestantId">Party record for @rc.Contestant.Name</label>
+                                                <select id="party-@rc.ContestantId" name="partyId" style="width:auto;min-height:32px;padding:.15rem .4rem;font-size:.85rem" onchange="this.form.submit()">
+                                                    <option value="">Not linked</option>
+                                                    @foreach (var p in registry)
+                                                    {
+                                                        <option value="@p.Id" selected="@(p.Id == rc.Contestant.PartyId)">Record: @p.Name</option>
+                                                    }
+                                                </select>
+                                                @if (rc.Contestant.PartyId.HasValue)
+                                                {
+                                                    <a class="small" asp-controller="Parties" asp-action="Details" asp-route-id="@rc.Contestant.PartyId">history</a>
+                                                }
+                                                <noscript><button class="btn btn-ghost btn-sm">Link</button></noscript>
+                                            </form>
+                                        }
+                                    </th>
                                     <td>
                                         @if (parliamentary && listStatuses.TryGetValue(rc.ContestantId, out var ls))
                                         {
@@ -88,9 +111,23 @@
                 <form asp-action="AddContestant" method="post" class="card-body">
                     <input type="hidden" name="ElectionId" value="@Model.Id" />
                     <div class="form-grid">
+                        @if (parliamentary && registry.Count > 0)
+                        {
+                            <div class="field" style="grid-column:1/-1">
+                                <label for="c-party">Party record</label>
+                                <select id="c-party" name="PartyId">
+                                    <option value="">New party (type the name below)</option>
+                                    @foreach (var p in registry)
+                                    {
+                                        <option value="@p.Id">@p.Name @(string.IsNullOrEmpty(p.Acronym) ? "" : "(" + p.Acronym + ")")</option>
+                                    }
+                                </select>
+                                <span class="hint">Choose the party that stood in earlier elections so results can be compared. Leave the name empty to use the record's name.</span>
+                            </div>
+                        }
                         <div class="field">
-                            <label for="c-name">Name</label>
-                            <input id="c-name" name="Name" required maxlength="200" />
+                            <label for="c-name">Name@(parliamentary ? " on this ballot" : "")</label>
+                            <input id="c-name" name="Name" maxlength="200" required="@(!parliamentary)" />
                         </div>
                         <div class="field">
                             <label for="c-acronym">Acronym <span class="muted">(optional)</span></label>

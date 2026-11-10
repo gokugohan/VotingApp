@@ -13,7 +13,7 @@ namespace VotingApp.Application.Elections
 {
     public sealed record CreateElectionInput(string Name, ElectionType Type, DateTime ElectionDate, int? TotalSeats, decimal? ThresholdPercent);
 
-    public sealed record AddContestantInput(ContestantType Type, string Name, string Acronym, Guid? CandidateId);
+    public sealed record AddContestantInput(ContestantType Type, string Name, string Acronym, Guid? CandidateId, Guid? PartyId = null);
 
     /// <summary>Election set-up: elections, rounds, ballots and the presidential runoff.</summary>
     public class ElectionAdminService
@@ -22,9 +22,11 @@ namespace VotingApp.Application.Elections
         private readonly ElectionResultsService results;
         private readonly PartyListService lists;
         private readonly StationRosterService rosters;
+        private readonly PartyService parties;
 
-        public ElectionAdminService(IAppDbContext db, ElectionResultsService results, PartyListService lists, StationRosterService rosters)
+        public ElectionAdminService(IAppDbContext db, ElectionResultsService results, PartyListService lists, StationRosterService rosters, PartyService parties)
         {
+            this.parties = parties;
             this.db = db;
             this.results = results;
             this.lists = lists;
@@ -83,6 +85,23 @@ namespace VotingApp.Application.Elections
             if (election == null) return OperationResult<Guid>.NotFound("Election not found.");
             if (election.Status != ElectionStatus.Setup || election.Rounds.Count > 1)
                 return OperationResult<Guid>.Fail(FailureKind.Conflict, "Contestants can only be added while the first round is in set-up.");
+            // Parties and coalitions link to their lasting record: the one chosen, or found/created by name.
+            Party party = null;
+            if (input.Type != ContestantType.Candidate)
+            {
+                if (input.PartyId.HasValue)
+                {
+                    party = await db.Parties.FirstOrDefaultAsync(p => p.Id == input.PartyId, ct);
+                    if (party == null) return OperationResult<Guid>.NotFound("Party not found.");
+                    input = input with { Name = string.IsNullOrWhiteSpace(input.Name) ? party.Name : input.Name, Acronym = input.Acronym ?? party.Acronym };
+                }
+                else if (!string.IsNullOrWhiteSpace(input.Name))
+                {
+                    party = await parties.FindOrCreateAsync(input.Name, input.Acronym,
+                        input.Type == ContestantType.Coalition ? PartyKind.Coalition : PartyKind.Party, ct);
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(input.Name))
                 return OperationResult<Guid>.Fail(FailureKind.Validation, "Name is required.");
 
@@ -101,7 +120,8 @@ namespace VotingApp.Application.Elections
                 Type = input.Type,
                 Name = input.Name.Trim(),
                 Acronym = input.Acronym?.Trim(),
-                CandidateId = input.CandidateId,
+                CandidateId = input.Type == ContestantType.Candidate ? input.CandidateId : null,
+                PartyId = party?.Id,
             };
             db.Contestants.Add(contestant);
 

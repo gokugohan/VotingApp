@@ -7,6 +7,7 @@
     string Name(Guid? id) => id.HasValue && names.TryGetValue(id.Value, out var n) ? n : "-";
     var isFinal = s.RoundStatus == ElectionStatus.Certified;
     var typeLabel = s.Type == ElectionType.Presidential ? "Presidential election" : "Parliamentary election";
+    ViewData["Comparison"] = Model.Comparison;
 }
 
 <div data-live="@Url.Action("Signature", "Results", new { id = s.RoundId })" data-live-signature="@Model.Signature" class="stack-lg">

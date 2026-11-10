@@ -22,9 +22,12 @@ namespace VotingApp.Controllers
         private readonly PublicResultsService publicResults;
         private readonly AreaService areas;
         private readonly PartyListService lists;
+        private readonly ResultsComparisonService comparisons;
 
-        public ResultsController(ElectionResultsService results, PublicResultsService publicResults, AreaService areas, PartyListService lists)
+        public ResultsController(ElectionResultsService results, PublicResultsService publicResults, AreaService areas, PartyListService lists,
+            ResultsComparisonService comparisons)
         {
+            this.comparisons = comparisons;
             this.results = results;
             this.publicResults = publicResults;
             this.areas = areas;
@@ -33,13 +36,13 @@ namespace VotingApp.Controllers
 
         public async Task<IActionResult> Round(Guid id, Guid? map)
         {
-            var page = await BuildPageAsync(results, publicResults, lists, id, map, Url.Action(nameof(Round), new { id }));
+            var page = await BuildPageAsync(results, publicResults, lists, comparisons, id, map, Url.Action(nameof(Round), new { id }));
             return page == null ? NotFound() : View(page);
         }
 
         /// <summary>Shared by the home page: everything the results partial needs for one round.</summary>
         internal static async Task<RoundResultsPage> BuildPageAsync(ElectionResultsService results, PublicResultsService publicResults,
-            PartyListService lists, Guid roundId, Guid? mapContestantId, string pagePath)
+            PartyListService lists, ResultsComparisonService comparisons, Guid roundId, Guid? mapContestantId, string pagePath)
         {
             var summary = await results.GetSummaryAsync(roundId, ResultSheetStatus.Approved);
             if (summary == null) return null;
@@ -53,6 +56,7 @@ namespace VotingApp.Controllers
                 MapContestantId = summary.Contestants.Any(c => c.ContestantId == mapContestantId) ? mapContestantId : null,
                 PagePath = pagePath,
                 Elected = elected,
+                Comparison = summary.SheetsCounted == 0 ? null : await comparisons.GetAsync(roundId),
             };
         }
 

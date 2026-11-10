@@ -184,12 +184,17 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid?>("PartyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CandidateId");
+
+                    b.HasIndex("PartyId");
 
                     b.HasIndex("ElectionId", "Name")
                         .IsUnique();
@@ -316,6 +321,39 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ElectionStations");
+                });
+
+            modelBuilder.Entity("VotingApp.Domain.Elections.Party", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Acronym")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Parties");
                 });
 
             modelBuilder.Entity("VotingApp.Domain.Elections.PartyListCandidate", b =>
@@ -794,9 +832,16 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("VotingApp.Domain.Elections.Party", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Candidate");
 
                     b.Navigation("Election");
+
+                    b.Navigation("Party");
                 });
 
             modelBuilder.Entity("VotingApp.Domain.Elections.ElectionRound", b =>

@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Authorization
 @using VotingApp.Application.Security
 @inject IAuthorizationService Authz
 @{
@@ -58,6 +58,7 @@
                             }
                             <span class="menu-label">Reference data</span>
                             <a asp-area="" asp-controller="Candidates" asp-action="Index">@Icon.Render("user") Candidates</a>
+                            <a asp-area="" asp-controller="Parties" asp-action="Index">@Icon.Render("landmark") Parties and coalitions</a>
                             <a asp-area="" asp-controller="PollingStationAreas" asp-action="Index">@Icon.Render("pin") Polling stations</a>
                             <a asp-area="" asp-controller="Areas" asp-action="Index">@Icon.Render("map") Areas</a>
                             @if (isAdmin || canAudit)

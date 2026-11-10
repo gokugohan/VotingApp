@@ -1,0 +1,72 @@
+@model Party
+@using VotingApp.Application.Security
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService Authz
+@{
+    ViewData["Title"] = Model.Name;
+    var history = (List<PartyHistoryRow>)ViewData["History"];
+    var canManage = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User, Permissions.ManageElections)).Succeeded;
+    var withSeats = history.Any(h => h.Seats.HasValue);
+}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Parties and coalitions</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<div class="page-header spread">
+    <div>
+        <div class="eyebrow">@Model.Kind</div>
+        <h1>@Model.Name @if (!string.IsNullOrEmpty(Model.Acronym)) { <span class="muted">(@Model.Acronym)</span> }</h1>
+        @if (!string.IsNullOrEmpty(Model.Notes)) { <p>@Model.Notes</p> }
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">@Icon.Render("pencil") Edit</a>
+    }
+</div>
+
+<section class="card" aria-labelledby="history-heading">
+    <div class="card-header"><h2 id="history-heading">Results over time</h2><span class="muted small">Approved polling station sheets only</span></div>
+    @if (history.Count == 0)
+    {
+        <div class="empty">No published results yet.</div>
+    }
+    else
+    {
+        <div class="card-body">
+            @{ var max = Math.Max(history.Max(h => h.PercentOfValid), 1m); }
+            <ol class="bars" aria-label="Share of valid votes by election, newest first">
+                @foreach (var h in history)
+                {
+                    <li>
+                        <div class="row1">
+                            <span class="name"><a asp-controller="Results" asp-action="Round" asp-route-id="@h.RoundId">@h.ElectionName</a> <span class="muted small">@h.ElectionDate.Year</span></span>
+                            <span class="figures"><strong>@h.PercentOfValid.ToString("0.00")%</strong>
+                                @if (h.Seats.HasValue) { <span> · <strong>@h.Seats</strong> seats</span> }
+                            </span>
+                        </div>
+                        <div class="track" aria-hidden="true"><div class="fill" style="width:@((h.PercentOfValid * 100m / max).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div></div>
+                    </li>
+                }
+            </ol>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <caption class="visually-hidden">Results of @Model.Name in each election</caption>
+                <thead><tr><th scope="col">Election</th><th scope="col">Name on the ballot</th><th scope="col" class="num">Votes</th><th scope="col" class="num">% of valid</th>@if (withSeats) { <th scope="col" class="num">Seats</th> }<th scope="col">Status</th></tr></thead>
+                <tbody>
+                    @foreach (var h in history)
+                    {
+                        <tr>
+                            <th scope="row"><a asp-controller="Results" asp-action="Round" asp-route-id="@h.RoundId">@h.ElectionName</a><div class="muted small" style="font-weight:400">@h.ElectionDate.ToString("d MMM yyyy")</div></th>
+                            <td>@h.NameOnBallot</td>
+                            <td class="num">@h.Votes.ToString("N0")</td>
+                            <td class="num">@h.PercentOfValid.ToString("0.00")%</td>
+                            @if (withSeats) { <td class="num">@h.Seats</td> }
+                            <td>
+                                @if (h.RoundStatus == ElectionStatus.Certified) { <span class="badge badge-ok">Certified</span> }
+                                else { <span class="badge badge-warn">Provisional · @h.ReportingPercent.ToString("0.#")% reporting</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

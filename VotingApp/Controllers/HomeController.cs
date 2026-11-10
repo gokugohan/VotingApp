@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,9 +16,12 @@ namespace VotingApp.Controllers
         private readonly PublicResultsService publicResults;
         private readonly ElectionResultsService results;
         private readonly PartyListService lists;
+        private readonly ResultsComparisonService comparisons;
 
-        public HomeController(AreaService areas, PublicResultsService publicResults, ElectionResultsService results, PartyListService lists)
+        public HomeController(AreaService areas, PublicResultsService publicResults, ElectionResultsService results, PartyListService lists,
+            ResultsComparisonService comparisons)
         {
+            this.comparisons = comparisons;
             this.lists = lists;
             this.areas = areas;
             this.publicResults = publicResults;
@@ -34,7 +37,7 @@ namespace VotingApp.Controllers
             if (roundId.HasValue && selected?.RoundId != roundId) return NotFound();
             if (selected == null) return View((RoundResultsPage)null);
 
-            var page = await ResultsController.BuildPageAsync(results, publicResults, lists, selected.RoundId, map,
+            var page = await ResultsController.BuildPageAsync(results, publicResults, lists, comparisons, selected.RoundId, map,
                 Url.Action(nameof(Index)));
             page.Rounds = rounds;
             return View(page);

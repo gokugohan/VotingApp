@@ -1,0 +1,40 @@
+@model List<PartySummary>
+@using VotingApp.Application.Security
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService Authz
+@{
+    ViewData["Title"] = "Parties and coalitions";
+    var canManage = User.Identity?.IsAuthenticated == true && (await Authz.AuthorizeAsync(User, Permissions.ManageElections)).Succeeded;
+}
+<div class="page-header spread">
+    <div>
+        <h1>Parties and coalitions</h1>
+        <p>Each party has one record across elections, so its results can be followed over time.</p>
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New party</a>
+    }
+</div>
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th scope="col">Name</th><th scope="col">Acronym</th><th scope="col">Type</th><th scope="col" class="num">Elections</th></tr></thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    <tr>
+                        <th scope="row"><a asp-action="Details" asp-route-id="@row.Party.Id">@row.Party.Name</a></th>
+                        <td>@row.Party.Acronym</td>
+                        <td>@row.Party.Kind</td>
+                        <td class="num">@row.Elections</td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="4" class="empty">No parties yet. They are added when you put a party on a parliamentary ballot.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

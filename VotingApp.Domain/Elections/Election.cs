@@ -56,9 +56,13 @@ namespace VotingApp.Domain.Elections
         public string LogoPath { get; set; }
         public string Description { get; set; }
 
-        /// <summary>Optional link to the legacy candidate record (profile, photo).</summary>
+        /// <summary>Presidential: the candidate's lasting profile (photo, biography; links results across elections).</summary>
         public Guid? CandidateId { get; set; }
         public Candidate Candidate { get; set; }
+
+        /// <summary>Parliamentary: the lasting party or coalition record (links results across elections).</summary>
+        public Guid? PartyId { get; set; }
+        public Party Party { get; set; }
 
         /// <summary>Parliamentary: the ordered closed list.</summary>
         public ICollection<PartyListCandidate> ListCandidates { get; set; } = new List<PartyListCandidate>();

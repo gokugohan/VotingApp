@@ -31,7 +31,7 @@ namespace VotingApp.Models
     {
         public Guid ElectionId { get; set; }
 
-        [Required, StringLength(200)]
+        [StringLength(200)]
         public string Name { get; set; }
 
         [StringLength(30)]
@@ -41,6 +41,9 @@ namespace VotingApp.Models
 
         [Display(Name = "Linked candidate profile")]
         public Guid? CandidateId { get; set; }
+
+        /// <summary>Parliamentary: an existing party record (otherwise one is found or created by name).</summary>
+        public Guid? PartyId { get; set; }
     }
 
     public class ContestantVoteField
@@ -134,6 +137,8 @@ namespace VotingApp.Models
         public string PagePath { get; set; }
         /// <summary>Parliamentary only: who fills the projected seats.</summary>
         public IReadOnlyList<PartyElected> Elected { get; set; }
+        /// <summary>Same round of the previous election of this type, if any.</summary>
+        public ResultsComparison Comparison { get; set; }
     }
 
     public class PartyListForm

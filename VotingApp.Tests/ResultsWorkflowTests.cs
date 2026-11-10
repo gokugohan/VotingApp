@@ -37,6 +37,8 @@ namespace VotingApp.Tests
         public ResultSheetService Sheets { get; }
         public UserScopeService Scopes { get; }
         public StationRosterService Rosters { get; }
+        public PartyService Parties { get; }
+        public ResultsComparisonService Comparisons { get; }
         public PublicResultsService Public { get; }
 
         public Fixture()
@@ -47,7 +49,9 @@ namespace VotingApp.Tests
             Results = new ElectionResultsService(Db, Cache,
                 new PresidentialResultCalculator(), new ParliamentarySeatAllocator(), Rosters);
             Lists = new PartyListService(Db, new PartyListValidator(), Cache);
-            Admin = new ElectionAdminService(Db, Results, Lists, Rosters);
+            Parties = new PartyService(Db, Results);
+            Comparisons = new ResultsComparisonService(Db, Results, Cache);
+            Admin = new ElectionAdminService(Db, Results, Lists, Rosters, Parties);
             Scopes = new UserScopeService(Db, User);
             Sheets = new ResultSheetService(Db, User, Scopes, new ResultSheetValidator(), Results, Rosters);
             Public = new PublicResultsService(Db, Cache, Rosters);

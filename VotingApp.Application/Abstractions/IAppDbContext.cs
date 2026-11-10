@@ -28,6 +28,7 @@ namespace VotingApp.Application.Abstractions
         DbSet<ResultSheetEntry> ResultSheetEntries { get; }
         DbSet<UserAreaAssignment> UserAreaAssignments { get; }
         DbSet<ElectionStation> ElectionStations { get; }
+        DbSet<Party> Parties { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

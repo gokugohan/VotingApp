@@ -329,3 +329,8 @@ table.table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
   body { background: #fff; color: #000; }
   .card { box-shadow: none; border-color: #999; }
 }
+
+/* ---------- Change vs previous election (text carries the meaning; colour only reinforces) ---------- */
+.change { display: inline-block; margin-left: .35rem; padding: 0 .4rem; border-radius: 999px; font-size: .8125rem; font-weight: 600; background: var(--surface-3); color: var(--text-2); white-space: nowrap; }
+.change.up { background: var(--ok-bg); color: var(--ok-text); }
+.change.down { background: var(--bad-bg); color: var(--bad-text); }
