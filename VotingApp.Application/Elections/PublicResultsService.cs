@@ -71,11 +71,13 @@ namespace VotingApp.Application.Elections
         private const int CodeLength = AreaHierarchy.MunicipalityCodeLength;
         private readonly IAppDbContext db;
         private readonly RoundResultsCache cache;
+        private readonly StationRosterService rosters;
 
-        public PublicResultsService(IAppDbContext db, RoundResultsCache cache)
+        public PublicResultsService(IAppDbContext db, RoundResultsCache cache, StationRosterService rosters)
         {
             this.db = db;
             this.cache = cache;
+            this.rosters = rosters;
         }
 
         /// <summary>Cache scope for data that is not tied to one round (the list of published rounds).</summary>
@@ -118,52 +120,54 @@ namespace VotingApp.Application.Elections
         public Task<RoundBreakdown> GetBreakdownAsync(Guid roundId, CancellationToken ct = default) =>
             cache.GetOrBuildAsync(roundId, "breakdown", () => BuildBreakdownAsync(roundId, CancellationToken.None));
 
+        /// <summary>A round's sheets, read once per change and shared by the breakdown, station pages and CSV.</summary>
+        private sealed record SheetSnapshot(
+            ResultSheetStatus Status, int? RegisteredVoters, int? BallotsReceived, int? BallotsUsed, int? BallotsSpoiled,
+            int? BallotsUnused, int BlankVotes, int InvalidVotes, string ScanPath, IReadOnlyDictionary<Guid, int> Votes)
+        {
+            public bool IsCounted => Status >= ResultSheetStatus.Approved;
+        }
+
+        private Task<IReadOnlyDictionary<Guid, SheetSnapshot>> GetSheetIndexAsync(Guid roundId) =>
+            cache.GetOrBuildAsync<IReadOnlyDictionary<Guid, SheetSnapshot>>(roundId, "sheets", async () =>
+            {
+                var sheets = await db.ResultSheets.AsNoTracking()
+                    .Where(s => s.ElectionRoundId == roundId)
+                    .Include(s => s.Entries)
+                    .ToListAsync();
+                return sheets.ToDictionary(s => s.PollingStationAreaId, s => new SheetSnapshot(
+                    s.Status, s.RegisteredVoters, s.BallotsReceived, s.BallotsUsed, s.BallotsSpoiled, s.BallotsUnused,
+                    s.BlankVotes, s.InvalidVotes, s.ScanPath, s.Entries.ToDictionary(e => e.ContestantId, e => e.Votes)));
+            });
+
         private async Task<RoundBreakdown> BuildBreakdownAsync(Guid roundId, CancellationToken ct)
         {
             if (!await db.ElectionRounds.AnyAsync(r => r.Id == roundId, ct)) return null;
 
             var ballot = await GetBallotAsync(roundId, ct);
-            var municipalities = await db.Areas.AsNoTracking()
-                .Where(a => a.Level == AreaHierarchy.Municipality)
-                .OrderBy(a => a.Name)
-                .Select(a => new { a.Id, a.Name })
-                .ToListAsync(ct);
+            var roster = await rosters.GetForRoundAsync(roundId, ct);
+            var sheets = await GetSheetIndexAsync(roundId);
 
-            var stations = await db.PollingStationAreas
-                .GroupBy(p => p.AreaId.Substring(0, CodeLength))
-                .Select(g => new { MunicipalityId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.MunicipalityId, x => x.Count, ct);
-
-            var counted = await db.ResultSheets
-                .Where(s => s.ElectionRoundId == roundId && s.Status >= ResultSheetStatus.Approved)
-                .GroupBy(s => s.PollingStationArea.AreaId.Substring(0, CodeLength))
-                .Select(g => new { MunicipalityId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.MunicipalityId, x => x.Count, ct);
-
-            var votes = await db.ResultSheetEntries
-                .Where(e => e.ResultSheet.ElectionRoundId == roundId && e.ResultSheet.Status >= ResultSheetStatus.Approved)
-                .GroupBy(e => new { MunicipalityId = e.ResultSheet.PollingStationArea.AreaId.Substring(0, CodeLength), e.ContestantId })
-                .Select(g => new { g.Key.MunicipalityId, g.Key.ContestantId, Votes = g.Sum(e => (long)e.Votes) })
-                .ToListAsync(ct);
-            var votesByMunicipality = votes.ToLookup(v => v.MunicipalityId);
-
-            var rows = municipalities.Select(m =>
-            {
-                var perContestant = ballot.ToDictionary(c => c.Id,
-                    c => votesByMunicipality[m.Id].Where(v => v.ContestantId == c.Id).Sum(v => v.Votes));
-                return new MunicipalityResult(m.Id, m.Name, MapKeys.ForMunicipality(m.Id),
-                    stations.TryGetValue(m.Id, out var s) ? s : 0,
-                    counted.TryGetValue(m.Id, out var c) ? c : 0,
-                    perContestant.Values.Sum(),
-                    perContestant);
-            }).ToList();
+            var rows = roster.Stations
+                .GroupBy(st => new { st.MunicipalityId, st.MunicipalityName })
+                .OrderBy(g => g.Key.MunicipalityName)
+                .Select(g =>
+                {
+                    var counted = g.Select(st => sheets.TryGetValue(st.PollingStationAreaId, out var sh) ? sh : null)
+                        .Where(sh => sh != null && sh.IsCounted).ToList();
+                    var perContestant = ballot.ToDictionary(c => c.Id,
+                        c => counted.Sum(sh => sh.Votes.TryGetValue(c.Id, out var v) ? (long)v : 0));
+                    return new MunicipalityResult(g.Key.MunicipalityId, g.Key.MunicipalityName, MapKeys.ForMunicipality(g.Key.MunicipalityId),
+                        g.Count(), counted.Count, perContestant.Values.Sum(), perContestant);
+                })
+                .ToList();
 
             return new RoundBreakdown(roundId, ballot, rows);
         }
 
         /// <summary>
-        /// Every polling station in a municipality with its published figures. Sheets that are not yet
-        /// approved show only their status, never their figures.
+        /// Every polling station of the election in a municipality with its published figures. Sheets that
+        /// are not yet approved show only their status, never their figures.
         /// </summary>
         public async Task<IReadOnlyList<StationResult>> GetStationsAsync(Guid roundId, string municipalityId, CancellationToken ct = default)
         {
@@ -174,35 +178,24 @@ namespace VotingApp.Application.Elections
 
         private async Task<List<StationResult>> BuildStationsAsync(Guid roundId, string municipalityId, CancellationToken ct)
         {
-            var stations = await db.PollingStationAreas.AsNoTracking()
-                .Where(p => p.AreaId.StartsWith(municipalityId))
-                .Select(p => new { p.Id, Village = p.Area.Name, PostId = p.Area.ParentId, Station = p.PollingStation.Name })
-                .ToListAsync(ct);
-            // Prefix filters rather than list.Contains (which EF Core 8 sends as OPENJSON, needing SQL compat level 130+).
-            var posts = await db.Areas.AsNoTracking()
-                .Where(a => a.Level == AreaHierarchy.AdministrativePost && a.Id.StartsWith(municipalityId))
-                .ToDictionaryAsync(a => a.Id, a => a.Name, ct);
-            var sheets = await db.ResultSheets.AsNoTracking()
-                .Where(s => s.ElectionRoundId == roundId && s.PollingStationArea.AreaId.StartsWith(municipalityId))
-                .Include(s => s.Entries)
-                .ToDictionaryAsync(s => s.PollingStationAreaId, ct);
-
-            return stations.Select(st =>
-            {
-                sheets.TryGetValue(st.Id, out var sheet);
-                var published = sheet != null && sheet.Status >= ResultSheetStatus.Approved;
-                return new StationResult(st.Id,
-                    st.PostId != null && posts.TryGetValue(st.PostId, out var post) ? post : null,
-                    st.Village, st.Station, sheet?.Status,
-                    published ? sheet.RegisteredVoters : null,
-                    published ? sheet.BallotsUsed : null,
-                    published ? sheet.BlankVotes : 0,
-                    published ? sheet.InvalidVotes : 0,
-                    published ? sheet.Entries.ToDictionary(e => e.ContestantId, e => e.Votes) : new Dictionary<Guid, int>(),
-                    published ? sheet.ScanPath : null);
-            })
-            .OrderBy(s => s.AdministrativePost).ThenBy(s => s.Village).ThenBy(s => s.Station)
-            .ToList();
+            var roster = await rosters.GetForRoundAsync(roundId, ct);
+            var sheets = await GetSheetIndexAsync(roundId);
+            return roster.Stations
+                .Where(st => st.MunicipalityId == municipalityId)
+                .Select(st =>
+                {
+                    sheets.TryGetValue(st.PollingStationAreaId, out var sheet);
+                    var published = sheet != null && sheet.IsCounted;
+                    return new StationResult(st.PollingStationAreaId, st.AdministrativePostName, st.VillageName, st.StationName, sheet?.Status,
+                        published ? sheet.RegisteredVoters : null,
+                        published ? sheet.BallotsUsed : null,
+                        published ? sheet.BlankVotes : 0,
+                        published ? sheet.InvalidVotes : 0,
+                        published ? sheet.Votes : new Dictionary<Guid, int>(),
+                        published ? sheet.ScanPath : null);
+                })
+                .OrderBy(s => s.AdministrativePost).ThenBy(s => s.Village).ThenBy(s => s.Station)
+                .ToList();
         }
 
         /// <summary>Open data: one CSV row per counted (approved or locked) sheet, one column per contestant.</summary>
@@ -212,15 +205,8 @@ namespace VotingApp.Application.Elections
         private async Task<string> BuildCsvAsync(Guid roundId, CancellationToken ct)
         {
             var ballot = await GetBallotAsync(roundId, ct);
-            var sheets = await db.ResultSheets.AsNoTracking()
-                .Where(s => s.ElectionRoundId == roundId && s.Status >= ResultSheetStatus.Approved)
-                .Include(s => s.Entries)
-                .Include(s => s.PollingStationArea).ThenInclude(p => p.Area)
-                .Include(s => s.PollingStationArea).ThenInclude(p => p.PollingStation)
-                .ToListAsync(ct);
-            var areaNames = await db.Areas.AsNoTracking()
-                .Where(a => a.Level == AreaHierarchy.Municipality || a.Level == AreaHierarchy.AdministrativePost)
-                .ToDictionaryAsync(a => a.Id, a => a.Name, ct);
+            var roster = await rosters.GetForRoundAsync(roundId, ct);
+            var sheets = await GetSheetIndexAsync(roundId);
 
             var csv = new StringBuilder();
             var header = new List<string>
@@ -232,26 +218,17 @@ namespace VotingApp.Application.Elections
             header.AddRange(ballot.Select(c => c.Name));
             csv.AppendLine(string.Join(",", header.Select(Escape)));
 
-            foreach (var s in sheets
-                .OrderBy(s => s.PollingStationArea.AreaId)
-                .ThenBy(s => s.PollingStationArea.PollingStation?.Name))
+            foreach (var st in roster.Stations.OrderBy(st => st.AreaId).ThenBy(st => st.StationName))
             {
-                var areaId = s.PollingStationArea.AreaId;
-                var municipalityId = areaId?.Length >= CodeLength ? AreaHierarchy.MunicipalityIdOf(areaId) : null;
-                var postId = s.PollingStationArea.Area?.ParentId;
-                var votes = s.Entries.ToDictionary(e => e.ContestantId, e => e.Votes);
+                if (!sheets.TryGetValue(st.PollingStationAreaId, out var s) || !s.IsCounted) continue;
                 var row = new List<string>
                 {
-                    municipalityId,
-                    municipalityId != null && areaNames.TryGetValue(municipalityId, out var m) ? m : null,
-                    postId != null && areaNames.TryGetValue(postId, out var p) ? p : null,
-                    s.PollingStationArea.Area?.Name,
-                    s.PollingStationArea.PollingStation?.Name,
+                    st.MunicipalityId, st.MunicipalityName, st.AdministrativePostName, st.VillageName, st.StationName,
                     s.Status.ToString(),
                     N(s.RegisteredVoters), N(s.BallotsReceived), N(s.BallotsUsed), N(s.BallotsSpoiled), N(s.BallotsUnused),
                     N(s.BlankVotes), N(s.InvalidVotes),
                 };
-                row.AddRange(ballot.Select(c => votes.TryGetValue(c.Id, out var v) ? N(v) : "0"));
+                row.AddRange(ballot.Select(c => s.Votes.TryGetValue(c.Id, out var v) ? N(v) : "0"));
                 csv.AppendLine(string.Join(",", row.Select(Escape)));
             }
             return csv.ToString();

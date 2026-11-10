@@ -21,12 +21,14 @@ namespace VotingApp.Application.Elections
         private readonly IAppDbContext db;
         private readonly ElectionResultsService results;
         private readonly PartyListService lists;
+        private readonly StationRosterService rosters;
 
-        public ElectionAdminService(IAppDbContext db, ElectionResultsService results, PartyListService lists)
+        public ElectionAdminService(IAppDbContext db, ElectionResultsService results, PartyListService lists, StationRosterService rosters)
         {
             this.db = db;
             this.results = results;
             this.lists = lists;
+            this.rosters = rosters;
         }
 
         public Task<List<Election>> ListAsync(CancellationToken ct = default) =>
@@ -149,6 +151,13 @@ namespace VotingApp.Application.Elections
                         "Fix these party lists before opening the election: " +
                         string.Join("; ", invalid.Select(s => $"{names[s.ContestantId]} ({s.Problem})")));
                 }
+            }
+
+            // Opening freezes the polling station list: later changes to stations never alter this election.
+            if (current.Number == 1 && current.Status == ElectionStatus.Setup && status > ElectionStatus.Setup)
+            {
+                if (await rosters.FreezeAsync(election.Id, ct) == 0 && !await db.ElectionStations.AnyAsync(s => s.ElectionId == election.Id, ct))
+                    return OperationResult.Fail(FailureKind.Validation, "There are no polling stations to open the election with.");
             }
 
             // The election's status mirrors its current (latest) round.

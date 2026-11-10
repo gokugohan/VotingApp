@@ -1,4 +1,4 @@
-﻿@model EditPollingStationArea
+@model EditPollingStationArea
 @{
     ViewData["Title"] = "Edit " + Model.StationName;
 }
@@ -14,6 +14,7 @@
             <span asp-validation-for="StationName" class="field-error"></span>
         </div>
         <p class="hint">Currently in <strong>@Model.Area?.Name</strong>. To move the station, choose a different village.</p>
+        <div class="alert alert-info" style="margin-bottom:1rem">@Icon.Render("info") <div>Changes apply to elections that open from now on. Elections already open keep the name and village this station had when they opened.</div></div>
         <partial name="_LocationPicker" model="(Model.AreaId, Model.Area?.Name)" />
         <div class="actions">
             <button type="submit" class="btn btn-primary">Save changes</button>

@@ -38,7 +38,7 @@ namespace VotingApp.Application.Elections
 
     public sealed record EntryForm(
         ElectionRound Round,
-        PollingStationArea Station,
+        RosterStation Station,
         IReadOnlyList<Contestant> Ballot,
         ResultSheet Sheet,
         ResultSheetValidation Validation);
@@ -59,10 +59,12 @@ namespace VotingApp.Application.Elections
         private readonly UserScopeService scopes;
         private readonly ResultSheetValidator validator;
         private readonly ElectionResultsService results;
+        private readonly StationRosterService rosters;
 
         public ResultSheetService(IAppDbContext db, ICurrentUser currentUser, UserScopeService scopes,
-            ResultSheetValidator validator, ElectionResultsService results)
+            ResultSheetValidator validator, ElectionResultsService results, StationRosterService rosters)
         {
+            this.rosters = rosters;
             this.db = db;
             this.currentUser = currentUser;
             this.scopes = scopes;
@@ -78,28 +80,22 @@ namespace VotingApp.Application.Elections
             var scope = await scopes.GetCurrentScopeAsync(ct: ct);
             var ballot = await BallotIdsAsync(roundId, ct);
 
-            var stations = await db.PollingStationAreas.AsNoTracking()
-                .Select(p => new { p.Id, p.AreaId, Village = p.Area.Name, Station = p.PollingStation.Name })
-                .ToListAsync(ct);
-            var municipalities = await db.Areas.AsNoTracking()
-                .Where(a => a.Level == AreaHierarchy.Municipality)
-                .ToDictionaryAsync(a => a.Id, a => a.Name, ct);
+            var roster = await rosters.GetForRoundAsync(roundId, ct);
             var sheets = await db.ResultSheets.AsNoTracking()
                 .Where(s => s.ElectionRoundId == roundId)
                 .Include(s => s.Entries)
                 .ToDictionaryAsync(s => s.PollingStationAreaId, ct);
 
             var list = new List<StationProgress>();
-            foreach (var st in stations)
+            foreach (var st in roster.Stations)
             {
-                if (st.AreaId == null || st.AreaId.Length < AreaHierarchy.MunicipalityCodeLength || !scope.Allows(st.AreaId)) continue;
-                var muni = AreaHierarchy.MunicipalityIdOf(st.AreaId);
-                if (!string.IsNullOrEmpty(municipalityId) && muni != municipalityId) continue;
+                if (!scope.Allows(st.AreaId)) continue;
+                if (!string.IsNullOrEmpty(municipalityId) && st.MunicipalityId != municipalityId) continue;
 
-                sheets.TryGetValue(st.Id, out var sheet);
+                sheets.TryGetValue(st.PollingStationAreaId, out var sheet);
                 var validation = sheet == null ? null : validator.Validate(sheet.ToFigures(), ballot);
-                list.Add(new StationProgress(st.Id, muni, municipalities.TryGetValue(muni, out var mName) ? mName : muni,
-                    st.Village, st.Station, sheet?.Id, sheet?.Status,
+                list.Add(new StationProgress(st.PollingStationAreaId, st.MunicipalityId, st.MunicipalityName,
+                    st.VillageName, st.StationName, sheet?.Id, sheet?.Status,
                     validation?.Issues.Count(i => i.Severity == IssueSeverity.Error) ?? 0,
                     validation?.Issues.Count(i => i.Severity == IssueSeverity.Warning) ?? 0,
                     sheet?.VerificationMismatches ?? 0, sheet?.LastMismatchFields));
@@ -115,10 +111,9 @@ namespace VotingApp.Application.Elections
                 .FirstOrDefaultAsync(r => r.Id == roundId, ct);
             if (round == null) return OperationResult<EntryForm>.NotFound("Round not found.");
 
-            var station = await db.PollingStationAreas.AsNoTracking()
-                .Include(p => p.Area).Include(p => p.PollingStation)
-                .FirstOrDefaultAsync(p => p.Id == pollingStationAreaId, ct);
-            if (station == null) return OperationResult<EntryForm>.NotFound("Polling station not found.");
+            // Only stations that belong to this election (its list frozen when it opened).
+            var station = (await rosters.GetForRoundAsync(roundId, ct)).Find(pollingStationAreaId);
+            if (station == null) return OperationResult<EntryForm>.NotFound("This polling station is not part of this election.");
             if (!(await scopes.GetCurrentScopeAsync(ct: ct)).Allows(station.AreaId))
                 return OperationResult<EntryForm>.Fail(FailureKind.Forbidden, "This polling station is outside your assigned municipalities.");
 
@@ -296,10 +291,11 @@ namespace VotingApp.Application.Elections
 
         private async Task<OperationResult<ResultSheet>> LoadSheetInScopeAsync(Guid sheetId, CancellationToken ct)
         {
-            var sheet = await db.ResultSheets.Include(s => s.Entries).Include(s => s.PollingStationArea)
+            var sheet = await db.ResultSheets.Include(s => s.Entries)
                 .FirstOrDefaultAsync(s => s.Id == sheetId, ct);
             if (sheet == null) return OperationResult<ResultSheet>.NotFound("Result sheet not found.");
-            if (!(await scopes.GetCurrentScopeAsync(ct: ct)).Allows(sheet.PollingStationArea.AreaId))
+            var station = (await rosters.GetForRoundAsync(sheet.ElectionRoundId, ct)).Find(sheet.PollingStationAreaId);
+            if (station == null || !(await scopes.GetCurrentScopeAsync(ct: ct)).Allows(station.AreaId))
                 return OperationResult<ResultSheet>.Fail(FailureKind.Forbidden, "This polling station is outside your assigned municipalities.");
             return OperationResult<ResultSheet>.Success(sheet);
         }

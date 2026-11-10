@@ -166,6 +166,14 @@ namespace VotingApp.Application.PollingStations
             {
                 return OperationResult.Fail(FailureKind.Conflict, "Results are recorded for this polling station; it cannot be deleted.");
             }
+            var openElections = await db.ElectionStations
+                .Where(s => s.PollingStationAreaId == id && s.Election.Status < Domain.Elections.ElectionStatus.Certified)
+                .Select(s => s.Election.Name).Distinct().ToListAsync(ct);
+            if (openElections.Count > 0)
+            {
+                return OperationResult.Fail(FailureKind.Conflict,
+                    "This polling station is part of an election that is not certified yet (" + string.Join(", ", openElections) + "); it cannot be deleted until then.");
+            }
             db.PollingStationAreas.Remove(location);
             return await TrySaveAsync("polling station location", id, ct);
         }

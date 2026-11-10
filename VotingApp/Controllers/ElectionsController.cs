@@ -27,11 +27,13 @@ namespace VotingApp.Controllers
         private readonly AreaService areas;
         private readonly UserManager<AppUser> users;
         private readonly PartyListService lists;
+        private readonly StationRosterService rosters;
 
         public ElectionsController(ElectionAdminService elections, CandidateService candidates, UserScopeService scopes,
-            AreaService areas, UserManager<AppUser> users, PartyListService lists)
+            AreaService areas, UserManager<AppUser> users, PartyListService lists, StationRosterService rosters)
         {
             this.lists = lists;
+            this.rosters = rosters;
             this.elections = elections;
             this.candidates = candidates;
             this.scopes = scopes;
@@ -71,6 +73,7 @@ namespace VotingApp.Controllers
             if (election == null) return NotFound();
             ViewData["Candidates"] = new SelectList(await candidates.ListAsync(HttpContext.RequestAborted), "Id", "Name");
             ViewData["ListStatuses"] = (await lists.GetStatusesAsync(id, HttpContext.RequestAborted)).ToDictionary(s => s.ContestantId);
+            ViewData["Roster"] = await rosters.GetForElectionAsync(id, HttpContext.RequestAborted);
             return View(election);
         }
 

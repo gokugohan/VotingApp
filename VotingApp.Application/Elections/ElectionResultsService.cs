@@ -45,10 +45,12 @@ namespace VotingApp.Application.Elections
         private readonly RoundResultsCache cache;
         private readonly PresidentialResultCalculator presidential;
         private readonly ParliamentarySeatAllocator parliamentary;
+        private readonly StationRosterService rosters;
 
         public ElectionResultsService(IAppDbContext db, RoundResultsCache cache,
-            PresidentialResultCalculator presidential, ParliamentarySeatAllocator parliamentary)
+            PresidentialResultCalculator presidential, ParliamentarySeatAllocator parliamentary, StationRosterService rosters)
         {
+            this.rosters = rosters;
             this.db = db;
             this.cache = cache;
             this.presidential = presidential;
@@ -125,7 +127,7 @@ namespace VotingApp.Application.Elections
 
             return new RoundSummary(
                 round.Id, round.ElectionId, round.Election.Name, round.Election.Type, round.Number, round.Status, minimumStatus,
-                await db.PollingStationAreas.CountAsync(ct),
+                (await rosters.GetForRoundAsync(roundId, ct)).Stations.Count,
                 sheetsCounted,
                 byStatus.ToDictionary(x => x.Status.ToString(), x => x.Count),
                 valid, blank, invalid,

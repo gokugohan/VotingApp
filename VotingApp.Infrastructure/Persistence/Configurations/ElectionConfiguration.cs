@@ -77,6 +77,20 @@ namespace VotingApp.Infrastructure.Persistence.Configurations
                 e.HasOne(x => x.Contestant).WithMany().HasForeignKey(x => x.ContestantId).OnDelete(DeleteBehavior.Restrict);
             });
 
+            builder.Entity<ElectionStation>(e =>
+            {
+                e.Property(x => x.StationName).IsRequired().HasMaxLength(200);
+                e.Property(x => x.AreaId).IsRequired().HasMaxLength(450);
+                e.Property(x => x.VillageName).HasMaxLength(200);
+                e.Property(x => x.AdministrativePostId).HasMaxLength(450);
+                e.Property(x => x.AdministrativePostName).HasMaxLength(200);
+                e.Property(x => x.MunicipalityId).IsRequired().HasMaxLength(450);
+                e.Property(x => x.MunicipalityName).HasMaxLength(200);
+                e.HasIndex(x => new { x.ElectionId, x.PollingStationAreaId }).IsUnique();
+                e.HasIndex(x => x.PollingStationAreaId);
+                e.HasOne(x => x.Election).WithMany().HasForeignKey(x => x.ElectionId).OnDelete(DeleteBehavior.Cascade);
+            });
+
             builder.Entity<UserAreaAssignment>(e =>
             {
                 e.Property(x => x.UserId).IsRequired().HasMaxLength(450);

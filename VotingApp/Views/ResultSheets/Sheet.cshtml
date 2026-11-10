@@ -3,18 +3,18 @@
     var ctx = Model.Context;
     var station = ctx.Station;
     var verify = Model.IsVerification;
-    ViewData["Title"] = (verify ? "Verify" : "Enter") + " result sheet · " + station.PollingStation?.Name;
+    ViewData["Title"] = (verify ? "Verify" : "Enter") + " result sheet · " + station.StationName;
 }
 
 <nav class="breadcrumbs" aria-label="Breadcrumb">
     <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
     <a asp-action="Index" asp-route-roundId="@ctx.Round.Id">Result sheets</a><span aria-hidden="true">/</span>
-    <span>@station.PollingStation?.Name</span>
+    <span>@station.StationName</span>
 </nav>
 <div class="page-header">
     <div class="eyebrow">@(verify ? "Second entry (verification)" : "Result sheet") · @ctx.Round.Election.Name</div>
-    <h1>@station.PollingStation?.Name</h1>
-    <p>@station.Area?.Name</p>
+    <h1>@station.StationName</h1>
+    <p>@station.VillageName · @station.AdministrativePostName · @station.MunicipalityName</p>
 </div>
 
 @if (verify)

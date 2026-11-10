@@ -6,6 +6,7 @@
     var canEditBallot = Model.Status == ElectionStatus.Setup && Model.Rounds.Count == 1;
     var listStatuses = ViewData["ListStatuses"] as Dictionary<Guid, PartyListStatus> ?? new Dictionary<Guid, PartyListStatus>();
     var parliamentary = Model.Type == ElectionType.Parliamentary;
+    var roster = ViewData["Roster"] as StationRoster;
     var steps = Enum.GetValues<ElectionStatus>();
     string NextHelp(ElectionStatus s) => s switch
     {
@@ -146,6 +147,27 @@
                 }
             </div>
         </section>
+
+        @if (roster != null)
+        {
+            <section class="card" aria-labelledby="stations-heading">
+                <div class="card-header"><h2 id="stations-heading">Polling stations</h2><span class="badge @(roster.IsFrozen ? "badge-ok" : "")">@(roster.IsFrozen ? "Fixed" : "Live")</span></div>
+                <div class="card-body">
+                    <div class="stat" style="padding:0"><div class="value">@roster.Stations.Count.ToString("N0")</div>
+                        <div class="sub">in @roster.Stations.Select(s => s.MunicipalityId).Distinct().Count() municipalities</div></div>
+                    <p class="hint" style="margin:.75rem 0 0">
+                        @if (roster.IsFrozen)
+                        {
+                            <span>Fixed on @roster.FrozenAtUtc.Value.ToString("d MMM yyyy") when the election opened. Later changes to polling stations do not affect this election.</span>
+                        }
+                        else
+                        {
+                            <span>The current list of <a asp-controller="PollingStationAreas" asp-action="Index">polling stations</a>. It is fixed when the election opens; stations added, moved or renamed afterwards will not be part of it.</span>
+                        }
+                    </p>
+                </div>
+            </section>
+        }
 
         <section class="card" aria-labelledby="rules-heading">
             <div class="card-header"><h2 id="rules-heading">Rules</h2></div>

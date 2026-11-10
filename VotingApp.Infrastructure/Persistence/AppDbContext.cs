@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -40,6 +40,7 @@ namespace VotingApp.Infrastructure.Persistence
         public DbSet<ResultSheet> ResultSheets { get; set; }
         public DbSet<ResultSheetEntry> ResultSheetEntries { get; set; }
         public DbSet<UserAreaAssignment> UserAreaAssignments { get; set; }
+        public DbSet<ElectionStation> ElectionStations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

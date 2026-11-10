@@ -38,6 +38,7 @@ Run it on hardware comparable to production; results from a developer laptop run
 |---|---|---|---|---|
 | Before results cache (2026-11-09) | 19.3 s | 8.5 s | 54 req/s | 0.01 % |
 | After single-flight, stale-while-revalidate cache | 76 ms | 158 ms | 153 req/s | 0 % |
+| Redesigned UI, per-election station list, shared sheet index (2026-11-10) | 18 ms | 58 ms | 156 req/s | 0 % (sign-in p95 635 ms) |
 
 The first run found cache stampedes (every request rebuilt expired aggregates at once) and uncached
 municipality pages and CSV. `RoundResultsCache` fixed both: one rebuild per item at a time, other

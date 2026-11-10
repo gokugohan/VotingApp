@@ -36,17 +36,21 @@ namespace VotingApp.Tests
         public ElectionAdminService Admin { get; }
         public ResultSheetService Sheets { get; }
         public UserScopeService Scopes { get; }
+        public StationRosterService Rosters { get; }
+        public PublicResultsService Public { get; }
 
         public Fixture()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
             Db = new AppDbContext(options, User);
+            Rosters = new StationRosterService(Db, Cache);
             Results = new ElectionResultsService(Db, Cache,
-                new PresidentialResultCalculator(), new ParliamentarySeatAllocator());
+                new PresidentialResultCalculator(), new ParliamentarySeatAllocator(), Rosters);
             Lists = new PartyListService(Db, new PartyListValidator(), Cache);
-            Admin = new ElectionAdminService(Db, Results, Lists);
+            Admin = new ElectionAdminService(Db, Results, Lists, Rosters);
             Scopes = new UserScopeService(Db, User);
-            Sheets = new ResultSheetService(Db, User, Scopes, new ResultSheetValidator(), Results);
+            Sheets = new ResultSheetService(Db, User, Scopes, new ResultSheetValidator(), Results, Rosters);
+            Public = new PublicResultsService(Db, Cache, Rosters);
 
             Db.Areas.AddRange(
                 new Area { Id = "TLS001", Name = "Aileu", Level = AreaHierarchy.Municipality },
@@ -270,10 +274,11 @@ namespace VotingApp.Tests
     public class PublicResultsServiceTests
     {
         /// <summary>Aileu sheet approved (A=300,B=200,C=100); Ainaro sheet only entered (A=1,B=2,C=3).</summary>
-        private static async Task<(Fixture F, Guid Round, Guid[] Ids, PublicResultsService Svc)> ArrangeAsync()
+        private static async Task<(Fixture F, Guid Round, Guid[] Ids, PublicResultsService Svc)> ArrangeAsync(Action<Fixture> beforeOpening = null)
         {
             var f = new Fixture();
             f.User.IsAdmin = true;
+            beforeOpening?.Invoke(f);
             var (round, ids) = await f.PresidentialInCountingAsync();
             f.User.UserId = "clerk-1";
             await f.Sheets.SubmitEntryAsync(round, Fixture.StationAileu, Fixture.Sheet(ids, 300, 200, 100));
@@ -283,7 +288,7 @@ namespace VotingApp.Tests
             await f.Sheets.SubmitVerificationAsync(aileu, Fixture.Sheet(ids, 300, 200, 100));
             f.User.UserId = "supervisor";
             Assert.True((await f.Sheets.ApproveAsync(aileu)).Succeeded);
-            return (f, round, ids, new PublicResultsService(f.Db, f.Cache));
+            return (f, round, ids, f.Public);
         }
 
         [Fact]
@@ -336,10 +341,12 @@ namespace VotingApp.Tests
         [Fact]
         public async Task Csv_has_one_row_per_counted_sheet_and_neutralises_formulas()
         {
-            var (f, round, ids, svc) = await ArrangeAsync();
+            var (f, round, ids, svc) = await ArrangeAsync(fx =>
+            {
+                fx.Db.PollingStations.Local.Single(p => p.Name == "EB Seloi").Name = "=HYPERLINK(\"x\"), Seloi";
+                fx.Db.SaveChanges();
+            });
             using var _ = f;
-            (await f.Db.PollingStations.SingleAsync(p => p.Name == "EB Seloi")).Name = "=HYPERLINK(\"x\"), Seloi";
-            await f.Db.SaveChangesAsync();
 
             var lines = (await svc.ExportCountedSheetsCsvAsync(round)).TrimEnd().Split(Environment.NewLine);
             Assert.Equal(2, lines.Length); // header + Aileu only
@@ -347,6 +354,79 @@ namespace VotingApp.Tests
             Assert.StartsWith("TLS001,Aileu,Aileu Vila,Seloi Malere,", lines[1]);
             Assert.Contains("\"'=HYPERLINK(\"\"x\"\"), Seloi\"", lines[1]);
             Assert.EndsWith(",300,200,100", lines[1]);
+        }
+    }
+
+    public class ElectionStationTests
+    {
+        [Fact]
+        public async Task Opening_an_election_freezes_its_polling_stations()
+        {
+            using var f = new Fixture();
+            f.User.IsAdmin = true;
+            var (round, ids) = await f.PresidentialInCountingAsync();
+            var electionId = (await f.Db.ElectionRounds.SingleAsync(r => r.Id == round)).ElectionId;
+
+            Assert.Equal(2, await f.Db.ElectionStations.CountAsync(s => s.ElectionId == electionId));
+            var roster = await f.Rosters.GetForElectionAsync(electionId);
+            Assert.True(roster.IsFrozen);
+        }
+
+        [Fact]
+        public async Task Later_station_changes_do_not_alter_a_running_election()
+        {
+            using var f = new Fixture();
+            f.User.IsAdmin = true;
+            var (round, ids) = await f.PresidentialInCountingAsync();
+
+            // After opening: rename and move one station, add a new one.
+            var location = await f.Db.PollingStationAreas.Include(p => p.PollingStation).SingleAsync(p => p.Id == Fixture.StationAileu);
+            location.PollingStation.Name = "Renamed later";
+            location.AreaId = "TLS0020101"; // moved to Ainaro
+            var added = new Domain.Entities.PollingStationArea
+            {
+                Id = Guid.NewGuid(), AreaId = "TLS0010101",
+                PollingStation = new Domain.Entities.PollingStation { Id = Guid.NewGuid(), Name = "Opened later" },
+            };
+            f.Db.PollingStationAreas.Add(added);
+            await f.Db.SaveChangesAsync();
+            f.Cache.Invalidate(round);
+
+            var aileu = Assert.Single(await f.Public.GetStationsAsync(round, "TLS001"));
+            Assert.Equal("EB Seloi", aileu.Station);                       // frozen name and municipality
+            Assert.Equal(2, (await f.Results.GetSummaryAsync(round)).PollingStations); // new station not counted
+
+            var entry = await f.Sheets.SubmitEntryAsync(round, added.Id, Fixture.Sheet(ids, 1, 1, 1));
+            Assert.Equal(FailureKind.NotFound, entry.Failure);              // not part of this election
+        }
+
+        [Fact]
+        public async Task A_station_used_by_an_uncertified_election_cannot_be_deleted()
+        {
+            using var f = new Fixture();
+            f.User.IsAdmin = true;
+            await f.PresidentialInCountingAsync();
+            var stations = new Application.PollingStations.PollingStationService(f.Db,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<Application.PollingStations.PollingStationService>.Instance);
+
+            var result = await stations.DeleteLocationAsync(Fixture.StationAinaro);
+
+            Assert.Equal(FailureKind.Conflict, result.Failure);
+            Assert.Contains("Presidential 2027", result.Error);
+        }
+
+        [Fact]
+        public async Task An_election_in_setup_uses_the_live_station_list()
+        {
+            using var f = new Fixture();
+            f.User.IsAdmin = true;
+            var electionId = (await f.Admin.CreateAsync(new CreateElectionInput("Draft", ElectionType.Presidential, DateTime.Today, null, null))).Value;
+
+            var roster = await f.Rosters.GetForElectionAsync(electionId);
+
+            Assert.False(roster.IsFrozen);
+            Assert.Equal(2, roster.Stations.Count);
+            Assert.Equal(0, await f.Db.ElectionStations.CountAsync());
         }
     }
 }

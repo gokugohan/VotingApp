@@ -262,6 +262,62 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                     b.ToTable("ElectionRounds");
                 });
 
+            modelBuilder.Entity("VotingApp.Domain.Elections.ElectionStation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdministrativePostId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AdministrativePostName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AreaId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("ElectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("FrozenAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MunicipalityId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MunicipalityName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("PollingStationAreaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("VillageName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PollingStationAreaId");
+
+                    b.HasIndex("ElectionId", "PollingStationAreaId")
+                        .IsUnique();
+
+                    b.ToTable("ElectionStations");
+                });
+
             modelBuilder.Entity("VotingApp.Domain.Elections.PartyListCandidate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -747,6 +803,17 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("VotingApp.Domain.Elections.Election", "Election")
                         .WithMany("Rounds")
+                        .HasForeignKey("ElectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Election");
+                });
+
+            modelBuilder.Entity("VotingApp.Domain.Elections.ElectionStation", b =>
+                {
+                    b.HasOne("VotingApp.Domain.Elections.Election", "Election")
+                        .WithMany()
                         .HasForeignKey("ElectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
