@@ -202,6 +202,16 @@ namespace VotingApp.Application.Elections
         public Task<string> ExportCountedSheetsCsvAsync(Guid roundId, CancellationToken ct = default) =>
             cache.GetOrBuildAsync(roundId, "csv", () => BuildCsvAsync(roundId, CancellationToken.None));
 
+        /// <summary>
+        /// The CSV exactly as it is downloaded: UTF-8 with a byte-order mark so spreadsheet software reads
+        /// accented names correctly. The official results record carries a fingerprint of these bytes.
+        /// </summary>
+        public async Task<byte[]> ExportCountedSheetsFileAsync(Guid roundId, CancellationToken ct = default)
+        {
+            var csv = await ExportCountedSheetsCsvAsync(roundId, ct);
+            return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+        }
+
         private async Task<string> BuildCsvAsync(Guid roundId, CancellationToken ct)
         {
             var ballot = await GetBallotAsync(roundId, ct);

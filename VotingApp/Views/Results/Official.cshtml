@@ -1,0 +1,297 @@
+@model OfficialResultsDocument
+@{
+    Layout = null;
+    var s = Model.Summary;
+    var t = Model.Totals;
+    var parliamentary = s.Type == ElectionType.Parliamentary;
+    var names = Model.Contestants.ToDictionary(c => c.ContestantId, c => c.Name);
+    string Name(Guid? id) => id.HasValue && names.TryGetValue(id.Value, out var n) ? n : "-";
+    var columns = Model.Contestants.OrderBy(c => c.BallotPosition).ToList();
+    string Short(OfficialContestantRow c) => string.IsNullOrEmpty(c.Acronym) ? c.Name : c.Acronym;
+    string N(long v) => v.ToString("N0");
+    string P(decimal v) => v.ToString("0.00");
+    var title = Model.IsNational ? T["National results record"] : T["Municipal results record"];
+    var round = s.RoundNumber > 1 ? T["Runoff"] : (s.Type == ElectionType.Presidential ? T["First round"] : null);
+    var csvUrl = Url.Action("Csv", "Results", new { id = s.RoundId }, Context.Request.Scheme);
+    (string Css, string Text) Stage(ResultSheetStatus? st) => st switch
+    {
+        ResultSheetStatus.Approved => ("ok", T["Approved"]),
+        ResultSheetStatus.Locked => ("ok", T["Locked"]),
+        null => ("missing", T["Not received"]),
+        _ => ("missing", T["Not yet approved"]),
+    };
+}
+<!DOCTYPE html>
+<html lang="@T.Lang">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="robots" content="noindex" />
+    <title>@title · @s.ElectionName@(Model.IsNational ? "" : " · " + Model.MunicipalityName)</title>
+    <style>
+        :root { --ink: #111; --muted: #555; --line: #999; --soft: #f2f2f2; --warn: #8a5300; --warn-bg: #fff4dc; }
+        * { box-sizing: border-box; }
+        html { background: #e9e9e9; }
+        body { margin: 0; color: var(--ink); background: #e9e9e9; font: 10.5pt/1.4 "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .toolbar { max-width: 210mm; margin: 0 auto; padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .toolbar a, .toolbar button { font: inherit; font-size: 10pt; padding: 6px 12px; border: 1px solid #888; border-radius: 6px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+        .toolbar button { background: #111; color: #fff; border-color: #111; }
+        .page { max-width: 210mm; margin: 0 auto 24px; padding: 14mm 14mm 16mm; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+        header.doc { text-align: center; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 12px; }
+        .country { font-size: 9pt; letter-spacing: .12em; text-transform: uppercase; }
+        h1 { font-size: 16pt; margin: 6px 0 2px; }
+        h2 { font-size: 11pt; margin: 16px 0 6px; padding-bottom: 2px; border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: .04em; }
+        .sub { color: var(--muted); }
+        .banner { margin: 10px 0; padding: 8px 10px; border: 1.5px solid var(--warn); background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+        .banner.final { border-color: #1b5e20; background: #edf7ee; color: #1b5e20; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid var(--line); padding: 3px 5px; vertical-align: top; }
+        th { background: var(--soft); text-align: left; font-weight: 600; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .facts td:first-child { width: 60%; }
+        .total td { font-weight: 700; background: var(--soft); }
+        .wide { font-size: 8pt; }
+        .wide th { writing-mode: horizontal-tb; }
+        .missing { color: var(--muted); font-style: italic; }
+        .statement { margin: 8px 0; }
+        .elected { columns: 2; column-gap: 8mm; font-size: 9pt; }
+        .elected div { break-inside: avoid; margin-bottom: 6px; }
+        .fingerprint { font-family: Consolas, "Courier New", monospace; font-size: 9pt; word-break: break-all; padding: 4px 6px; border: 1px dashed var(--line); background: var(--soft); }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm 12mm; margin-top: 8px; }
+        .signature { break-inside: avoid; }
+        .signature div { border-bottom: 1px solid var(--ink); height: 9mm; display: flex; align-items: flex-end; font-size: 8pt; color: var(--muted); }
+        footer.doc { margin-top: 14px; font-size: 8pt; color: var(--muted); }
+        @@media (max-width: 640px) { .page { padding: 16px; } .signatures { grid-template-columns: 1fr; } .elected { columns: 1; } }
+        @@page { size: A4; margin: 12mm; }
+        @@media print {
+            html, body { background: #fff; }
+            .toolbar { display: none; }
+            .page { box-shadow: none; margin: 0; padding: 0; max-width: none; }
+            h2 { break-after: avoid; }
+            tr { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" onclick="window.print()">@T["Print or save as PDF"]</button>
+        @if (Model.IsNational)
+        {
+            <a href="@Url.Action("Round", "Results", new { id = s.RoundId })">@T["Back to results"]</a>
+        }
+        else
+        {
+            <a href="@Url.Action("Municipality", "Results", new { roundId = s.RoundId, id = Model.MunicipalityId })">@T["Back to results"]</a>
+            <a href="@Url.Action("Official", "Results", new { id = s.RoundId })">@T["National results record"]</a>
+        }
+        <a href="@Url.Action("Csv", "Results", new { id = s.RoundId })">@T["CSV by polling station"]</a>
+    </div>
+
+    <main class="page">
+        <header class="doc">
+            <div class="country">República Democrática de Timor-Leste</div>
+            <h1>@title</h1>
+            <div><strong>@s.ElectionName</strong>@(round == null ? "" : " · " + round)</div>
+            <div class="sub">
+                @(s.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"]) ·
+                @T["Voting day: {0}", Model.VotingDate.ToString("d MMMM yyyy")]
+                @if (!Model.IsNational) { <span>· @T["Municipality"]: <strong>@Model.MunicipalityName</strong></span> }
+            </div>
+        </header>
+
+        @if (Model.IsFinal)
+        {
+            <div class="banner final">@T["Certified results. The round was certified and can no longer change."]</div>
+        }
+        else
+        {
+            <div class="banner">@T["PROVISIONAL: this record is not final. Figures can change until the results are certified."]</div>
+        }
+        @if (t.StationsMissing > 0)
+        {
+            <p class="statement"><strong>@T["{0} of {1} polling stations are not included because their sheets are not yet approved.", N(t.StationsMissing), N(t.PollingStations)]</strong></p>
+        }
+
+        <h2>@T["Participation"]</h2>
+        <table class="facts">
+            <tbody>
+                <tr><td>@T["Polling stations counted"]</td><td class="num">@T["{0} of {1}", N(t.SheetsCounted), N(t.PollingStations)]</td></tr>
+                <tr><td>@T["Registered voters (stations counted)"]</td><td class="num">@N(t.RegisteredVoters)</td></tr>
+                <tr><td>@T["Voters (ballots in the box)"]</td><td class="num">@N(t.BallotsUsed)</td></tr>
+                <tr><td>@T["Turnout"]</td><td class="num">@(t.TurnoutPercent is decimal turnout ? P(turnout) + "%" : "–")</td></tr>
+                <tr><td>@T["Valid votes"]</td><td class="num">@N(t.ValidVotes)</td></tr>
+                <tr><td>@T["Blank votes"]</td><td class="num">@N(t.BlankVotes)</td></tr>
+                <tr><td>@T["Invalid votes"]</td><td class="num">@N(t.InvalidVotes)</td></tr>
+            </tbody>
+        </table>
+
+        <h2>@T["Results"]</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th class="num">@T["Ballot no."]</th>
+                    <th>@(parliamentary ? T["Party or coalition"] : T["Candidate"])</th>
+                    <th class="num">@T["Votes"]</th>
+                    <th class="num">@T["% of valid votes"]</th>
+                    @if (parliamentary && Model.IsNational)
+                    {
+                        <th>@T["Threshold"]</th>
+                        <th class="num">@T["Seats"]</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Contestants)
+                {
+                    <tr>
+                        <td class="num">@c.BallotPosition</td>
+                        <td>@c.Name@(string.IsNullOrEmpty(c.Acronym) ? "" : " (" + c.Acronym + ")")</td>
+                        <td class="num">@N(c.Votes)</td>
+                        <td class="num">@P(c.PercentOfValid)</td>
+                        @if (parliamentary && Model.IsNational)
+                        {
+                            <td>@(c.MeetsThreshold == true ? T["Reached"] : T["Not reached"])</td>
+                            <td class="num">@(c.Seats ?? 0)</td>
+                        }
+                    </tr>
+                }
+                <tr class="total">
+                    <td></td>
+                    <td>@T["Total valid votes"]</td>
+                    <td class="num">@N(t.ValidVotes)</td>
+                    <td class="num">100.00</td>
+                    @if (parliamentary && Model.IsNational)
+                    {
+                        <td></td>
+                        <td class="num">@(s.Parliamentary?.TotalSeats)</td>
+                    }
+                </tr>
+            </tbody>
+        </table>
+
+        @if (Model.IsNational && t.ValidVotes > 0)
+        {
+            <h2>@T["Outcome"]</h2>
+            @if (s.Presidential is { } p)
+            {
+                <p class="statement">
+                    @switch (p.Outcome)
+                    {
+                        case PresidentialOutcome.Elected when s.RoundNumber > 1:
+                            @T.Html("<strong>{0}</strong> obtained the most valid votes in the runoff ({1}%).", Name(p.WinnerId), P(Model.Contestants.First(c => c.ContestantId == p.WinnerId).PercentOfValid))
+                            break;
+                        case PresidentialOutcome.Elected:
+                            @T.Html("<strong>{0}</strong> obtained more than half of the valid votes ({1}%).", Name(p.WinnerId), P(Model.Contestants.First(c => c.ContestantId == p.WinnerId).PercentOfValid))
+                            break;
+                        case PresidentialOutcome.Runoff:
+                            @T.Html("No candidate obtained more than half of the valid votes ({0} needed). The runoff is between <strong>{1}</strong> and <strong>{2}</strong>.", N(p.MajorityThreshold), Name(p.RunoffContestantIds[0]), Name(p.RunoffContestantIds[1]))
+                            break;
+                        case PresidentialOutcome.TieRequiresResolution:
+                            @T["A tie between {0} decides the outcome and must be resolved under the law.", string.Join(", ", p.TiedContestantIds.Select(id => Name(id)))]
+                            break;
+                    }
+                </p>
+            }
+            else if (s.Parliamentary is { } pr)
+            {
+                <p class="statement">
+                    @T["{0} seats allocated by the D'Hondt method among parties and coalitions with at least {1}% of the valid votes.", pr.TotalSeats, pr.ThresholdPercent.ToString("0.##")]
+                    @if (pr.LastSeatDecidedByTie) { <strong>@T["(The last seat was decided by a tie-break.)"]</strong> }
+                </p>
+                @if (Model.Elected?.Count > 0)
+                {
+                    <div class="elected">
+                        @foreach (var party in Model.Elected)
+                        {
+                            <div>
+                                <strong>@party.Name</strong> (@(party.Seats == 1 ? T["1 seat"] : T["{0} seats", party.Seats]))<br />
+                                @string.Join("; ", party.Members.Select(m => (m.IsSubstitute ? T["S{0}", m.Position] : m.Position + ".") + " " + m.FullName))
+                                @if (party.Unfilled > 0) { <br /><em>@T["Seats without a candidate on the list: {0}", party.Unfilled]</em> }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        }
+
+        <h2>@(Model.IsNational ? T["Results by municipality"] : T["Results by polling station"])</h2>
+        <table class="wide">
+            <thead>
+                <tr>
+                    <th>@(Model.IsNational ? T["Municipality"] : T["Polling station"])</th>
+                    <th class="num">@(Model.IsNational ? T["Stations"] : T["Status"])</th>
+                    <th class="num">@T["Voters"]</th>
+                    <th class="num">@T["Blank"]</th>
+                    <th class="num">@T["Invalid"]</th>
+                    @foreach (var c in columns) { <th class="num" title="@c.Name">@Short(c)</th> }
+                    <th class="num">@T["Valid"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Breakdown)
+                {
+                    var counted = r.SheetsCounted > 0;
+                    <tr>
+                        <td>@r.Name@if (r.Detail != null) { <br /><span class="sub">@r.Detail</span> }</td>
+                        @if (Model.IsNational)
+                        {
+                            <td class="num">@r.SheetsCounted/@r.PollingStations</td>
+                        }
+                        else
+                        {
+                            var st = Stage(r.Status);
+                            <td class="@st.Css">@st.Text</td>
+                        }
+                        @if (counted)
+                        {
+                            <td class="num">@N(r.BallotsUsed)</td>
+                            <td class="num">@N(r.BlankVotes)</td>
+                            <td class="num">@N(r.InvalidVotes)</td>
+                            @foreach (var c in columns) { <td class="num">@N(r.Votes[c.ContestantId])</td> }
+                            <td class="num">@N(r.ValidVotes)</td>
+                        }
+                        else
+                        {
+                            <td colspan="@(columns.Count + 4)" class="missing">@T["Not counted"]</td>
+                        }
+                    </tr>
+                }
+                <tr class="total">
+                    <td>@T["Total"]</td>
+                    <td class="num">@t.SheetsCounted/@t.PollingStations</td>
+                    <td class="num">@N(t.BallotsUsed)</td>
+                    <td class="num">@N(t.BlankVotes)</td>
+                    <td class="num">@N(t.InvalidVotes)</td>
+                    @foreach (var c in columns) { <td class="num">@N(c.Votes)</td> }
+                    <td class="num">@N(t.ValidVotes)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>@T["Verification"]</h2>
+        <p>@T["Fingerprint of the published data (SHA-256 of the CSV by polling station):"]</p>
+        <div class="fingerprint">@Model.DataFingerprint</div>
+        <p class="sub">@T["Anyone can download the CSV from {0} and compute its SHA-256 (for example: certutil -hashfile file.csv SHA256, or sha256sum file.csv). The same value means the published data has not changed since this record was generated.", csvUrl]</p>
+
+        <h2>@T["Signatures"]</h2>
+        <p>@(Model.IsNational ? T["Members of the national tabulation body:"] : T["Members of the municipal tabulation body:"])</p>
+        <div class="signatures">
+            @for (var i = 0; i < 4; i++)
+            {
+                <div class="signature">
+                    <div>@T["Name"]</div>
+                    <div>@T["Function"]</div>
+                    <div>@T["Signature"]</div>
+                    <div>@T["Date"]</div>
+                </div>
+            }
+        </div>
+
+        <footer class="doc">
+            @T["Generated {0} UTC from approved polling station sheets.", Model.GeneratedAtUtc.ToString("yyyy-MM-dd HH:mm")]
+            @T["Round reference: {0}", s.RoundId]
+        </footer>
+    </main>
+</body>
+</html>

@@ -69,7 +69,10 @@
     <section class="card" aria-labelledby="stations-heading">
         <div class="card-header">
             <h2 id="stations-heading">@T["Polling stations"]</h2>
-            <a class="btn btn-secondary btn-sm no-print" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") @T["CSV (all municipalities)"]</a>
+            <span class="cluster no-print">
+                <a class="btn btn-secondary btn-sm" asp-action="Official" asp-route-id="@s.RoundId" asp-route-municipality="@m.MunicipalityId">@Icon.Render("file") @T["Results record"]</a>
+                <a class="btn btn-secondary btn-sm" asp-action="Csv" asp-route-id="@s.RoundId">@Icon.Render("download") @T["CSV (all municipalities)"]</a>
+            </span>
         </div>
         <div class="table-wrap">
             <table class="table table-compact">

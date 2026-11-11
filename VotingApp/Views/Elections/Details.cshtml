@@ -36,6 +36,10 @@
                     <span class="cluster">
                         <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">@Icon.Render("file") @T["Result sheets"]</a>
                         <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") @T["Results"]</a>
+                        @if (round.Status >= ElectionStatus.Counting)
+                        {
+                            <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Official" asp-route-id="@round.Id">@Icon.Render("file") @T["Results record"]</a>
+                        }
                     </span>
                 </div>
                 <div class="table-wrap">

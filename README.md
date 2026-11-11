@@ -53,6 +53,9 @@ Package versions are managed centrally in `Directory.Packages.props`.
 | `/Results/Summary/{roundId}` | National summary (JSON) |
 | `/Results/Municipalities/{roundId}` | Per-municipality results (JSON) |
 | `/Results/Csv/{roundId}` | One row per counted station sheet (CSV, UTF-8) |
+| `/Results/Official/{roundId}` (`?municipality=TLS001`) | Printable results record, national or municipal, to sign and publish (see below) |
+
+**Results record.** *Results record* (on the results, municipality and election pages) opens a printable A4 document for a round: participation, results with threshold and seats (or the presidential outcome), elected members, a breakdown by municipality (national record) or by polling station (municipal record), and signature blocks for the tabulation body. It says PROVISIONAL until the round is certified, and states how many stations are not yet counted. It carries the SHA-256 of the CSV exactly as downloaded, so anyone can check that a signed paper and the published data match (`certutil -hashfile file.csv SHA256` or `sha256sum file.csv`). Print it from the browser or save it as PDF.
 
 The home page shows the same approved figures for the most recent round in counting or later, with a selector for other rounds. Results pages refresh themselves: they poll a few-byte signature (`/Results/Signature/{roundId}`) every 20 seconds and re-load only when results changed.
 

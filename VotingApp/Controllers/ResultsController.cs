@@ -105,11 +105,20 @@ namespace VotingApp.Controllers
         {
             var summary = await results.GetSummaryAsync(id, ResultSheetStatus.Approved, HttpContext.RequestAborted);
             if (summary == null) return NotFound();
-            var csv = await publicResults.ExportCountedSheetsCsvAsync(id, HttpContext.RequestAborted);
-            // UTF-8 with BOM so spreadsheet software reads accented names correctly.
-            var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+            var bytes = await publicResults.ExportCountedSheetsFileAsync(id, HttpContext.RequestAborted);
             var name = $"results-{Slug(summary.ElectionName)}-round{summary.RoundNumber}-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
             return File(bytes, "text/csv; charset=utf-8", name);
+        }
+
+        /// <summary>
+        /// The printable results record of a round, national or for one municipality, to be signed by the
+        /// tabulation body. Provisional until the round is certified.
+        /// </summary>
+        public async Task<IActionResult> Official(Guid id, string municipality,
+            [Microsoft.AspNetCore.Mvc.FromServices] OfficialResultsService official)
+        {
+            var document = await official.GetAsync(id, string.IsNullOrEmpty(municipality) ? null : municipality, HttpContext.RequestAborted);
+            return document == null ? NotFound() : View(document);
         }
 
         private static string Slug(string value) =>
