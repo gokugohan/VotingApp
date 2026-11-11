@@ -1,21 +1,21 @@
-﻿@model CreatePollingStationArea
+@model CreatePollingStationArea
 @{
-    ViewData["Title"] = "New polling station";
+    ViewData["Title"] = T["New polling station"];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Polling stations</a><span aria-hidden="true">/</span><span>New</span></nav>
-<div class="page-header"><h1>New polling station</h1></div>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Polling stations"]</a><span aria-hidden="true">/</span><span>@T["New"]</span></nav>
+<div class="page-header"><h1>@T["New polling station"]</h1></div>
 <form asp-action="Create" method="post" class="card form-narrow">
     <div class="card-body">
         <div asp-validation-summary="ModelOnly" class="errors"></div>
         <div class="field">
-            <label asp-for="StationName">Name</label>
-            <input asp-for="StationName" required maxlength="200" placeholder="e.g. EB Seloi Malere" />
+            <label asp-for="StationName">@T["Name"]</label>
+            <input asp-for="StationName" required maxlength="200" placeholder="@T["e.g. EB Seloi Malere"]" />
             <span asp-validation-for="StationName" class="field-error"></span>
         </div>
         <partial name="_LocationPicker" model="((string)null, (string)null)" />
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Create polling station</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Create polling station"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </div>
 </form>

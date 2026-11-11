@@ -1,22 +1,22 @@
 @model List<VotingApp.Controllers.RolePermissionsRow>
 @using VotingApp.Application.Security
 @{
-    ViewData["Title"] = "Roles and permissions";
+    ViewData["Title"] = T["Roles and permissions"];
     var groups = Permissions.All.GroupBy(p => p.Group).ToList();
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Users">Users and roles</a><span aria-hidden="true">/</span><span>Roles</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Users">@T["Users and roles"]</a><span aria-hidden="true">/</span><span>@T["Roles"]</span></nav>
 <div class="page-header">
-    <h1>Roles and permissions</h1>
-    <p>A suggested set-up for results night: <strong>Clerk</strong> (enter), <strong>Verifier</strong> (verify), <strong>Municipal supervisor</strong> (verify and approve), <strong>National tabulation</strong> (approve and lock). Then limit staff to their municipalities.</p>
+    <h1>@T["Roles and permissions"]</h1>
+    <p>@T.Html("A suggested set-up for results night: <strong>Clerk</strong> (enter), <strong>Verifier</strong> (verify), <strong>Municipal supervisor</strong> (verify and approve), <strong>National tabulation</strong> (approve and lock). Then limit staff to their municipalities.")</p>
 </div>
 
 <form asp-action="CreateRole" method="post" class="card" style="margin-bottom:1.5rem">
     <div class="card-body cluster" style="align-items:flex-end">
         <div class="field" style="margin:0;flex:1;min-width:14rem">
-            <label for="new-role">New role</label>
-            <input id="new-role" name="name" required maxlength="100" placeholder="e.g. Municipal supervisor" />
+            <label for="new-role">@T["New role"]</label>
+            <input id="new-role" name="name" required maxlength="100" placeholder="@T["e.g. Municipal supervisor"]" />
         </div>
-        <button type="submit" class="btn btn-primary">@Icon.Render("plus") Create role</button>
+        <button type="submit" class="btn btn-primary">@Icon.Render("plus") @T["Create role"]</button>
     </div>
 </form>
 
@@ -28,17 +28,17 @@
             <input type="hidden" name="roleId" value="@row.Role.Id" />
             <div class="card-header">
                 <h2>@row.Role.Name</h2>
-                <span class="badge">@(isAdmin ? "All permissions" : $"{row.Permissions.Count} permission{(row.Permissions.Count == 1 ? "" : "s")}")</span>
+                <span class="badge">@(isAdmin ? T["All permissions"] : row.Permissions.Count == 1 ? T["1 permission"] : T["{0} permissions", row.Permissions.Count])</span>
             </div>
             <div class="card-body">
                 <div class="grid grid-4">
                     @foreach (var group in groups)
                     {
                         <fieldset style="border:0;margin:0;padding:0">
-                            <legend class="label" style="margin-bottom:.25rem">@group.Key</legend>
+                            <legend class="label" style="margin-bottom:.25rem">@T[group.Key]</legend>
                             @foreach (var p in group)
                             {
-                                <div><label class="check"><input type="checkbox" name="permissions" value="@p.Name" checked="@(isAdmin || row.Permissions.Contains(p.Name))" disabled="@isAdmin" /> @p.Description</label></div>
+                                <div><label class="check"><input type="checkbox" name="permissions" value="@p.Name" checked="@(isAdmin || row.Permissions.Contains(p.Name))" disabled="@isAdmin" /> @T[p.Description]</label></div>
                             }
                         </fieldset>
                     }
@@ -47,11 +47,11 @@
             <div class="card-footer">
                 @if (isAdmin)
                 {
-                    <span class="muted small">The Admin role always has every permission.</span>
+                    <span class="muted small">@T["The Admin role always has every permission."]</span>
                 }
                 else
                 {
-                    <button type="submit" class="btn btn-primary btn-sm">Save permissions</button>
+                    <button type="submit" class="btn btn-primary btn-sm">@T["Save permissions"]</button>
                 }
             </div>
         </form>

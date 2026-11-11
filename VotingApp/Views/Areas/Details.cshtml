@@ -1,17 +1,17 @@
-﻿@model VotingApp.Domain.Entities.Area
+@model VotingApp.Domain.Entities.Area
 @{
     ViewData["Title"] = Model.Name;
-    var level = Model.Level switch { 2 => "Municipality", 3 => "Administrative post", 4 => "Village (suco)", _ => "Area" };
+    var level = Model.Level switch { 2 => T["Municipality"], 3 => T["Administrative post"], 4 => T["Village (suco)"], _ => T["Area"] };
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Areas</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Areas"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
 <div class="page-header"><div class="eyebrow">@level</div><h1>@Model.Name</h1></div>
 <div class="card form-narrow">
     <div class="card-body">
         <dl class="dl">
-            <dt>Code</dt><dd><code>@Model.Id</code></dd>
+            <dt>@T["Code"]</dt><dd><code>@Model.Id</code></dd>
             @if (!string.IsNullOrEmpty(Model.ParentId))
             {
-                <dt>Part of</dt><dd><a asp-action="Details" asp-route-id="@Model.ParentId">@Model.ParentId</a></dd>
+                <dt>@T["Part of"]</dt><dd><a asp-action="Details" asp-route-id="@Model.ParentId">@Model.ParentId</a></dd>
             }
         </dl>
     </div>

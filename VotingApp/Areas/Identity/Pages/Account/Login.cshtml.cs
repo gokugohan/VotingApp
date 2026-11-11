@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -104,13 +105,13 @@ namespace VotingApp.Areas.Identity.Pages.Account
                     }
                     else
                     {
-                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        ModelState.AddModelError(string.Empty, HttpContext.RequestServices.GetRequiredService<VotingApp.Web.Localization.Texts>()["Invalid login attempt."]);
                         return Page();
                     }
                 }
 
                 // Same message as a wrong password, so the form can't be used to discover which emails have accounts.
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                ModelState.AddModelError(string.Empty, HttpContext.RequestServices.GetRequiredService<VotingApp.Web.Localization.Texts>()["Invalid login attempt."]);
                 return Page();
 
             }

@@ -1,35 +1,35 @@
-﻿@page
+@page
 @model RegisterModel
 @{
-    ViewData["Title"] = "New user";
+    ViewData["Title"] = T["New user"];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="" asp-controller="Admin" asp-action="Users">Users and roles</a><span aria-hidden="true">/</span><span>New user</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-area="" asp-controller="Admin" asp-action="Users">@T["Users and roles"]</a><span aria-hidden="true">/</span><span>@T["New user"]</span></nav>
 <div class="page-header">
-    <h1>New user</h1>
-    <p>After creating the account, give it a role and, for municipal staff, their municipalities.</p>
+    <h1>@T["New user"]</h1>
+    <p>@T["After creating the account, give it a role and, for municipal staff, their municipalities."]</p>
 </div>
 <form asp-route-returnUrl="@Url.Action("Users", "Admin", new { area = "" })" method="post" class="card form-narrow">
     <div class="card-body">
         <div asp-validation-summary="All" class="errors"></div>
         <div class="field">
-            <label asp-for="Input.Email">E-mail</label>
+            <label asp-for="Input.Email">@T["E-mail"]</label>
             <input asp-for="Input.Email" autocomplete="off" />
             <span asp-validation-for="Input.Email" class="field-error"></span>
         </div>
         <div class="field">
-            <label asp-for="Input.Password">Temporary password</label>
+            <label asp-for="Input.Password">@T["Temporary password"]</label>
             <input asp-for="Input.Password" autocomplete="new-password" />
-            <span class="hint">At least 8 characters with upper case, lower case and a digit. Share it securely; the user can change it under My account.</span>
+            <span class="hint">@T["At least 8 characters with upper case, lower case and a digit."] @T["Share it securely; the user can change it under My account."]</span>
             <span asp-validation-for="Input.Password" class="field-error"></span>
         </div>
         <div class="field">
-            <label asp-for="Input.ConfirmPassword">Confirm password</label>
+            <label asp-for="Input.ConfirmPassword">@T["Confirm password"]</label>
             <input asp-for="Input.ConfirmPassword" autocomplete="new-password" />
             <span asp-validation-for="Input.ConfirmPassword" class="field-error"></span>
         </div>
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Create user</button>
-            <a asp-area="" asp-controller="Admin" asp-action="Users" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Create user"]</button>
+            <a asp-area="" asp-controller="Admin" asp-action="Users" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </div>
 </form>

@@ -167,9 +167,8 @@ namespace VotingApp.Application.Elections
                 var invalid = (await lists.GetStatusesAsync(election.Id, ct)).Where(s => !s.IsValid).ToList();
                 if (invalid.Count > 0)
                 {
-                    return OperationResult.Fail(FailureKind.Validation,
-                        "Fix these party lists before opening the election: " +
-                        string.Join("; ", invalid.Select(s => $"{names[s.ContestantId]} ({s.Problem})")));
+                    var problems = string.Join("; ", invalid.Select(s => names[s.ContestantId] + " (" + s.Problem + ")"));
+                    return OperationResult.Fail(FailureKind.Validation, $"Fix these party lists before opening the election: {problems}");
                 }
             }
 

@@ -1,24 +1,29 @@
 @model CreateElectionModel
 @{
-    ViewData["Title"] = "New election";
+    ViewData["Title"] = T["New election"];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>New election</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span><span>@T["New election"]</span></nav>
 <div class="page-header">
-    <h1>New election</h1>
-    <p>The first round is created with the election. Add contestants next, then open it for voting and counting.</p>
+    <h1>@T["New election"]</h1>
+    <p>@T["The first round is created with the election. Add contestants next, then open it for voting and counting."]</p>
 </div>
 
 <div class="card form-narrow">
     <form asp-action="Create" method="post" class="card-body">
         <div asp-validation-summary="ModelOnly" class="errors"></div>
         <div class="field">
-            <label asp-for="Name">Name</label>
-            <input asp-for="Name" placeholder="e.g. Presidential Election 2027" />
+            <label asp-for="Name">@T["Name"]</label>
+            <input asp-for="Name" placeholder="@T["e.g. Presidential Election 2027"]" />
             <span asp-validation-for="Name" class="field-error"></span>
         </div>
         <div class="field">
-            <label asp-for="Type">Type</label>
-            <select asp-for="Type" asp-items="Html.GetEnumSelectList<ElectionType>()" id="election-type"></select>
+            <label asp-for="Type">@T["Type"]</label>
+            <select asp-for="Type" id="election-type">
+                @foreach (var t in Enum.GetValues<ElectionType>())
+                {
+                    <option value="@((int)t)" selected="@(t == Model?.Type)">@T[t.ToString()]</option>
+                }
+            </select>
         </div>
         <div class="field">
             <label asp-for="ElectionDate"></label>
@@ -26,22 +31,22 @@
             <span asp-validation-for="ElectionDate" class="field-error"></span>
         </div>
         <fieldset class="form-grid" id="parliament-fields" style="border:0;padding:0;margin:0">
-            <legend class="label" style="margin-bottom:.5rem">Parliamentary rules</legend>
+            <legend class="label" style="margin-bottom:.5rem">@T["Parliamentary rules"]</legend>
             <div class="field">
-                <label asp-for="TotalSeats">Seats</label>
+                <label asp-for="TotalSeats">@T["Seats"]</label>
                 <input asp-for="TotalSeats" />
                 <span asp-validation-for="TotalSeats" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="ThresholdPercent">Threshold (% of valid votes)</label>
+                <label asp-for="ThresholdPercent">@T["Threshold (% of valid votes)"]</label>
                 <input asp-for="ThresholdPercent" step="0.01" />
                 <span asp-validation-for="ThresholdPercent" class="field-error"></span>
             </div>
-            <p class="hint" style="grid-column:1/-1">Defaults: 65 seats, 4% threshold. Check them against the electoral law in force.</p>
+            <p class="hint" style="grid-column:1/-1">@T["Defaults: 65 seats, 4% threshold. Check them against the electoral law in force."]</p>
         </fieldset>
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Create election</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Create election"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </form>
 </div>

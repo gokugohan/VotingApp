@@ -1,27 +1,27 @@
-﻿@model VotingApp.ViewModels.DeleteCandidateViewModel
+@model VotingApp.ViewModels.DeleteCandidateViewModel
 @{
-    ViewData["Title"] = "Delete " + Model.Candidate.Name;
+    ViewData["Title"] = T["Delete {0}", Model.Candidate.Name];
     var hasVotes = Model.VoteList != null && Model.VoteList.Count > 0;
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>@Model.Candidate.Name</span></nav>
-<div class="page-header"><h1>Delete candidate</h1></div>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Candidates"]</a><span aria-hidden="true">/</span><span>@Model.Candidate.Name</span></nav>
+<div class="page-header"><h1>@T["Delete candidate"]</h1></div>
 <div class="card form-narrow">
     <div class="card-body stack">
         <div class="cluster"><partial name="_Avatar" model="(Model.Candidate.Name, Model.Candidate.Avatar, (string)null)" /><strong>@Model.Candidate.Name</strong></div>
         @if (hasVotes)
         {
             <div class="alert alert-warn">@Icon.Render("alert")
-                <div>This candidate has <strong>@ViewData["TotalCandidateVote"]</strong> recorded votes at @Model.VoteList.Count polling stations, so it cannot be deleted.</div>
+                <div>@T.Html("This candidate has <strong>{0}</strong> recorded votes at {1} polling stations, so it cannot be deleted.", ViewData["TotalCandidateVote"], Model.VoteList.Count)</div>
             </div>
         }
         else
         {
-            <p>The profile and photo reference will be removed. This cannot be undone.</p>
+            <p>@T["The profile and photo reference will be removed. This cannot be undone."]</p>
         }
         <form asp-action="Delete" method="post" class="actions">
             <input type="hidden" asp-for="Id" />
-            <button type="submit" class="btn btn-danger" disabled="@hasVotes">@Icon.Render("trash") Delete</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-danger" disabled="@hasVotes">@Icon.Render("trash") @T["Delete"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </form>
     </div>
 </div>

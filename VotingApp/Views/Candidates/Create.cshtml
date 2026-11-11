@@ -1,16 +1,16 @@
-﻿@model CreateCandidateModel
+@model CreateCandidateModel
 @{
-    ViewData["Title"] = "New candidate";
+    ViewData["Title"] = T["New candidate"];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>New</span></nav>
-<div class="page-header"><h1>New candidate</h1></div>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Candidates"]</a><span aria-hidden="true">/</span><span>@T["New"]</span></nav>
+<div class="page-header"><h1>@T["New candidate"]</h1></div>
 <form asp-action="Create" method="post" enctype="multipart/form-data" class="card form-narrow">
     <div class="card-body">
         <div asp-validation-summary="ModelOnly" class="errors"></div>
         <partial name="_CandidateFields" model="(Model?.Name, Model?.Description, Model?.ShortBiography, (string)null)" />
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Create candidate</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Create candidate"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </div>
 </form>

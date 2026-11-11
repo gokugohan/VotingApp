@@ -1,9 +1,9 @@
-﻿@model IEnumerable<VotingApp.Domain.Entities.Area>
+@model IEnumerable<VotingApp.Domain.Entities.Area>
 @using VotingApp.Application.Security
 @using Microsoft.AspNetCore.Authorization
 @inject IAuthorizationService Authz
 @{
-    ViewData["Title"] = "Polling stations";
+    ViewData["Title"] = T["Polling stations"];
     var locations = (List<VotingApp.Domain.Entities.PollingStationArea>)ViewData["PollingStations"];
     var selected = (string)ViewData["MunicipalityId"];
     var municipalityNames = Model.ToDictionary(m => m.Id, m => m.Name);
@@ -12,32 +12,32 @@
 }
 <div class="page-header spread">
     <div>
-        <h1>Polling stations</h1>
-        <p>@locations.Count station@(locations.Count == 1 ? "" : "s")@(string.IsNullOrEmpty(selected) ? "" : " in " + municipalityNames.GetValueOrDefault(selected)). Results are recorded per station.</p>
+        <h1>@T["Polling stations"]</h1>
+        <p>@(string.IsNullOrEmpty(selected) ? T["{0} station(s).", locations.Count] : T["{0} station(s) in {1}.", locations.Count, municipalityNames.GetValueOrDefault(selected)]) @T["Results are recorded per station."]</p>
     </div>
     @if (canManage)
     {
-        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New polling station</a>
+        <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") @T["New polling station"]</a>
     }
 </div>
 
 <div class="card">
     <div class="card-header">
         <form method="get" class="cluster">
-            <label for="muni" class="label">Municipality</label>
+            <label for="muni" class="label">@T["Municipality"]</label>
             <select id="muni" name="municipalityId" onchange="this.form.submit()" style="width:auto">
-                <option value="">All municipalities</option>
+                <option value="">@T["All municipalities"]</option>
                 @foreach (var m in Model)
                 {
                     <option value="@m.Id" selected="@(m.Id == selected)">@m.Name</option>
                 }
             </select>
-            <noscript><button class="btn btn-secondary btn-sm">Filter</button></noscript>
+            <noscript><button class="btn btn-secondary btn-sm">@T["Filter"]</button></noscript>
         </form>
     </div>
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th scope="col">Polling station</th><th scope="col">Village</th><th scope="col">Municipality</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <thead><tr><th scope="col">@T["Polling station"]</th><th scope="col">@T["Village"]</th><th scope="col">@T["Municipality"]</th><th scope="col"><span class="visually-hidden">@T["Actions"]</span></th></tr></thead>
             <tbody>
                 @foreach (var l in locations)
                 {
@@ -48,15 +48,15 @@
                         <td class="actions-cell">
                             @if (canManage)
                             {
-                                <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@l.Id" aria-label="Edit @l.PollingStation?.Name">@Icon.Render("pencil") Edit</a>
-                                <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@l.Id" aria-label="Delete @l.PollingStation?.Name">@Icon.Render("trash") Delete</a>
+                                <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@l.Id" aria-label="@T["Edit {0}", l.PollingStation?.Name]">@Icon.Render("pencil") @T["Edit"]</a>
+                                <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@l.Id" aria-label="@T["Delete {0}", l.PollingStation?.Name]">@Icon.Render("trash") @T["Delete"]</a>
                             }
                         </td>
                     </tr>
                 }
                 @if (locations.Count == 0)
                 {
-                    <tr><td colspan="4" class="empty">No polling stations here yet.</td></tr>
+                    <tr><td colspan="4" class="empty">@T["No polling stations here yet."]</td></tr>
                 }
             </tbody>
         </table>

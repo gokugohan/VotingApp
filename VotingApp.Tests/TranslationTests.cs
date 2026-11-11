@@ -139,6 +139,10 @@ namespace VotingApp.Tests
         [InlineData("Only entered sheets can be verified (this one is Approved).", "Só é possível verificar atas introduzidas (esta está Aprovada).")]
         [InlineData("The entries differ in: Ballots used, Party X.", "As introduções diferem em: Boletins utilizados, Party X.")]
         [InlineData("Sheet approved and counted.", "Ata aprovada e contada.")]
+        [InlineData("Status set to Voting.", "Estado alterado para Votação.")]
+        [InlineData("Line 3: gender must be F or M.", "Linha 3: o sexo deve ser F ou M.")]
+        [InlineData("Positions 4-6 need at least one woman.", "As posições 4-6 precisam de pelo menos uma mulher.")]
+        [InlineData("Roles updated for ana@example.test.", "Funções atualizadas para ana@example.test.")]
         [InlineData("Something nobody translated (42).", "Something nobody translated (42).")]
         public void Service_messages_are_translated_with_their_values(string english, string portuguese)
         {
@@ -162,6 +166,19 @@ namespace VotingApp.Tests
                 var untranslated = labels.Where(l => catalog.Translate(language, l) == l).ToList();
                 Assert.True(untranslated.Count == 0, $"{language}: " + string.Join(", ", untranslated));
             }
+        }
+    
+        [Fact]
+        public void Password_rule_errors_follow_the_language()
+        {
+            var context = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            context.Request.Headers["Cookie"] = "lang=pt";
+            var accessor = new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = context };
+            var errors = new VotingApp.Web.Localization.TranslatedIdentityErrors(new VotingApp.Web.Localization.Texts(Catalog(), accessor));
+
+            Assert.Equal("A palavra-passe deve ter pelo menos 8 caracteres.", errors.PasswordTooShort(8).Description);
+            Assert.Equal("PasswordRequiresDigit", errors.PasswordRequiresDigit().Code);
+            Assert.Equal("A palavra-passe deve conter um algarismo (0-9).", errors.PasswordRequiresDigit().Description);
         }
     }
 }

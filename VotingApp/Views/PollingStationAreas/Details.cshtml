@@ -1,14 +1,14 @@
-﻿@model VotingApp.Domain.Entities.PollingStationArea
+@model VotingApp.Domain.Entities.PollingStationArea
 @{
     ViewData["Title"] = Model.PollingStation?.Name;
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Polling stations</a><span aria-hidden="true">/</span><span>@Model.PollingStation?.Name</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Polling stations"]</a><span aria-hidden="true">/</span><span>@Model.PollingStation?.Name</span></nav>
 <div class="page-header"><h1>@Model.PollingStation?.Name</h1></div>
 <div class="card form-narrow">
     <div class="card-body">
         <dl class="dl">
-            <dt>Village</dt><dd>@Model.Area?.Name</dd>
-            <dt>Area code</dt><dd><code>@Model.AreaId</code></dd>
+            <dt>@T["Village"]</dt><dd>@Model.Area?.Name</dd>
+            <dt>@T["Area code"]</dt><dd><code>@Model.AreaId</code></dd>
         </dl>
     </div>
 </div>

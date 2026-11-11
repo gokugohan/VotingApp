@@ -67,6 +67,7 @@ namespace VotingApp.Web
                     options.User.RequireUniqueEmail = true;
                 })
                 .AddDefaultTokenProviders()
+                .AddErrorDescriber<VotingApp.Web.Localization.TranslatedIdentityErrors>()
                 .AddDefaultUI()
                 .AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>()
                 .AddEntityFrameworkStores<AppDbContext>();

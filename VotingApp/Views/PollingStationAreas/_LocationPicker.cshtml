@@ -2,16 +2,16 @@
 @* Municipality -> administrative post -> village. Posts the village id as AreaId. *@
 <div class="form-grid">
     <div class="field">
-        <label for="loc-municipality">Municipality</label>
-        <select id="loc-municipality" asp-items="ViewBag.Municipalities"><option value="">Choose…</option></select>
+        <label for="loc-municipality">@T["Municipality"]</label>
+        <select id="loc-municipality" asp-items="ViewBag.Municipalities"><option value="">@T["Choose…"]</option></select>
     </div>
     <div class="field">
-        <label for="loc-post">Administrative post</label>
-        <select id="loc-post" disabled><option value="">Choose a municipality first</option></select>
+        <label for="loc-post">@T["Administrative post"]</label>
+        <select id="loc-post" disabled><option value="">@T["Choose a municipality first"]</option></select>
     </div>
 </div>
 <div class="field">
-    <label for="AreaId">Village (suco)</label>
+    <label for="AreaId">@T["Village (suco)"]</label>
     <select id="AreaId" name="AreaId" required>
         @if (!string.IsNullOrEmpty(Model.SelectedVillageId))
         {
@@ -19,13 +19,14 @@
         }
         else
         {
-            <option value="">Choose an administrative post first</option>
+            <option value="">@T["Choose an administrative post first"]</option>
         }
     </select>
     @Html.ValidationMessage("AreaId", null, new { @class = "field-error" })
 </div>
 <script>
     (function () {
+        var texts = { choose: @Json.Serialize(T["Choose…"]), postFirst: @Json.Serialize(T["Choose an administrative post first"]), muniFirst: @Json.Serialize(T["Choose a municipality first"]) };
         var muni = document.getElementById("loc-municipality"), post = document.getElementById("loc-post"), village = document.getElementById("AreaId");
         function fill(select, items, placeholder) {
             select.innerHTML = "";
@@ -38,12 +39,12 @@
             return fetch(url).then(function (r) { return r.json(); }).then(function (items) { fill(select, items, placeholder); });
         }
         muni.addEventListener("change", function () {
-            fill(village, [], "Choose an administrative post first");
-            if (muni.value) load("@Url.Action("GetPostAdministratives")/" + encodeURIComponent(muni.value), post, "Choose…");
-            else fill(post, [], "Choose a municipality first");
+            fill(village, [], texts.postFirst);
+            if (muni.value) load("@Url.Action("GetPostAdministratives")/" + encodeURIComponent(muni.value), post, texts.choose);
+            else fill(post, [], texts.muniFirst);
         });
         post.addEventListener("change", function () {
-            if (post.value) load("@Url.Action("GetVillages")/" + encodeURIComponent(post.value), village, "Choose…");
+            if (post.value) load("@Url.Action("GetVillages")/" + encodeURIComponent(post.value), village, texts.choose);
         });
     })();
 </script>

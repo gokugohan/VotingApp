@@ -1,33 +1,33 @@
-﻿@model IEnumerable<VotingApp.Domain.Entities.PollingStation>
+@model IEnumerable<VotingApp.Domain.Entities.PollingStation>
 @{
-    ViewData["Title"] = "Polling station names";
+    ViewData["Title"] = T["Polling station names"];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-controller="PollingStationAreas" asp-action="Index">Polling stations</a><span aria-hidden="true">/</span><span>Names</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-controller="PollingStationAreas" asp-action="Index">@T["Polling stations"]</a><span aria-hidden="true">/</span><span>@T["Names"]</span></nav>
 <div class="page-header spread">
     <div>
-        <h1>Polling station names</h1>
-        <p>The list of station names only. To place a station in a village, use <a asp-controller="PollingStationAreas" asp-action="Index">Polling stations</a>.</p>
+        <h1>@T["Polling station names"]</h1>
+        <p>@T.Html("The list of station names only. To place a station in a village, use <a href=\"{0}\">Polling stations</a>.", Url.Action("Index", "PollingStationAreas"))</p>
     </div>
-    <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") New name</a>
+    <a asp-action="Create" class="btn btn-primary">@Icon.Render("plus") @T["New name"]</a>
 </div>
 <div class="card">
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th scope="col">Name</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+            <thead><tr><th scope="col">@T["Name"]</th><th scope="col"><span class="visually-hidden">@T["Actions"]</span></th></tr></thead>
             <tbody>
                 @foreach (var item in Model)
                 {
                     <tr>
                         <th scope="row">@item.Name</th>
                         <td class="actions-cell">
-                            <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@item.Id" aria-label="Rename @item.Name">@Icon.Render("pencil") Rename</a>
-                            <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@item.Id" aria-label="Delete @item.Name">@Icon.Render("trash") Delete</a>
+                            <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@item.Id" aria-label="@T["Rename {0}", item.Name]">@Icon.Render("pencil") @T["Rename"]</a>
+                            <a class="btn btn-ghost btn-sm" asp-action="Delete" asp-route-id="@item.Id" aria-label="@T["Delete {0}", item.Name]">@Icon.Render("trash") @T["Delete"]</a>
                         </td>
                     </tr>
                 }
                 @if (!Model.Any())
                 {
-                    <tr><td colspan="2" class="empty">No polling stations yet.</td></tr>
+                    <tr><td colspan="2" class="empty">@T["No polling stations yet."]</td></tr>
                 }
             </tbody>
         </table>

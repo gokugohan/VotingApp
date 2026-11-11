@@ -1,17 +1,17 @@
-﻿@model IndexAreaModel
+@model IndexAreaModel
 @{
-    ViewData["Title"] = "Areas";
+    ViewData["Title"] = T["Areas"];
     var posts = Model.AdministrativePosts.ToLookup(p => p.ParentId);
     var villages = Model.Villages.ToLookup(v => v.ParentId);
 }
 <div class="page-header">
-    <h1>Administrative areas</h1>
-    <p>@Model.Municipalities.Count municipalities, @Model.AdministrativePosts.Count administrative posts and @Model.Villages.Count villages (sucos).</p>
+    <h1>@T["Administrative areas"]</h1>
+    <p>@T["{0} municipalities, {1} administrative posts and {2} villages (sucos).", Model.Municipalities.Count, Model.AdministrativePosts.Count, Model.Villages.Count]</p>
 </div>
 
 <div class="field" style="max-width:24rem">
-    <label for="area-search">Find an area</label>
-    <input id="area-search" type="search" placeholder="Type a name…" autocomplete="off" />
+    <label for="area-search">@T["Find an area"]</label>
+    <input id="area-search" type="search" placeholder="@T["Type a name…"]" autocomplete="off" />
 </div>
 
 <div class="stack" id="area-tree">
@@ -20,7 +20,7 @@
         <details class="card" data-area-name="@m.Name.ToLowerInvariant()">
             <summary class="card-body spread" style="cursor:pointer;list-style:none">
                 <span><strong>@m.Name</strong> <span class="muted small">@m.Id</span></span>
-                <span class="badge">@posts[m.Id].Count() posts</span>
+                <span class="badge">@T["{0} posts", posts[m.Id].Count()]</span>
             </summary>
             <div class="card-body" style="border-top:1px solid var(--border)">
                 <div class="grid grid-2">

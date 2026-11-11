@@ -1,9 +1,9 @@
-﻿@model EditCandidateModel
+@model EditCandidateModel
 @{
-    ViewData["Title"] = "Edit " + Model.Name;
+    ViewData["Title"] = T["Edit {0}", Model.Name];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Candidates</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
-<div class="page-header"><h1>Edit candidate</h1></div>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Candidates"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<div class="page-header"><h1>@T["Edit candidate"]</h1></div>
 <form asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="card form-narrow">
     <div class="card-body">
         <div asp-validation-summary="ModelOnly" class="errors"></div>
@@ -11,8 +11,8 @@
         <input type="hidden" asp-for="Avatar" />
         <partial name="_CandidateFields" model="(Model.Name, Model.Description, Model.ShortBiography, Model.Avatar)" />
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Save changes</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Save changes"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </div>
 </form>

@@ -1,13 +1,13 @@
-﻿@page
+@page
 @model RolesModel
 @{
-    ViewData["Title"] = "Roles";
+    ViewData["Title"] = T["Roles"];
     ViewData["ActivePage"] = ManageNavPages.Roles;
 }
 <div class="card">
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th scope="col">Role</th></tr></thead>
+            <thead><tr><th scope="col">@T["Role"]</th></tr></thead>
             <tbody>
                 @foreach (var role in Model.Roles)
                 {
@@ -16,5 +16,5 @@
             </tbody>
         </table>
     </div>
-    <div class="card-footer"><a asp-area="" asp-controller="Admin" asp-action="Roles">Edit roles and permissions @Icon.Render("chevron-right")</a></div>
+    <div class="card-footer"><a asp-area="" asp-controller="Admin" asp-action="Roles">@T["Edit roles and permissions"] @Icon.Render("chevron-right")</a></div>
 </div>

@@ -1,17 +1,17 @@
-﻿@page
+@page
 @model PermissionsModel
 @{
-    ViewData["Title"] = "Permissions";
+    ViewData["Title"] = T["Permissions"];
     ViewData["ActivePage"] = ManageNavPages.Permissions;
 }
 <div class="card">
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th scope="col">Area</th><th scope="col">Permission</th><th scope="col">Code</th></tr></thead>
+            <thead><tr><th scope="col">@T["Area"]</th><th scope="col">@T["Permission"]</th><th scope="col">@T["Code"]</th></tr></thead>
             <tbody>
                 @foreach (var item in Model.PermissionItems)
                 {
-                    <tr><td>@item.Group</td><td>@item.Description</td><td><code class="small">@item.Name</code></td></tr>
+                    <tr><td>@T[item.Group]</td><td>@T[item.Description]</td><td><code class="small">@item.Name</code></td></tr>
                 }
             </tbody>
         </table>

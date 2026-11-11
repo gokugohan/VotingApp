@@ -1,35 +1,36 @@
-﻿@model IEnumerable<VotingApp.Domain.Entities.Audit>
+@model IEnumerable<VotingApp.Domain.Entities.Audit>
 @{
-    ViewData["Title"] = "Audit log";
+    ViewData["Title"] = T["Audit log"];
+    string Change(string type) => type switch { "Create" => T["Created"], "Update" => T["Changed"], "Delete" => T["Deleted"], _ => type };
 }
 <div class="page-header">
-    <h1>Audit log</h1>
-    <p>Every change saved through the application, newest first (latest 1,000). Times are UTC for entries recorded after the 2026 upgrade.</p>
+    <h1>@T["Audit log"]</h1>
+    <p>@T["Every change saved through the application, newest first (latest 1,000). Times are UTC for entries recorded after the 2026 upgrade."]</p>
 </div>
 <div class="card">
     <div class="table-wrap">
         <table class="table table-compact">
-            <thead><tr><th scope="col">When</th><th scope="col">Change</th><th scope="col">Record</th><th scope="col">User</th><th scope="col">Details</th></tr></thead>
+            <thead><tr><th scope="col">@T["When"]</th><th scope="col">@T["Change"]</th><th scope="col">@T["Record"]</th><th scope="col">@T["User"]</th><th scope="col">@T["Details"]</th></tr></thead>
             <tbody>
                 @foreach (var a in Model)
                 {
                     <tr>
                         <td class="nowrap small">@a.DateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td><span class="badge @(a.Type == "Delete" ? "badge-bad" : a.Type == "Create" ? "badge-ok" : "badge-info")">@a.Type</span></td>
+                        <td><span class="badge @(a.Type == "Delete" ? "badge-bad" : a.Type == "Create" ? "badge-ok" : "badge-info")">@Change(a.Type)</span></td>
                         <td>@a.TableName<div class="muted small" style="font-family:var(--mono);overflow-wrap:anywhere">@a.PrimaryKey</div></td>
-                        <td class="small" style="font-family:var(--mono)">@(a.UserId ?? "system")</td>
+                        <td class="small" style="font-family:var(--mono)">@(a.UserId ?? T["system"])</td>
                         <td>
                             <details>
-                                <summary class="small" style="cursor:pointer">@(string.IsNullOrEmpty(a.AffectedColumns) ? "Values" : a.AffectedColumns)</summary>
-                                @if (!string.IsNullOrEmpty(a.OldValues)) { <div class="small"><strong>Before:</strong> <code style="overflow-wrap:anywhere">@a.OldValues</code></div> }
-                                @if (!string.IsNullOrEmpty(a.NewValues)) { <div class="small"><strong>After:</strong> <code style="overflow-wrap:anywhere">@a.NewValues</code></div> }
+                                <summary class="small" style="cursor:pointer">@(string.IsNullOrEmpty(a.AffectedColumns) ? T["Values"] : a.AffectedColumns)</summary>
+                                @if (!string.IsNullOrEmpty(a.OldValues)) { <div class="small"><strong>@T["Before:"]</strong> <code style="overflow-wrap:anywhere">@a.OldValues</code></div> }
+                                @if (!string.IsNullOrEmpty(a.NewValues)) { <div class="small"><strong>@T["After:"]</strong> <code style="overflow-wrap:anywhere">@a.NewValues</code></div> }
                             </details>
                         </td>
                     </tr>
                 }
                 @if (!Model.Any())
                 {
-                    <tr><td colspan="5" class="empty">No changes recorded yet.</td></tr>
+                    <tr><td colspan="5" class="empty">@T["No changes recorded yet."]</td></tr>
                 }
             </tbody>
         </table>

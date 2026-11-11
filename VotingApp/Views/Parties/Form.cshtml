@@ -1,10 +1,10 @@
 @model VotingApp.Controllers.PartyFormModel
 @{
     var isNew = !Model.Id.HasValue;
-    ViewData["Title"] = isNew ? "New party" : "Edit " + Model.Name;
+    ViewData["Title"] = isNew ? T["New party"] : T["Edit {0}", Model.Name];
 }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Parties and coalitions</a><span aria-hidden="true">/</span><span>@(isNew ? "New" : Model.Name)</span></nav>
-<div class="page-header"><h1>@(isNew ? "New party or coalition" : "Edit party")</h1></div>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Parties and coalitions"]</a><span aria-hidden="true">/</span><span>@(isNew ? T["New"] : Model.Name)</span></nav>
+<div class="page-header"><h1>@(isNew ? T["New party or coalition"] : T["Edit party"])</h1></div>
 <form asp-action="Save" method="post" class="card form-narrow">
     <div class="card-body">
         <div asp-validation-summary="ModelOnly" class="errors"></div>
@@ -12,23 +12,23 @@
         <div class="field">
             <label asp-for="Name"></label>
             <input asp-for="Name" />
-            <span class="hint">Renaming keeps the history: earlier ballots still show the name used at the time.</span>
+            <span class="hint">@T["Renaming keeps the history: earlier ballots still show the name used at the time."]</span>
             <span asp-validation-for="Name" class="field-error"></span>
         </div>
         <div class="form-grid">
             <div class="field"><label asp-for="Acronym"></label><input asp-for="Acronym" /></div>
-            <div class="field"><label asp-for="Kind">Type</label><select asp-for="Kind" asp-items="Html.GetEnumSelectList<PartyKind>()"></select></div>
+            <div class="field"><label asp-for="Kind">@T["Type"]</label><select asp-for="Kind">@foreach (var k in Enum.GetValues<PartyKind>()) { <option value="@((int)k)" selected="@(k == Model.Kind)">@T[k.ToString()]</option> }</select></div>
         </div>
-        <div class="field"><label asp-for="Notes">Notes <span class="muted">(optional)</span></label><textarea asp-for="Notes" rows="3"></textarea></div>
+        <div class="field"><label asp-for="Notes">@T["Notes"] <span class="muted">@T["(optional)"]</span></label><textarea asp-for="Notes" rows="3"></textarea></div>
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a asp-action="Index" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">@T["Save"]</button>
+            <a asp-action="Index" class="btn btn-ghost">@T["Cancel"]</a>
         </div>
     </div>
 </form>
 @if (!isNew)
 {
-    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-narrow" style="margin-top:1rem" data-confirm="Delete this party record? Only possible if it has never been on a ballot.">
-        <button type="submit" class="btn btn-ghost">@Icon.Render("trash") Delete party</button>
+    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-narrow" style="margin-top:1rem" data-confirm="@T["Delete this party record? Only possible if it has never been on a ballot."]">
+        <button type="submit" class="btn btn-ghost">@Icon.Render("trash") @T["Delete party"]</button>
     </form>
 }

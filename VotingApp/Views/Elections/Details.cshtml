@@ -12,17 +12,17 @@
     var steps = Enum.GetValues<ElectionStatus>();
     string NextHelp(ElectionStatus s) => s switch
     {
-        ElectionStatus.Voting => "Polls are open. The ballot can no longer change.",
-        ElectionStatus.Counting => "Result sheet entry opens for clerks.",
-        ElectionStatus.Provisional => "Provisional results are announced; entry stays open for remaining stations.",
-        ElectionStatus.Certified => "Final: results are certified and the round can no longer change.",
+        ElectionStatus.Voting => T["Polls are open. The ballot can no longer change."],
+        ElectionStatus.Counting => T["Result sheet entry opens for clerks."],
+        ElectionStatus.Provisional => T["Provisional results are announced; entry stays open for remaining stations."],
+        ElectionStatus.Certified => T["Final: results are certified and the round can no longer change."],
         _ => "",
     };
 }
 
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
 <div class="page-header">
-    <div class="eyebrow">@(Model.Type == ElectionType.Presidential ? "Presidential" : "Parliamentary") election · @Model.ElectionDate.ToString("d MMMM yyyy")</div>
+    <div class="eyebrow">@(Model.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"]) · @Model.ElectionDate.ToString("d MMMM yyyy")</div>
     <h1>@Model.Name</h1>
 </div>
 
@@ -32,15 +32,15 @@
         {
             <section class="card" aria-labelledby="round-@round.Number">
                 <div class="card-header">
-                    <h2 id="round-@round.Number">@(round.Number == 1 ? (Model.Rounds.Count > 1 ? "First round" : "Ballot") : "Runoff") <span class="muted small">@round.VotingDate.ToString("d MMM yyyy")</span></h2>
+                    <h2 id="round-@round.Number">@(round.Number == 1 ? (Model.Rounds.Count > 1 ? T["First round"] : T["Ballot"]) : T["Runoff"]) <span class="muted small">@round.VotingDate.ToString("d MMM yyyy")</span></h2>
                     <span class="cluster">
-                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">@Icon.Render("file") Result sheets</a>
-                        <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") Results</a>
+                        <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">@Icon.Render("file") @T["Result sheets"]</a>
+                        <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") @T["Results"]</a>
                     </span>
                 </div>
                 <div class="table-wrap">
                     <table class="table">
-                        <thead><tr><th scope="col" class="num" style="width:3rem">#</th><th scope="col">Name</th><th scope="col">@(parliamentary ? "Candidate list" : "Type")</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <thead><tr><th scope="col" class="num" style="width:3rem">#</th><th scope="col">@T["Name"]</th><th scope="col">@(parliamentary ? T["Candidate list"] : T["Type"])</th><th scope="col"><span class="visually-hidden">@T["Actions"]</span></th></tr></thead>
                         <tbody>
                             @foreach (var rc in round.Contestants.OrderBy(c => c.BallotPosition))
                             {
@@ -52,19 +52,19 @@
                                             <form asp-action="LinkParty" method="post" class="cluster" style="margin-top:.25rem;font-weight:400">
                                                 <input type="hidden" name="electionId" value="@Model.Id" />
                                                 <input type="hidden" name="contestantId" value="@rc.ContestantId" />
-                                                <label class="visually-hidden" for="party-@rc.ContestantId">Party record for @rc.Contestant.Name</label>
+                                                <label class="visually-hidden" for="party-@rc.ContestantId">@T["Party record for {0}", rc.Contestant.Name]</label>
                                                 <select id="party-@rc.ContestantId" name="partyId" style="width:auto;min-height:32px;padding:.15rem .4rem;font-size:.85rem" onchange="this.form.submit()">
-                                                    <option value="">Not linked</option>
+                                                    <option value="">@T["Not linked"]</option>
                                                     @foreach (var p in registry)
                                                     {
-                                                        <option value="@p.Id" selected="@(p.Id == rc.Contestant.PartyId)">Record: @p.Name</option>
+                                                        <option value="@p.Id" selected="@(p.Id == rc.Contestant.PartyId)">@T["Record: {0}", p.Name]</option>
                                                     }
                                                 </select>
                                                 @if (rc.Contestant.PartyId.HasValue)
                                                 {
-                                                    <a class="small" asp-controller="Parties" asp-action="Details" asp-route-id="@rc.Contestant.PartyId">history</a>
+                                                    <a class="small" asp-controller="Parties" asp-action="Details" asp-route-id="@rc.Contestant.PartyId">@T["history"]</a>
                                                 }
-                                                <noscript><button class="btn btn-ghost btn-sm">Link</button></noscript>
+                                                <noscript><button class="btn btn-ghost btn-sm">@T["Link"]</button></noscript>
                                             </form>
                                         }
                                     </th>
@@ -73,26 +73,26 @@
                                         {
                                             <div class="cluster" style="gap:.4rem">
                                                 @if (ls.IsValid) { <span class="badge badge-ok">@Icon.Render("check") @ls.Effective + @ls.Substitutes</span> }
-                                                else { <span class="badge badge-bad" title="@ls.Problem">@Icon.Render("alert") @(ls.Effective == 0 ? "No list" : "Rules not met")</span> }
-                                                <a asp-controller="PartyLists" asp-action="@(canEditBallot ? "Edit" : "Details")" asp-route-id="@rc.ContestantId">@(canEditBallot ? "Edit list" : "View list")</a>
+                                                else { <span class="badge badge-bad" title="@T.Message(ls.Problem)">@Icon.Render("alert") @(ls.Effective == 0 ? T["No list"] : T["Rules not met"])</span> }
+                                                <a asp-controller="PartyLists" asp-action="@(canEditBallot ? "Edit" : "Details")" asp-route-id="@rc.ContestantId">@(canEditBallot ? T["Edit list"] : T["View list"])</a>
                                                 @if (Model.Status is ElectionStatus.Provisional or ElectionStatus.Certified)
                                                 {
-                                                    <a asp-controller="PartyLists" asp-action="Seats" asp-route-id="@rc.ContestantId">Seats</a>
+                                                    <a asp-controller="PartyLists" asp-action="Seats" asp-route-id="@rc.ContestantId">@T["Seats"]</a>
                                                 }
                                             </div>
                                         }
                                         else
                                         {
-                                            @rc.Contestant.Type
+                                            @T[rc.Contestant.Type.ToString()]
                                         }
                                     </td>
                                     <td class="actions-cell">
                                         @if (canEditBallot)
                                         {
-                                            <form asp-action="RemoveContestant" method="post" class="inline" data-confirm="Remove @rc.Contestant.Name from the ballot?">
+                                            <form asp-action="RemoveContestant" method="post" class="inline" data-confirm="@T["Remove {0} from the ballot?", rc.Contestant.Name]">
                                                 <input type="hidden" name="electionId" value="@Model.Id" />
                                                 <input type="hidden" name="contestantId" value="@rc.ContestantId" />
-                                                <button type="submit" class="btn btn-ghost btn-sm" aria-label="Remove @rc.Contestant.Name">@Icon.Render("trash") Remove</button>
+                                                <button type="submit" class="btn btn-ghost btn-sm" aria-label="@T["Remove {0}", rc.Contestant.Name]">@Icon.Render("trash") @T["Remove"]</button>
                                             </form>
                                         }
                                     </td>
@@ -100,7 +100,7 @@
                             }
                             @if (!round.Contestants.Any())
                             {
-                                <tr><td colspan="4" class="empty">No contestants yet. Add them below.</td></tr>
+                                <tr><td colspan="4" class="empty">@T["No contestants yet. Add them below."]</td></tr>
                             }
                         </tbody>
                     </table>
@@ -111,30 +111,30 @@
         @if (canEditBallot)
         {
             <section class="card" aria-labelledby="add-heading">
-                <div class="card-header"><h2 id="add-heading">Add @(Model.Type == ElectionType.Presidential ? "a candidate" : "a party or coalition")</h2></div>
+                <div class="card-header"><h2 id="add-heading">@(Model.Type == ElectionType.Presidential ? T["Add a candidate"] : T["Add a party or coalition"])</h2></div>
                 <form asp-action="AddContestant" method="post" class="card-body">
                     <input type="hidden" name="ElectionId" value="@Model.Id" />
                     <div class="form-grid">
                         @if (parliamentary && registry.Count > 0)
                         {
                             <div class="field" style="grid-column:1/-1">
-                                <label for="c-party">Party record</label>
+                                <label for="c-party">@T["Party record"]</label>
                                 <select id="c-party" name="PartyId">
-                                    <option value="">New party (type the name below)</option>
+                                    <option value="">@T["New party (type the name below)"]</option>
                                     @foreach (var p in registry)
                                     {
                                         <option value="@p.Id">@p.Name @(string.IsNullOrEmpty(p.Acronym) ? "" : "(" + p.Acronym + ")")</option>
                                     }
                                 </select>
-                                <span class="hint">Choose the party that stood in earlier elections so results can be compared. Leave the name empty to use the record's name.</span>
+                                <span class="hint">@T["Choose the party that stood in earlier elections so results can be compared. Leave the name empty to use the record's name."]</span>
                             </div>
                         }
                         <div class="field">
-                            <label for="c-name">Name@(parliamentary ? " on this ballot" : "")</label>
+                            <label for="c-name">@(parliamentary ? T["Name on this ballot"] : T["Name"])</label>
                             <input id="c-name" name="Name" maxlength="200" required="@(!parliamentary)" />
                         </div>
                         <div class="field">
-                            <label for="c-acronym">Acronym <span class="muted">(optional)</span></label>
+                            <label for="c-acronym">@T["Acronym"] <span class="muted">@T["(optional)"]</span></label>
                             <input id="c-acronym" name="Acronym" maxlength="30" />
                         </div>
                         @if (Model.Type == ElectionType.Presidential)
@@ -144,20 +144,20 @@
                         else
                         {
                             <div class="field">
-                                <label for="c-type">Type</label>
+                                <label for="c-type">@T["Type"]</label>
                                 <select id="c-type" name="Type">
-                                    <option value="@ContestantType.Party">Party</option>
-                                    <option value="@ContestantType.Coalition">Coalition</option>
+                                    <option value="@ContestantType.Party">@T["Party"]</option>
+                                    <option value="@ContestantType.Coalition">@T["Coalition"]</option>
                                 </select>
                             </div>
                         }
                         <div class="field">
-                            <label for="c-profile">Candidate profile <span class="muted">(optional)</span></label>
-                            <select id="c-profile" name="CandidateId" asp-items="ViewBag.Candidates"><option value="">None</option></select>
-                            <span class="hint">Links a photo and biography.</span>
+                            <label for="c-profile">@T["Candidate profile"] <span class="muted">@T["(optional)"]</span></label>
+                            <select id="c-profile" name="CandidateId" asp-items="ViewBag.Candidates"><option value="">@T["None"]</option></select>
+                            <span class="hint">@T["Links a photo and biography."]</span>
                         </div>
                     </div>
-                    <div class="actions"><button type="submit" class="btn btn-primary">@Icon.Render("plus") Add to ballot</button></div>
+                    <div class="actions"><button type="submit" class="btn btn-primary">@Icon.Render("plus") @T["Add to ballot"]</button></div>
                 </form>
             </section>
         }
@@ -165,7 +165,7 @@
 
     <aside class="stack-lg">
         <section class="card" aria-labelledby="status-heading">
-            <div class="card-header"><h2 id="status-heading">Status</h2></div>
+            <div class="card-header"><h2 id="status-heading">@T["Status"]</h2></div>
             <div class="card-body stack">
                 <ol style="list-style:none;margin:0;padding:0" class="stack">
                     @foreach (var st in steps)
@@ -173,16 +173,16 @@
                         var done = st < current.Status; var now = st == current.Status;
                         <li class="cluster" style="flex-wrap:nowrap">
                             <span class="badge @(now ? "badge-info" : done ? "badge-ok" : "")" style="min-width:1.6rem;justify-content:center">@(done ? Icon.Render("check") : new Microsoft.AspNetCore.Html.HtmlString(((int)st + 1).ToString()))</span>
-                            <span style="@(now ? "font-weight:700" : done ? "" : "color:var(--muted)")">@st @if (now) { <span class="visually-hidden">(current)</span> }</span>
+                            <span style="@(now ? "font-weight:700" : done ? "" : "color:var(--muted)")">@T[st.ToString()] @if (now) { <span class="visually-hidden">@T["(current)"]</span> }</span>
                         </li>
                     }
                 </ol>
                 @if (next.HasValue)
                 {
-                    <form asp-action="SetStatus" method="post" data-confirm="Move to @next? This cannot be undone.">
+                    <form asp-action="SetStatus" method="post" data-confirm="@T["Move to {0}? This cannot be undone.", T[next.Value.ToString()]]">
                         <input type="hidden" name="id" value="@Model.Id" />
                         <input type="hidden" name="status" value="@next" />
-                        <button type="submit" class="btn btn-primary" style="width:100%">Move to @next</button>
+                        <button type="submit" class="btn btn-primary" style="width:100%">@T["Move to {0}", T[next.Value.ToString()]]</button>
                         <p class="hint" style="margin:.5rem 0 0">@NextHelp(next.Value)</p>
                     </form>
                 }
@@ -192,18 +192,18 @@
         @if (roster != null)
         {
             <section class="card" aria-labelledby="stations-heading">
-                <div class="card-header"><h2 id="stations-heading">Polling stations</h2><span class="badge @(roster.IsFrozen ? "badge-ok" : "")">@(roster.IsFrozen ? "Fixed" : "Live")</span></div>
+                <div class="card-header"><h2 id="stations-heading">@T["Polling stations"]</h2><span class="badge @(roster.IsFrozen ? "badge-ok" : "")">@(roster.IsFrozen ? T["Fixed"] : T["Live"])</span></div>
                 <div class="card-body">
                     <div class="stat" style="padding:0"><div class="value">@roster.Stations.Count.ToString("N0")</div>
-                        <div class="sub">in @roster.Stations.Select(s => s.MunicipalityId).Distinct().Count() municipalities</div></div>
+                        <div class="sub">@T["in {0} municipalities", roster.Stations.Select(s => s.MunicipalityId).Distinct().Count()]</div></div>
                     <p class="hint" style="margin:.75rem 0 0">
                         @if (roster.IsFrozen)
                         {
-                            <span>Fixed on @roster.FrozenAtUtc.Value.ToString("d MMM yyyy") when the election opened. Later changes to polling stations do not affect this election.</span>
+                            <span>@T["Fixed on {0} when the election opened. Later changes to polling stations do not affect this election.", roster.FrozenAtUtc.Value.ToString("d MMM yyyy")]</span>
                         }
                         else
                         {
-                            <span>The current list of <a asp-controller="PollingStationAreas" asp-action="Index">polling stations</a>. It is fixed when the election opens; stations added, moved or renamed afterwards will not be part of it.</span>
+                            <span>@T.Html("The current list of <a href=\"{0}\">polling stations</a>. It is fixed when the election opens; stations added, moved or renamed afterwards will not be part of it.", Url.Action("Index", "PollingStationAreas"))</span>
                         }
                     </p>
                 </div>
@@ -211,18 +211,18 @@
         }
 
         <section class="card" aria-labelledby="rules-heading">
-            <div class="card-header"><h2 id="rules-heading">Rules</h2></div>
+            <div class="card-header"><h2 id="rules-heading">@T["Rules"]</h2></div>
             <div class="card-body">
                 <dl class="dl">
                     @if (Model.Type == ElectionType.Presidential)
                     {
-                        <dt>Winner</dt><dd>More than 50% of valid votes; otherwise a runoff between the top two.</dd>
+                        <dt>@T["Winner"]</dt><dd>@T["More than 50% of valid votes; otherwise a runoff between the top two."]</dd>
                     }
                     else
                     {
-                        <dt>Seats</dt><dd>@Model.TotalSeats</dd>
-                        <dt>Threshold</dt><dd>@Model.ThresholdPercent?.ToString("0.##")% of valid votes</dd>
-                        <dt>Method</dt><dd>D'Hondt</dd>
+                        <dt>@T["Seats"]</dt><dd>@Model.TotalSeats</dd>
+                        <dt>@T["Threshold"]</dt><dd>@T["{0}% of valid votes", Model.ThresholdPercent?.ToString("0.##")]</dd>
+                        <dt>@T["Method"]</dt><dd>D'Hondt</dd>
                     }
                 </dl>
             </div>
@@ -231,15 +231,15 @@
         @if (Model.Type == ElectionType.Presidential && Model.Rounds.Count == 1)
         {
             <section class="card" aria-labelledby="runoff-heading">
-                <div class="card-header"><h2 id="runoff-heading">Runoff</h2></div>
+                <div class="card-header"><h2 id="runoff-heading">@T["Runoff"]</h2></div>
                 <form asp-action="CreateRunoff" method="post" class="card-body">
                     <input type="hidden" name="id" value="@Model.Id" />
-                    <p class="hint">Uses approved first-round results. Only possible when no candidate has a majority and no tie decides who qualifies.</p>
+                    <p class="hint">@T["Uses approved first-round results. Only possible when no candidate has a majority and no tie decides who qualifies."]</p>
                     <div class="field">
-                        <label for="votingDate">Runoff voting date</label>
+                        <label for="votingDate">@T["Runoff voting date"]</label>
                         <input type="date" id="votingDate" name="votingDate" required />
                     </div>
-                    <button type="submit" class="btn btn-secondary">Create runoff round</button>
+                    <button type="submit" class="btn btn-secondary">@T["Create runoff round"]</button>
                 </form>
             </section>
         }

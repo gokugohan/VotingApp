@@ -50,8 +50,8 @@ namespace VotingApp.Controllers
         {
             var (effective, effectiveErrors) = PartyListService.Parse(form.Effective);
             var (substitutes, substituteErrors) = PartyListService.Parse(form.Substitutes);
-            foreach (var e in effectiveErrors) ModelState.AddModelError("Form.Effective", "Effective candidates, " + e);
-            foreach (var e in substituteErrors) ModelState.AddModelError("Form.Substitutes", "Substitutes, " + e);
+            foreach (var e in effectiveErrors) ModelState.AddModelError("Form.Effective", T["Effective candidates"] + ": " + T.Message(e));
+            foreach (var e in substituteErrors) ModelState.AddModelError("Form.Substitutes", T["Substitutes"] + ": " + T.Message(e));
 
             if (ModelState.IsValid)
             {
@@ -61,7 +61,7 @@ namespace VotingApp.Controllers
                     var errors = result.Value.Where(i => i.Severity == Domain.Elections.Rules.IssueSeverity.Error).ToList();
                     Flash(errors.Count == 0
                         ? $"List saved: {effective.Count} effective candidates and {substitutes.Count} substitutes."
-                        : "List saved as a draft, but it does not meet the rules yet: " + string.Join(" ", errors.Select(i => i.Message)),
+                        : T["List saved as a draft, but it does not meet the rules yet:"] + " " + string.Join(" ", errors.Select(i => T.Message(i.Message))),
                         error: errors.Count > 0);
                     return RedirectToAction(nameof(Edit), new { id = form.ContestantId });
                 }
@@ -110,7 +110,7 @@ namespace VotingApp.Controllers
         {
             var result = await lists.ReinstateAsync(candidateId, HttpContext.RequestAborted);
             if (result.Failure == FailureKind.NotFound) return NotFound();
-            Flash(result.Succeeded ? "Reinstated: the seat returns to them." : string.Join(" ", result.Errors), error: !result.Succeeded);
+            Flash(result.Succeeded ? "Reinstated: the seat returns to them." : string.Join(" ", result.Errors.Select(T.Message)), error: !result.Succeeded);
             return RedirectToAction(nameof(Seats), new { id = contestantId });
         }
 

@@ -67,7 +67,7 @@ namespace VotingApp.Application.PollingStations
             if (await db.PollingStationAreas.AnyAsync(p => p.PollingStationId == id, ct))
                 return OperationResult.Fail(FailureKind.Conflict, "The polling station is placed in a village; remove that first.");
             db.PollingStations.Remove(station);
-            return await TrySaveAsync("polling station", id, ct);
+            return await TrySaveAsync("polling station", "The polling station is still in use and cannot be deleted.", id, ct);
         }
 
         // ---- Polling stations placed in villages ----
@@ -175,10 +175,10 @@ namespace VotingApp.Application.PollingStations
                     "This polling station is part of an election that is not certified yet (" + string.Join(", ", openElections) + "); it cannot be deleted until then.");
             }
             db.PollingStationAreas.Remove(location);
-            return await TrySaveAsync("polling station location", id, ct);
+            return await TrySaveAsync("polling station location", "The polling station location is still in use and cannot be deleted.", id, ct);
         }
 
-        private async Task<OperationResult> TrySaveAsync(string what, Guid id, CancellationToken ct)
+        private async Task<OperationResult> TrySaveAsync(string what, string inUse, Guid id, CancellationToken ct)
         {
             try
             {
@@ -188,7 +188,7 @@ namespace VotingApp.Application.PollingStations
             catch (DbUpdateException ex)
             {
                 logger.LogWarning(ex, "Deleting {What} {Id} failed", what, id);
-                return OperationResult.Fail(FailureKind.Conflict, $"The {what} is still in use and cannot be deleted.");
+                return OperationResult.Fail(FailureKind.Conflict, inUse);
             }
         }
     }
