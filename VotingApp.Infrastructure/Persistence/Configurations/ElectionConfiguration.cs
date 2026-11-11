@@ -78,6 +78,16 @@ namespace VotingApp.Infrastructure.Persistence.Configurations
                 e.HasOne(x => x.Contestant).WithMany().HasForeignKey(x => x.ContestantId).OnDelete(DeleteBehavior.Restrict);
             });
 
+            builder.Entity<SheetSubmission>(e =>
+            {
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Id).ValueGeneratedNever(); // id comes from the device
+                e.Property(x => x.UserId).IsRequired().HasMaxLength(450);
+                e.Property(x => x.Outcome).IsRequired().HasMaxLength(20);
+                e.Property(x => x.Message).HasMaxLength(1000);
+                e.HasIndex(x => new { x.ElectionRoundId, x.PollingStationAreaId });
+            });
+
             builder.Entity<Party>(e =>
             {
                 e.Property(x => x.Name).IsRequired().HasMaxLength(200);

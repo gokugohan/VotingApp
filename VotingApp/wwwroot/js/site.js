@@ -44,6 +44,13 @@
         if (e.key === "Escape") menus.forEach(function (d) { d.open = false; });
     });
 
+    // ---- Signing out clears pages saved for offline entry (queued sheets stay with the offline page) ----
+    document.querySelectorAll('form[action*="Logout"]').forEach(function (form) {
+        form.addEventListener("submit", function () {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage("sign-out");
+        });
+    });
+
     // ---- Confirmation for destructive or irreversible forms: <form data-confirm="..."> ----
     document.querySelectorAll("form[data-confirm]").forEach(function (form) {
         form.addEventListener("submit", function (e) {

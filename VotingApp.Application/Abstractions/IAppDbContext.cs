@@ -29,8 +29,12 @@ namespace VotingApp.Application.Abstractions
         DbSet<UserAreaAssignment> UserAreaAssignments { get; }
         DbSet<ElectionStation> ElectionStations { get; }
         DbSet<Party> Parties { get; }
+        DbSet<SheetSubmission> SheetSubmissions { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Drops all pending (unsaved) changes, e.g. after a failed save.</summary>
+        void DiscardChanges();
     }
 
     /// <summary>The signed-in user, as seen by application services.</summary>

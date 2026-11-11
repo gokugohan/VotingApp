@@ -51,6 +51,10 @@
         </div>
     </div>
     <div class="cluster">
+        @if (entryOpen && (canEnter || canVerify))
+        {
+            <a class="btn btn-secondary" asp-controller="OfflineEntry" asp-action="Index" asp-route-roundId="@round.Id" title="Keeps working without a connection">@Icon.Render("download") Offline entry</a>
+        }
         <a class="btn btn-secondary" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") Public results</a>
         @if (canLock)
         {

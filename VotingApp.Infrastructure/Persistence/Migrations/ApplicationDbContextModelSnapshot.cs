@@ -526,6 +526,47 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                     b.ToTable("RoundContestants");
                 });
 
+            modelBuilder.Entity("VotingApp.Domain.Elections.SheetSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ElectionRoundId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("PollingStationAreaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("QueuedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElectionRoundId", "PollingStationAreaId");
+
+                    b.ToTable("SheetSubmissions");
+                });
+
             modelBuilder.Entity("VotingApp.Domain.Entities.Area", b =>
                 {
                     b.Property<string>("Id")

@@ -1,0 +1,90 @@
+@model OfflinePack
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Offline entry · " + Model.ElectionName;
+    var canEnter = (bool)ViewData["CanEnter"];
+    var canVerify = (bool)ViewData["CanVerify"];
+    // System.Text.Json escapes <, > and & by default, so names cannot break out of the script block.
+    var packJson = JsonSerializer.Serialize(Model, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <a asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@Model.RoundId">Result sheets</a><span aria-hidden="true">/</span>
+    <span>Offline entry</span>
+</nav>
+<div class="page-header spread">
+    <div>
+        <div class="eyebrow">Offline entry@(Model.RoundNumber > 1 ? " · Runoff" : "")</div>
+        <h1>@Model.ElectionName</h1>
+        <p>Keep this page open, or open it again from this device: it works without a connection. Sheets are saved on this device and sent when the connection is back.</p>
+    </div>
+    <div class="card" style="min-width:16rem">
+        <div class="card-body stack" style="padding:1rem">
+            <div class="cluster"><span id="net-dot" class="badge">Checking connection…</span></div>
+            <div class="small" id="queue-summary" aria-live="polite"></div>
+            <button type="button" class="btn btn-primary" id="sync-now">@Icon.Render("refresh") Sync now</button>
+        </div>
+    </div>
+</div>
+
+@if (!Model.EntryOpen)
+{
+    <div class="alert alert-warn" style="margin-bottom:1rem">@Icon.Render("alert") <div>Result entry is not open for this round. Sheets saved here will be rejected until the election is moved to Counting.</div></div>
+}
+
+<div id="offline-app"
+     data-sync-url="@Url.Action("Sync")"
+     data-user="@userId"
+     data-can-enter="@(canEnter ? "true" : "false")"
+     data-can-verify="@(canVerify ? "true" : "false")">
+    @Html.AntiForgeryToken()
+    <noscript><div class="alert alert-bad">Offline entry needs JavaScript. Use the normal result sheets page instead.</div></noscript>
+
+    <div class="grid grid-side">
+        <form id="sheet-form" class="card" autocomplete="off" novalidate>
+            <div class="card-header"><h2>New sheet</h2></div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="station">Polling station</label>
+                        <select id="station" required></select>
+                    </div>
+                    <div class="field">
+                        <span class="label" id="kind-label">This is the</span>
+                        <div class="cluster" role="radiogroup" aria-labelledby="kind-label">
+                            <label class="check"><input type="radio" name="kind" value="entry" /> First entry</label>
+                            <label class="check"><input type="radio" name="kind" value="verify" /> Verification (second entry)</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="figures"></div>
+                <p id="live-check" class="small" aria-live="polite"></p>
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">@Icon.Render("check") Save on this device</button>
+                    <button type="reset" class="btn btn-ghost">Clear</button>
+                </div>
+            </div>
+        </form>
+
+        <section class="card" aria-labelledby="queue-heading">
+            <div class="card-header"><h2 id="queue-heading">Saved on this device</h2></div>
+            <div class="table-wrap">
+                <table class="table table-compact">
+                    <thead><tr><th scope="col">Station</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody id="queue-rows"></tbody>
+                </table>
+            </div>
+            <div class="card-footer small muted">Sent sheets stay listed here until you clear them. Rejected sheets can be removed and typed again.
+                <button type="button" class="linklike" id="clear-done">Clear sent sheets</button>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script type="application/json" id="offline-pack">@Html.Raw(packJson)</script>
+
+@section Scripts {
+    <script src="~/js/offline.js" asp-append-version="true"></script>
+}

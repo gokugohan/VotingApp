@@ -42,6 +42,7 @@ namespace VotingApp.Infrastructure.Persistence
         public DbSet<UserAreaAssignment> UserAreaAssignments { get; set; }
         public DbSet<ElectionStation> ElectionStations { get; set; }
         public DbSet<Party> Parties { get; set; }
+        public DbSet<SheetSubmission> SheetSubmissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -60,6 +61,8 @@ namespace VotingApp.Infrastructure.Persistence
             AddAuditEntries(currentUser?.UserId);
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
+
+        public void DiscardChanges() => ChangeTracker.Clear();
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
