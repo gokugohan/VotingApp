@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 # Local secrets for docker compose
 .env
+backups/

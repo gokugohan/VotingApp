@@ -121,6 +121,9 @@ The compose stack applies migrations on start-up (`Database__MigrateOnStartup=tr
 | Several instances | Set `DataProtection__KeysPath` to shared storage so cookies/antiforgery tokens work across instances; protect keys at rest (certificate or key vault) in production |
 | Rate limits | Login: 10/min per IP; other POSTs: 120/min per user (configurable) |
 | Database resilience | SQL transient-fault retries enabled |
+| Backups | `ops/backup.sh` (database with checksums, sheet photos, keys) and `ops/restore.sh` (with a `--drill` mode that restores into a scratch database) |
+
+Before an election, follow [the election runbook](ops/RUNBOOK.md): passwords, a database login for the app, backups and restore drills, accounts, results night and certification.
 
 ## CI
 
