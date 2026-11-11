@@ -19,7 +19,7 @@ COPY VotingApp/ VotingApp/
 RUN dotnet publish VotingApp/VotingApp.csproj -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 # ---- Runtime ----
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_FORWARDEDHEADERS_ENABLED=true \
