@@ -179,5 +179,8 @@
   "Voting": "Votação",
   "Counting": "Apuramento",
   "Party": "Partido",
-  "Coalition": "Coligação"
+  "Coalition": "Coligação",
+  "S{0}": "S{0}",
+  "replaces {0}": "substitui {0}",
+  "Stepped down": "Renunciou"
 }

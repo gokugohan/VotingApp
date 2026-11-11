@@ -155,6 +155,42 @@ namespace VotingApp.Models
         public PartyListForm Form { get; set; }
     }
 
+    public class StepDownForm
+    {
+        public Guid ContestantId { get; set; }
+        [Required(ErrorMessage = "Choose the person.")]
+        public Guid? CandidateId { get; set; }
+        [Required(ErrorMessage = "Enter the date.")]
+        [DataType(DataType.Date)]
+        public DateTime? Date { get; set; }
+        [Required(ErrorMessage = "Choose a reason.")]
+        public StepDownReason? Reason { get; set; }
+        [StringLength(500)]
+        public string Note { get; set; }
+    }
+
+    /// <summary>Who holds a party's seats after the election, and stand-downs recorded so far.</summary>
+    public class PartySeatsPage
+    {
+        public PartyList List { get; set; }
+        /// <summary>Seats won (null until any result sheet is counted).</summary>
+        public int? Seats { get; set; }
+        public IReadOnlyList<ElectedMember> Holders { get; set; } = new List<ElectedMember>();
+        public bool CanRecord { get; set; }
+        public StepDownForm Form { get; set; }
+
+        public static string ReasonText(StepDownReason? r) => r switch
+        {
+            StepDownReason.JoinedGovernment => "Joined the government",
+            StepDownReason.Resigned => "Resigned",
+            StepDownReason.Died => "Died",
+            StepDownReason.DeclinedSeat => "Did not take up the seat",
+            StepDownReason.LostMandate => "Lost the mandate",
+            StepDownReason.Other => "Other",
+            _ => "",
+        };
+    }
+
     public class MunicipalityResultsPage
     {
         public RoundSummary Summary { get; set; }

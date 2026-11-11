@@ -75,6 +75,10 @@
                                                 @if (ls.IsValid) { <span class="badge badge-ok">@Icon.Render("check") @ls.Effective + @ls.Substitutes</span> }
                                                 else { <span class="badge badge-bad" title="@ls.Problem">@Icon.Render("alert") @(ls.Effective == 0 ? "No list" : "Rules not met")</span> }
                                                 <a asp-controller="PartyLists" asp-action="@(canEditBallot ? "Edit" : "Details")" asp-route-id="@rc.ContestantId">@(canEditBallot ? "Edit list" : "View list")</a>
+                                                @if (Model.Status is ElectionStatus.Provisional or ElectionStatus.Certified)
+                                                {
+                                                    <a asp-controller="PartyLists" asp-action="Seats" asp-route-id="@rc.ContestantId">Seats</a>
+                                                }
                                             </div>
                                         }
                                         else

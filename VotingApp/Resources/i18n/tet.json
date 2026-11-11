@@ -179,5 +179,8 @@
   "Voting": "Votasaun",
   "Counting": "Apuramentu",
   "Party": "Partidu",
-  "Coalition": "Koligasaun"
+  "Coalition": "Koligasaun",
+  "S{0}": "S{0}",
+  "replaces {0}": "troka {0}",
+  "Stepped down": "Sai ona"
 }

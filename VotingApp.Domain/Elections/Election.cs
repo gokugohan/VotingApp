@@ -90,5 +90,15 @@ namespace VotingApp.Domain.Elections
         public string FullName { get; set; }
         public Gender Gender { get; set; }
         public bool IsSubstitute { get; set; }
+
+        /// <summary>
+        /// Set when the person gave up their seat or place on the list after the election (joined the
+        /// government, resigned, died...). Their seat passes to the next available person on the list.
+        /// </summary>
+        public DateTime? SteppedDownOn { get; set; }
+        public StepDownReason? StepDownReason { get; set; }
+        public string StepDownNote { get; set; }
+
+        public bool HasSteppedDown => SteppedDownOn.HasValue;
     }
 }

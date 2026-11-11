@@ -379,6 +379,16 @@ namespace VotingApp.Infrastructure.Persistence.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("int");
 
+                    b.Property<string>("StepDownNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("StepDownReason")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SteppedDownOn")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ContestantId", "Position", "IsSubstitute")

@@ -41,6 +41,20 @@ namespace VotingApp.Domain.Elections
         Locked = 4,
     }
 
+    /// <summary>Why a person on a party list gave up their seat or place.</summary>
+    public enum StepDownReason
+    {
+        /// <summary>Appointed to the government; the mandate is suspended while in office.</summary>
+        JoinedGovernment = 1,
+        Resigned = 2,
+        Died = 3,
+        /// <summary>Elected but did not take up the seat.</summary>
+        DeclinedSeat = 4,
+        /// <summary>Lost the mandate by a court or parliamentary decision.</summary>
+        LostMandate = 5,
+        Other = 9,
+    }
+
     public enum Gender
     {
         Female = 1,

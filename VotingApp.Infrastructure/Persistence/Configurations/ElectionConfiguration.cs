@@ -52,6 +52,8 @@ namespace VotingApp.Infrastructure.Persistence.Configurations
             builder.Entity<PartyListCandidate>(e =>
             {
                 e.Property(x => x.FullName).IsRequired().HasMaxLength(200);
+                e.Property(x => x.StepDownNote).HasMaxLength(500);
+                e.Ignore(x => x.HasSteppedDown);
                 e.HasIndex(x => new { x.ContestantId, x.Position, x.IsSubstitute }).IsUnique();
             });
 

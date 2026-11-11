@@ -165,12 +165,14 @@
                 {
                     <div>
                         <h3 style="font-size:1rem;margin-bottom:.35rem">@party.Name <span class="muted" style="font-weight:400">· @(party.Seats == 1 ? T["1 seat"] : T["{0} seats", party.Seats])</span></h3>
-                        <ol class="small" style="margin:0;padding-left:1.4rem">
+                        <ul class="small" style="margin:0;padding-left:0;list-style:none">
                             @foreach (var m in party.Members)
                             {
-                                <li value="@m.Position">@m.FullName</li>
+                                <li><span class="muted num" style="display:inline-block;min-width:1.8rem">@(m.IsSubstitute ? T["S{0}", m.Position] : m.Position + ".")</span><span>@m.FullName</span>
+                                    @if (m.Replaces != null) { <span class="muted">· @T["replaces {0}", m.Replaces]</span> }
+                                </li>
                             }
-                        </ol>
+                        </ul>
                         @if (party.Unfilled > 0)
                         {
                             <div class="badge badge-bad" style="margin-top:.35rem">@Icon.Render("alert") @T["Seats without a candidate on the list: {0}", party.Unfilled]</div>

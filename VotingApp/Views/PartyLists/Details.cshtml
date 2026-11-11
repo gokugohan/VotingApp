@@ -27,7 +27,7 @@
                     <tbody>
                         @foreach (var p in people)
                         {
-                            <tr><td class="num">@p.Position</td><td>@p.FullName</td><td>@(p.Gender == Gender.Female ? T["Woman"] : T["Man"])</td></tr>
+                            <tr><td class="num">@p.Position</td><td>@p.FullName @if (p.HasSteppedDown) { <span class="badge">@T["Stepped down"]</span> }</td><td>@(p.Gender == Gender.Female ? T["Woman"] : T["Man"])</td></tr>
                         }
                         @if (people.Count == 0)
                         {

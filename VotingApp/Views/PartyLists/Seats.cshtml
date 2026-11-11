@@ -1,0 +1,137 @@
+@model PartySeatsPage
+@{
+    var list = Model.List;
+    var c = list.Contestant;
+    ViewData["Title"] = "Seats · " + c.Name;
+    var holders = Model.Holders.ToDictionary(h => h.CandidateId);
+    var everyone = list.Effective.Concat(list.Substitutes).ToList();
+    var nextInLine = everyone.FirstOrDefault(p => !p.HasSteppedDown && !holders.ContainsKey(p.Id)
+        && (p.IsSubstitute || p.Position > (Model.Seats ?? 0)));
+    var canStepDown = everyone.Where(p => !p.HasSteppedDown).ToList();
+    var steppedDown = everyone.Count(p => p.HasSteppedDown);
+    var unfilled = (Model.Seats ?? 0) - Model.Holders.Count;
+    string Label(PartyListCandidate p) => p.IsSubstitute ? "S" + p.Position : p.Position.ToString();
+}
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
+    <a asp-controller="Elections" asp-action="Details" asp-route-id="@list.Election.Id">@list.Election.Name</a><span aria-hidden="true">/</span>
+    <span>@c.Name seats</span>
+</nav>
+<div class="page-header spread">
+    <div>
+        <div class="eyebrow">Seats after the election</div>
+        <h1>@c.Name @if (!string.IsNullOrEmpty(c.Acronym)) { <span class="muted">(@c.Acronym)</span> }</h1>
+        <p>When a member steps down, their seat passes to the next available person: first the effective candidates who were not elected, then the substitutes, in list order. Check each case against the electoral law and the parliament's decision before recording it.</p>
+    </div>
+    <a class="btn btn-secondary" asp-action="Details" asp-route-id="@c.Id">@Icon.Render("list") Public list</a>
+</div>
+
+<section class="grid grid-4" aria-label="Seat summary" style="margin-bottom:1.5rem">
+    <div class="card stat"><div class="label">Seats won</div><div class="value">@(Model.Seats?.ToString() ?? "–")</div><div class="sub">@(list.Election.Status == ElectionStatus.Certified ? "certified" : "provisional")</div></div>
+    <div class="card stat"><div class="label">Seats filled</div><div class="value">@Model.Holders.Count</div></div>
+    <div class="card stat"><div class="label">Stepped down</div><div class="value">@steppedDown</div></div>
+    <div class="card stat"><div class="label">Next in line</div><div class="value" style="font-size:1.1rem">@(nextInLine?.FullName ?? "Nobody left")</div></div>
+</section>
+
+@if (unfilled > 0)
+{
+    <div class="alert alert-bad" style="margin-bottom:1rem">@Icon.Render("alert") <div>@unfilled seat(s) cannot be filled: nobody is left on the list.</div></div>
+}
+
+<div class="grid grid-side">
+    <section class="card" aria-labelledby="people-heading">
+        <div class="card-header"><h2 id="people-heading">Everyone on the list</h2></div>
+        <div class="table-wrap">
+            <table class="table table-compact">
+                <thead><tr><th scope="col" class="num" style="width:3.5rem">#</th><th scope="col">Name</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                <tbody>
+                    @foreach (var p in everyone)
+                    {
+                        <tr>
+                            <td class="num">@Label(p)</td>
+                            <td>@p.FullName <span class="muted small">@(p.Gender == Gender.Female ? "F" : "M")</span></td>
+                            <td>
+                                @if (holders.TryGetValue(p.Id, out var h))
+                                {
+                                    <span class="badge badge-ok">Holds a seat</span>
+                                    @if (h.Replaces != null) { <span class="small muted">replaces @h.Replaces</span> }
+                                }
+                                else if (p.HasSteppedDown)
+                                {
+                                    <span class="badge badge-warn">Stepped down @p.SteppedDownOn.Value.ToString("yyyy-MM-dd")</span>
+                                    <span class="small muted">@PartySeatsPage.ReasonText(p.StepDownReason)@(p.StepDownNote == null ? "" : " · " + p.StepDownNote)</span>
+                                }
+                                else if (p == nextInLine)
+                                {
+                                    <span class="badge">Next in line</span>
+                                }
+                            </td>
+                            <td class="actions-cell">
+                                @if (p.HasSteppedDown)
+                                {
+                                    <form asp-action="Reinstate" method="post" class="inline" data-confirm="Reinstate @p.FullName? Whoever replaced them gives the seat back.">
+                                        <input type="hidden" name="contestantId" value="@c.Id" />
+                                        <input type="hidden" name="candidateId" value="@p.Id" />
+                                        <button class="btn btn-ghost btn-sm">Reinstate</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (everyone.Count == 0)
+                    {
+                        <tr><td colspan="4" class="empty">No list was entered for this party.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card" aria-labelledby="stepdown-heading">
+        <div class="card-header"><h2 id="stepdown-heading">Record stepping down</h2></div>
+        <div class="card-body">
+            @if (!Model.CanRecord)
+            {
+                <p class="muted">This can be recorded once results are provisional or certified.</p>
+            }
+            else
+            {
+                <form asp-action="StepDown" method="post" class="stack">
+                    <div asp-validation-summary="All" class="errors"></div>
+                    <input type="hidden" asp-for="Form.ContestantId" />
+                    <div class="field">
+                        <label asp-for="Form.CandidateId">Person</label>
+                        <select asp-for="Form.CandidateId" required>
+                            <option value="">Choose…</option>
+                            @foreach (var p in canStepDown)
+                            {
+                                <option value="@p.Id" selected="@(p.Id == Model.Form.CandidateId)">@Label(p). @p.FullName@(holders.ContainsKey(p.Id) ? " (holds a seat)" : "")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Form.Date">Date</label>
+                        <input asp-for="Form.Date" type="date" required />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Form.Reason">Reason</label>
+                        <select asp-for="Form.Reason" required>
+                            <option value="">Choose…</option>
+                            @foreach (var r in Enum.GetValues<StepDownReason>())
+                            {
+                                <option value="@r" selected="@(r == Model.Form.Reason)">@PartySeatsPage.ReasonText(r)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Form.Note">Note <span class="muted">(optional: decision, reference)</span></label>
+                        <input asp-for="Form.Note" maxlength="500" />
+                    </div>
+                    <div class="actions"><button class="btn btn-primary">Record</button></div>
+                    <p class="hint">A member who joined the government and later returns can be reinstated from the list.</p>
+                </form>
+            }
+        </div>
+    </section>
+</div>
