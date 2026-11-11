@@ -38,7 +38,13 @@ namespace VotingApp.Web
             // Labels and validation messages come from the same translation files as the views. Registered
             // before MVC so its default resource-file localizer is not used.
             services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, VotingApp.Web.Localization.CatalogLocalizerFactory>();
-            services.AddControllersWithViews(o => o.ModelMetadataDetailsProviders.Add(new VotingApp.Web.Localization.DefaultValidationMessages()))
+            services.AddControllersWithViews(o =>
+                {
+                    o.ModelMetadataDetailsProviders.Add(new VotingApp.Web.Localization.DefaultValidationMessages());
+                    // Forms are read with the invariant culture, whatever language the page is shown in.
+                    var form = o.ValueProviderFactories.IndexOf(o.ValueProviderFactories.OfType<Microsoft.AspNetCore.Mvc.ModelBinding.FormValueProviderFactory>().Single());
+                    o.ValueProviderFactories[form] = new VotingApp.Web.Localization.InvariantFormValueProviderFactory();
+                })
                 .AddNewtonsoftJson(o => o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore)
                 .AddDataAnnotationsLocalization(o => o.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(object)));
             services.AddRazorPages();
@@ -146,6 +152,7 @@ namespace VotingApp.Web
             }
 
             app.Use(CorrelationAndSecurityHeaders);
+            app.Use(VotingApp.Web.Localization.AppCultures.Apply);
             app.UseSerilogRequestLogging(options =>
             {
                 options.EnrichDiagnosticContext = (diagnostics, http) =>

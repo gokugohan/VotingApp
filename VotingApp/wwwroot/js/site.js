@@ -81,6 +81,9 @@
     // ---- Live results: <div data-live="signature-url" data-live-signature="..."> ----
     // Polls a tiny signature while the page is visible; when results change, re-fetches the page
     // and swaps the region in place. No WebSocket, no library: cheap on slow connections.
+    // Browsers have no Tetun locale; Tetun pages use Portuguese conventions, like the server.
+    function locale() { var l = document.documentElement.lang || "en"; return l === "tet" ? "pt-PT" : l === "pt" ? "pt-PT" : "en-GB"; }
+
     document.querySelectorAll("[data-live]").forEach(function (region) {
         var url = region.getAttribute("data-live");
         var signature = region.getAttribute("data-live-signature");
@@ -100,7 +103,7 @@
                         if (!fresh) return;
                         region.innerHTML = fresh.innerHTML;
                         signature = fresh.getAttribute("data-live-signature");
-                        setStatus("Results updated " + new Date().toLocaleTimeString());
+                        setStatus((status && status.getAttribute("data-live-updated") || "Results updated {0}").replace("{0}", new Date().toLocaleTimeString(locale())));
                     });
                 })
                 .catch(function () { /* offline: try again next tick */ })

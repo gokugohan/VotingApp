@@ -39,7 +39,7 @@ else
             <article class="card">
                 <div class="card-body stack">
                     <div class="spread">
-                        <span class="eyebrow muted small" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">@(e.Type == ElectionType.Presidential ? T["Presidential"] : T["Parliamentary"]) · @e.ElectionDate.ToString("d MMMM yyyy")</span>
+                        <span class="eyebrow muted small" style="text-transform:uppercase;letter-spacing:.06em;font-weight:600">@(e.Type == ElectionType.Presidential ? T["Presidential"] : T["Parliamentary"]) · @T.Date(e.ElectionDate)</span>
                         <span class="badge @StatusBadge(e.Status)">@T[e.Status.ToString()]</span>
                     </div>
                     <h2 style="margin:0">@e.Name</h2>
@@ -49,7 +49,7 @@ else
                             <li class="spread" style="border-top:1px solid var(--border);padding-top:.75rem">
                                 <span>
                                     <strong>@(e.Rounds.Count > 1 ? (r.Number == 1 ? T["First round"] : T["Runoff"]) : T["Results"])</strong>
-                                    <span class="muted small"> · @r.VotingDate.ToString("d MMM yyyy") · @T[r.Status.ToString()]</span>
+                                    <span class="muted small"> · @T.ShortDate(r.VotingDate) · @T[r.Status.ToString()]</span>
                                 </span>
                                 <span class="cluster">
                                     @if (r.Status >= ElectionStatus.Counting)

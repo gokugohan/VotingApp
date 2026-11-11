@@ -22,7 +22,7 @@
 
 <nav class="breadcrumbs" aria-label="@T["Breadcrumb"]"><a asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span><span>@Model.Name</span></nav>
 <div class="page-header">
-    <div class="eyebrow">@(Model.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"]) · @Model.ElectionDate.ToString("d MMMM yyyy")</div>
+    <div class="eyebrow">@(Model.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"]) · @T.Date(Model.ElectionDate)</div>
     <h1>@Model.Name</h1>
 </div>
 
@@ -32,7 +32,7 @@
         {
             <section class="card" aria-labelledby="round-@round.Number">
                 <div class="card-header">
-                    <h2 id="round-@round.Number">@(round.Number == 1 ? (Model.Rounds.Count > 1 ? T["First round"] : T["Ballot"]) : T["Runoff"]) <span class="muted small">@round.VotingDate.ToString("d MMM yyyy")</span></h2>
+                    <h2 id="round-@round.Number">@(round.Number == 1 ? (Model.Rounds.Count > 1 ? T["First round"] : T["Ballot"]) : T["Runoff"]) <span class="muted small">@T.ShortDate(round.VotingDate)</span></h2>
                     <span class="cluster">
                         <a class="btn btn-ghost btn-sm" asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@round.Id">@Icon.Render("file") @T["Result sheets"]</a>
                         <a class="btn btn-ghost btn-sm" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") @T["Results"]</a>
@@ -203,7 +203,7 @@
                     <p class="hint" style="margin:.75rem 0 0">
                         @if (roster.IsFrozen)
                         {
-                            <span>@T["Fixed on {0} when the election opened. Later changes to polling stations do not affect this election.", roster.FrozenAtUtc.Value.ToString("d MMM yyyy")]</span>
+                            <span>@T["Fixed on {0} when the election opened. Later changes to polling stations do not affect this election.", T.ShortDate(roster.FrozenAtUtc.Value)]</span>
                         }
                         else
                         {

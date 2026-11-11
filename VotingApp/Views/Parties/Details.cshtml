@@ -54,7 +54,7 @@
                     @foreach (var h in history)
                     {
                         <tr>
-                            <th scope="row"><a asp-controller="Results" asp-action="Round" asp-route-id="@h.RoundId">@h.ElectionName</a><div class="muted small" style="font-weight:400">@h.ElectionDate.ToString("d MMM yyyy")</div></th>
+                            <th scope="row"><a asp-controller="Results" asp-action="Round" asp-route-id="@h.RoundId">@h.ElectionName</a><div class="muted small" style="font-weight:400">@T.ShortDate(h.ElectionDate)</div></th>
                             <td>@h.NameOnBallot</td>
                             <td class="num">@h.Votes.ToString("N0")</td>
                             <td class="num">@h.PercentOfValid.ToString("0.00")%</td>

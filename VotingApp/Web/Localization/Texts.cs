@@ -112,21 +112,30 @@ namespace VotingApp.Web.Localization
 
         public string Lang { get; }
 
+        /// <summary>Dates and numbers of the current language (see <see cref="AppCultures"/>).</summary>
+        public CultureInfo Culture => AppCultures.For(Lang);
+
+        /// <summary>A full date: "1 May 2027", "1 de maio de 2027", "1 Maiu 2027".</summary>
+        public string Date(DateTime date) => date.ToString(AppCultures.LongDatePattern(Lang), Culture);
+
+        /// <summary>A short date: "1 May 2027", "1 mai. 2027", "1 Mai 2027".</summary>
+        public string ShortDate(DateTime date) => date.ToString("d MMM yyyy", Culture);
+
         public string this[string english] => catalog.Translate(Lang, english);
 
         /// <summary>Translates a finished message from a service or validator (see <see cref="TranslationCatalog.TranslateMessage"/>).</summary>
         public string Message(string english) => catalog.TranslateMessage(Lang, english);
 
         public string this[string english, params object[] args] =>
-            string.Format(CultureInfo.CurrentCulture, catalog.Translate(Lang, english), args);
+            string.Format(Culture, catalog.Translate(Lang, english), args);
 
         /// <summary>
         /// A translated sentence that contains markup (e.g. "&lt;strong&gt;{0}&lt;/strong&gt; leads"). The
         /// sentence comes from our own translation files; the arguments are data and are HTML-encoded.
         /// </summary>
         public IHtmlContent Html(string english, params object[] args) =>
-            new HtmlString(string.Format(CultureInfo.CurrentCulture, catalog.Translate(Lang, english),
-                args.Select(a => (object)HtmlEncoder.Default.Encode(Convert.ToString(a, CultureInfo.CurrentCulture) ?? string.Empty)).ToArray()));
+            new HtmlString(string.Format(Culture, catalog.Translate(Lang, english),
+                args.Select(a => (object)HtmlEncoder.Default.Encode(Convert.ToString(a, Culture) ?? string.Empty)).ToArray()));
 
         public static string Resolve(HttpContext context)
         {

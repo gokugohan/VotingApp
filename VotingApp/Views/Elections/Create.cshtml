@@ -39,7 +39,7 @@
             </div>
             <div class="field">
                 <label asp-for="ThresholdPercent">@T["Threshold (% of valid votes)"]</label>
-                <input asp-for="ThresholdPercent" step="0.01" />
+                <input asp-for="ThresholdPercent" type="number" step="0.01" min="0" max="100" value="@Model?.ThresholdPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
                 <span asp-validation-for="ThresholdPercent" class="field-error"></span>
             </div>
             <p class="hint" style="grid-column:1/-1">@T["Defaults: 65 seats, 4% threshold. Check them against the electoral law in force."]</p>

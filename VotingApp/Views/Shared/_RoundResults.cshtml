@@ -27,7 +27,7 @@
                     <span class="live"><span class="pulse" aria-hidden="true"></span> @T["Live"]</span>
                 }
                 <span class="muted">@T["Updated {0} UTC", s.GeneratedAtUtc.ToString("HH:mm")]</span>
-                <span class="muted" data-live-status aria-live="polite"></span>
+                <span class="muted" data-live-status data-live-updated="@T["Results updated {0}"]" aria-live="polite"></span>
             </div>
         </div>
         @if (Model.Rounds != null && Model.Rounds.Count > 1)

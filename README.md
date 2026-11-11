@@ -80,6 +80,8 @@ Public pages are available in English, Portuguese and Tetun (switcher in the hea
 
 Staff pages are translated too: result sheets, sheet entry and verification, offline entry, the account pages and the administration pages (elections, party lists and seats, polling stations, areas, candidates, parties, users, roles, audit log). Password-rule and other sign-in errors come from `TranslatedIdentityErrors`. Form labels (`[Display]`) and validation messages use the same files through ASP.NET's data-annotation localization. Messages from services are translated as whole sentences: a key with placeholders such as `Votes cast ({0}) exceed registered voters ({1}).` matches the finished English message and carries the values over, so services keep writing plain English. The tests also count texts used in C# (labels, messages, interpolated strings as templates), so unused translations are caught.
 
+Dates and numbers follow the language too: English uses British conventions (1,234.5; 1 May 2027), Portuguese those of Portugal (1 234,5; 1 de maio de 2027). .NET has no Tetun culture, so Tetun uses the Portuguese conventions with Tetun month and day names (`AppCultures`). Posted forms are always read with the invariant culture, because browsers send numbers as "4.5" whatever the page language.
+
 **The Tetun translation is a draft** and should be reviewed by a native speaker against the terminology used by CNE and STAE.
 
 ## Running locally

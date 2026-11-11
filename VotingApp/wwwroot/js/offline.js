@@ -162,7 +162,7 @@
             var tr = el("tr");
             var who = el("td");
             who.appendChild(el("strong", null, item.stationLabel));
-            who.appendChild(el("div", { "class": "muted small" }, t("{0} · saved {1}", item.kind === "verify" ? t("Verification") : t("First entry"), new Date(item.queuedAt).toLocaleString())));
+            who.appendChild(el("div", { "class": "muted small" }, t("{0} · saved {1}", item.kind === "verify" ? t("Verification") : t("First entry"), new Date(item.queuedAt).toLocaleString(({ pt: "pt-PT", tet: "pt-PT" })[document.documentElement.lang] || "en-GB"))));
             tr.appendChild(who);
             var st = el("td");
             var l = labels[item.status] || labels.pending;

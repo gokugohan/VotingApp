@@ -95,7 +95,7 @@
             <div><strong>@s.ElectionName</strong>@(round == null ? "" : " · " + round)</div>
             <div class="sub">
                 @(s.Type == ElectionType.Presidential ? T["Presidential election"] : T["Parliamentary election"]) ·
-                @T["Voting day: {0}", Model.VotingDate.ToString("d MMMM yyyy")]
+                @T["Voting day: {0}", T.Date(Model.VotingDate)]
                 @if (!Model.IsNational) { <span>· @T["Municipality"]: <strong>@Model.MunicipalityName</strong></span> }
             </div>
         </header>
@@ -160,7 +160,7 @@
                     <td></td>
                     <td>@T["Total valid votes"]</td>
                     <td class="num">@N(t.ValidVotes)</td>
-                    <td class="num">100.00</td>
+                    <td class="num">@P(100m)</td>
                     @if (parliamentary && Model.IsNational)
                     {
                         <td></td>

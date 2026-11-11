@@ -743,5 +743,6 @@
   "Function": "Função",
   "Signature": "Assinatura",
   "Generated {0} UTC from approved polling station sheets.": "Gerada em {0} UTC a partir das atas aprovadas das mesas de voto.",
-  "Round reference: {0}": "Referência da volta: {0}"
+  "Round reference: {0}": "Referência da volta: {0}",
+  "Results updated {0}": "Resultados atualizados às {0}"
 }
