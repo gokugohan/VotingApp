@@ -1,37 +1,84 @@
 @model OfflinePack
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Offline entry · " + Model.ElectionName;
+    ViewData["Title"] = T["Offline entry"] + " · " + Model.ElectionName;
     var canEnter = (bool)ViewData["CanEnter"];
     var canVerify = (bool)ViewData["CanVerify"];
     // System.Text.Json escapes <, > and & by default, so names cannot break out of the script block.
     var packJson = JsonSerializer.Serialize(Model, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    // Texts used by offline.js, in the user's language (kept with the page, so they work offline too).
+    var scriptTexts = new Dictionary<string, string>
+    {
+        ["(already received earlier)"] = T["(already received earlier)"],
+        ["Ballots"] = T["Ballots"],
+        ["Ballots received"] = T["Ballots received"],
+        ["Ballots received ({0}) is not used + spoiled + unused ({1})."] = T["Ballots received ({0}) is not used + spoiled + unused ({1})."],
+        ["Ballots used (in the box)"] = T["Ballots used (in the box)"],
+        ["Blank votes"] = T["Blank votes"],
+        ["Choose a polling station."] = T["Choose a polling station."],
+        ["Choose a polling station…"] = T["Choose a polling station…"],
+        ["Choose first entry or verification."] = T["Choose first entry or verification."],
+        ["Could not reach the server; will try again."] = T["Could not reach the server; will try again."],
+        ["Enter every figure from the sheet."] = T["Enter every figure from the sheet."],
+        ["Entries differ"] = T["Entries differ"],
+        ["Every figure is required (enter 0 if none)."] = T["Every figure is required (enter 0 if none)."],
+        ["Figures add up."] = T["Figures add up."],
+        ["First entry"] = T["First entry"],
+        ["Invalid votes"] = T["Invalid votes"],
+        ["No sheets saved on this device yet."] = T["No sheets saved on this device yet."],
+        ["No stations need entry in your municipalities"] = T["No stations need entry in your municipalities"],
+        ["Nothing waiting to be sent."] = T["Nothing waiting to be sent."],
+        ["Offline: sheets are kept on this device"] = T["Offline: sheets are kept on this device"],
+        ["Online"] = T["Online"],
+        ["Registered voters (if on the sheet)"] = T["Registered voters (if on the sheet)"],
+        ["Rejected"] = T["Rejected"],
+        ["Remove"] = T["Remove"],
+        ["Remove this sheet before it is sent?"] = T["Remove this sheet before it is sent?"],
+        ["Saved"] = T["Saved"],
+        ["Sending {0} sheet(s)…"] = T["Sending {0} sheet(s)…"],
+        ["Spoiled ballots"] = T["Spoiled ballots"],
+        ["The server could not read the sheets. Please reload the page."] = T["The server could not read the sheets. Please reload the page."],
+        ["The server is not available right now; sheets stay saved here and will be sent later."] = T["The server is not available right now; sheets stay saved here and will be sent later."],
+        ["This device could not save the sheet (storage full or blocked)."] = T["This device could not save the sheet (storage full or blocked)."],
+        ["Unused ballots"] = T["Unused ballots"],
+        ["Verification"] = T["Verification"],
+        ["Verified"] = T["Verified"],
+        ["Votes"] = T["Votes"],
+        ["Votes add up to {0}, but ballots used is {1}."] = T["Votes add up to {0}, but ballots used is {1}."],
+        ["Waiting"] = T["Waiting"],
+        ["Waiting to be sent."] = T["Waiting to be sent."],
+        ["Your session has ended. Sign in again while online to send the waiting sheets; they stay saved here."] = T["Your session has ended. Sign in again while online to send the waiting sheets; they stay saved here."],
+        ["{0} (awaiting verification)"] = T["{0} (awaiting verification)"],
+        ["{0} sheet(s) waiting to be sent."] = T["{0} sheet(s) waiting to be sent."],
+        ["{0} · saved {1}"] = T["{0} · saved {1}"],
+    };
+    var textsJson = JsonSerializer.Serialize(scriptTexts);
 }
 
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
-    <a asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@Model.RoundId">Result sheets</a><span aria-hidden="true">/</span>
-    <span>Offline entry</span>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]">
+    <a asp-controller="Elections" asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span>
+    <a asp-controller="ResultSheets" asp-action="Index" asp-route-roundId="@Model.RoundId">@T["Result sheets"]</a><span aria-hidden="true">/</span>
+    <span>@T["Offline entry"]</span>
 </nav>
 <div class="page-header spread">
     <div>
-        <div class="eyebrow">Offline entry@(Model.RoundNumber > 1 ? " · Runoff" : "")</div>
+        <div class="eyebrow">@T["Offline entry"]@(Model.RoundNumber > 1 ? " · " + T["Runoff"] : "")</div>
         <h1>@Model.ElectionName</h1>
-        <p>Keep this page open, or open it again from this device: it works without a connection. Sheets are saved on this device and sent when the connection is back.</p>
+        <p>@T["Keep this page open, or open it again from this device: it works without a connection. Sheets are saved on this device and sent when the connection is back."]</p>
     </div>
     <div class="card" style="min-width:16rem">
         <div class="card-body stack" style="padding:1rem">
-            <div class="cluster"><span id="net-dot" class="badge">Checking connection…</span></div>
+            <div class="cluster"><span id="net-dot" class="badge">@T["Checking connection…"]</span></div>
             <div class="small" id="queue-summary" aria-live="polite"></div>
-            <button type="button" class="btn btn-primary" id="sync-now">@Icon.Render("refresh") Sync now</button>
+            <button type="button" class="btn btn-primary" id="sync-now">@Icon.Render("refresh") @T["Sync now"]</button>
         </div>
     </div>
 </div>
 
 @if (!Model.EntryOpen)
 {
-    <div class="alert alert-warn" style="margin-bottom:1rem">@Icon.Render("alert") <div>Result entry is not open for this round. Sheets saved here will be rejected until the election is moved to Counting.</div></div>
+    <div class="alert alert-warn" style="margin-bottom:1rem">@Icon.Render("alert") <div>@T["Result entry is not open for this round. Sheets saved here will be rejected until the election is moved to Counting."]</div></div>
 }
 
 <div id="offline-app"
@@ -40,50 +87,51 @@
      data-can-enter="@(canEnter ? "true" : "false")"
      data-can-verify="@(canVerify ? "true" : "false")">
     @Html.AntiForgeryToken()
-    <noscript><div class="alert alert-bad">Offline entry needs JavaScript. Use the normal result sheets page instead.</div></noscript>
+    <noscript><div class="alert alert-bad">@T["Offline entry needs JavaScript. Use the normal result sheets page instead."]</div></noscript>
 
     <div class="grid grid-side">
         <form id="sheet-form" class="card" autocomplete="off" novalidate>
-            <div class="card-header"><h2>New sheet</h2></div>
+            <div class="card-header"><h2>@T["New sheet"]</h2></div>
             <div class="card-body">
                 <div class="form-grid">
                     <div class="field">
-                        <label for="station">Polling station</label>
+                        <label for="station">@T["Polling station"]</label>
                         <select id="station" required></select>
                     </div>
                     <div class="field">
-                        <span class="label" id="kind-label">This is the</span>
+                        <span class="label" id="kind-label">@T["This is the"]</span>
                         <div class="cluster" role="radiogroup" aria-labelledby="kind-label">
-                            <label class="check"><input type="radio" name="kind" value="entry" /> First entry</label>
-                            <label class="check"><input type="radio" name="kind" value="verify" /> Verification (second entry)</label>
+                            <label class="check"><input type="radio" name="kind" value="entry" /> @T["First entry"]</label>
+                            <label class="check"><input type="radio" name="kind" value="verify" /> @T["Verification (second entry)"]</label>
                         </div>
                     </div>
                 </div>
                 <div id="figures"></div>
                 <p id="live-check" class="small" aria-live="polite"></p>
                 <div class="actions">
-                    <button type="submit" class="btn btn-primary">@Icon.Render("check") Save on this device</button>
-                    <button type="reset" class="btn btn-ghost">Clear</button>
+                    <button type="submit" class="btn btn-primary">@Icon.Render("check") @T["Save on this device"]</button>
+                    <button type="reset" class="btn btn-ghost">@T["Clear"]</button>
                 </div>
             </div>
         </form>
 
         <section class="card" aria-labelledby="queue-heading">
-            <div class="card-header"><h2 id="queue-heading">Saved on this device</h2></div>
+            <div class="card-header"><h2 id="queue-heading">@T["Saved on this device"]</h2></div>
             <div class="table-wrap">
                 <table class="table table-compact">
-                    <thead><tr><th scope="col">Station</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <thead><tr><th scope="col">@T["Station"]</th><th scope="col">@T["Status"]</th><th scope="col"><span class="visually-hidden">@T["Actions"]</span></th></tr></thead>
                     <tbody id="queue-rows"></tbody>
                 </table>
             </div>
-            <div class="card-footer small muted">Sent sheets stay listed here until you clear them. Rejected sheets can be removed and typed again.
-                <button type="button" class="linklike" id="clear-done">Clear sent sheets</button>
+            <div class="card-footer small muted">@T["Sent sheets stay listed here until you clear them. Rejected sheets can be removed and typed again."]
+                <button type="button" class="linklike" id="clear-done">@T["Clear sent sheets"]</button>
             </div>
         </section>
     </div>
 </div>
 
 <script type="application/json" id="offline-pack">@Html.Raw(packJson)</script>
+<script type="application/json" id="offline-texts">@Html.Raw(textsJson)</script>
 
 @section Scripts {
     <script src="~/js/offline.js" asp-append-version="true"></script>

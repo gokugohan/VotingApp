@@ -1,9 +1,9 @@
 ﻿@{
     string Current(string navClass) => navClass == "active" ? "page" : null;
 }
-<nav class="tabs" aria-label="Account">
-    <a asp-page="./Index" aria-current="@Current(ManageNavPages.IndexNavClass(ViewContext))">Profile</a>
-    <a asp-page="./ChangePassword" aria-current="@Current(ManageNavPages.ChangePasswordNavClass(ViewContext))">Password</a>
+<nav class="tabs" aria-label="@T["Account"]">
+    <a asp-page="./Index" aria-current="@Current(ManageNavPages.IndexNavClass(ViewContext))">@T["Profile"]</a>
+    <a asp-page="./ChangePassword" aria-current="@Current(ManageNavPages.ChangePasswordNavClass(ViewContext))">@T["Password"]</a>
     @if (User.IsInRole(VotingApp.Application.Security.Permissions.AdminRole))
     {
         <a asp-page="./Roles" aria-current="@Current(ManageNavPages.RolesNavClass(ViewContext))">Roles</a>

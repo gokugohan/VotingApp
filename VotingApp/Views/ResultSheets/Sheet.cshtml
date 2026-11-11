@@ -1,18 +1,27 @@
 @model SheetPageModel
+@using System.Text.Json
 @{
     var ctx = Model.Context;
     var station = ctx.Station;
     var verify = Model.IsVerification;
-    ViewData["Title"] = (verify ? "Verify" : "Enter") + " result sheet · " + station.StationName;
+    ViewData["Title"] = (verify ? T["Verify result sheet"] : T["Enter result sheet"]) + " · " + station.StationName;
+    // Texts for the live check below, in the user's language.
+    var liveTexts = JsonSerializer.Serialize(new Dictionary<string, string>
+    {
+        ["sum"] = T["Votes add up to {0}, but ballots used is {1}."],
+        ["ballots"] = T["Ballots received ({0}) is not used + spoiled + unused ({1})."],
+        ["missing"] = T["Enter every figure from the sheet."],
+        ["ok"] = T["Figures add up."],
+    });
 }
 
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span>
-    <a asp-action="Index" asp-route-roundId="@ctx.Round.Id">Result sheets</a><span aria-hidden="true">/</span>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]">
+    <a asp-controller="Elections" asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span>
+    <a asp-action="Index" asp-route-roundId="@ctx.Round.Id">@T["Result sheets"]</a><span aria-hidden="true">/</span>
     <span>@station.StationName</span>
 </nav>
 <div class="page-header">
-    <div class="eyebrow">@(verify ? "Second entry (verification)" : "Result sheet") · @ctx.Round.Election.Name</div>
+    <div class="eyebrow">@(verify ? T["Second entry (verification)"] : T["Result sheet"]) · @ctx.Round.Election.Name</div>
     <h1>@station.StationName</h1>
     <p>@station.VillageName · @station.AdministrativePostName · @station.MunicipalityName</p>
 </div>
@@ -20,18 +29,18 @@
 @if (verify)
 {
     <div class="alert alert-info" style="margin-bottom:1.5rem">@Icon.Render("info")
-        <div>Type every figure <strong>from the paper sheet</strong>. The first entry is hidden on purpose. If all figures match, the sheet is verified; if not, the differing fields are flagged for a supervisor.</div>
+        <div>@T.Html("Type every figure <strong>from the paper sheet</strong>. The first entry is hidden on purpose. If all figures match, the sheet is verified; if not, the differing fields are flagged for a supervisor.")</div>
     </div>
 }
 else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
 {
     <div class="alert @(ctx.Validation.HasErrors ? "alert-bad" : "alert-warn")" style="margin-bottom:1.5rem">@Icon.Render("alert")
         <div>
-            <strong>Checks on the saved sheet</strong>
+            <strong>@T["Checks on the saved sheet"]</strong>
             <ul style="margin:.25rem 0 0 1.1rem;padding:0">
                 @foreach (var issue in ctx.Validation.Issues)
                 {
-                    <li>@(issue.Severity == IssueSeverity.Error ? "Error" : "Warning"): @issue.Message</li>
+                    <li>@(issue.Severity == IssueSeverity.Error ? T["Error"] : T["Warning"]): @T.Message(issue.Message)</li>
                 }
             </ul>
         </div>
@@ -46,10 +55,10 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
 
     <div class="grid grid-2">
         <fieldset class="card" style="margin:0">
-            <legend class="visually-hidden">Ballots</legend>
-            <div class="card-header"><h2>1. Ballots</h2></div>
+            <legend class="visually-hidden">@T["Ballots"]</legend>
+            <div class="card-header"><h2>1. @T["Ballots"]</h2></div>
             <div class="card-body">
-                <div class="field"><label asp-for="Form.RegisteredVoters"></label><input asp-for="Form.RegisteredVoters" type="number" min="0" inputmode="numeric" /><span class="hint">If shown on the sheet.</span></div>
+                <div class="field"><label asp-for="Form.RegisteredVoters"></label><input asp-for="Form.RegisteredVoters" type="number" min="0" inputmode="numeric" /><span class="hint">@T["If shown on the sheet."]</span></div>
                 <div class="field"><label asp-for="Form.BallotsReceived"></label><input asp-for="Form.BallotsReceived" class="js-recv" type="number" min="0" inputmode="numeric" required /></div>
                 <div class="field"><label asp-for="Form.BallotsUsed"></label><input asp-for="Form.BallotsUsed" class="js-used" type="number" min="0" inputmode="numeric" required /></div>
                 <div class="form-grid">
@@ -60,8 +69,8 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
         </fieldset>
 
         <fieldset class="card" style="margin:0">
-            <legend class="visually-hidden">Votes</legend>
-            <div class="card-header"><h2>2. Votes</h2></div>
+            <legend class="visually-hidden">@T["Votes"]</legend>
+            <div class="card-header"><h2>2. @T["Votes"]</h2></div>
             <div class="card-body">
                 @for (var i = 0; i < Model.Form.Votes.Count; i++)
                 {
@@ -85,15 +94,15 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
     @if (!verify)
     {
         <section class="card">
-            <div class="card-header"><h2>3. Signed sheet <span class="muted small" style="font-weight:400">(optional)</span></h2></div>
+            <div class="card-header"><h2>3. @T["Signed sheet"] <span class="muted small" style="font-weight:400">@T["(optional)"]</span></h2></div>
             <div class="card-body">
                 <div class="field" style="margin:0">
-                    <label asp-for="Form.Scan">Photo or scan</label>
+                    <label asp-for="Form.Scan">@T["Photo or scan"]</label>
                     <input asp-for="Form.Scan" type="file" accept="image/jpeg,image/png,application/pdf" capture="environment" />
-                    <span class="hint">JPEG, PNG or PDF, up to 8 MB. Published with the results once approved, so anyone can compare it with the typed figures.</span>
+                    <span class="hint">@T["JPEG, PNG or PDF, up to 8 MB. Published with the results once approved, so anyone can compare it with the typed figures."]</span>
                     @if (!string.IsNullOrEmpty(ctx.Sheet?.ScanPath))
                     {
-                        <span class="hint">Already attached: <a href="@ctx.Sheet.ScanPath" target="_blank" rel="noopener">view current scan</a>. Uploading replaces it.</span>
+                        <span class="hint">@T["Already attached:"] <a href="@ctx.Sheet.ScanPath" target="_blank" rel="noopener">@T["view current scan"]</a>. @T["Uploading replaces it."]</span>
                     }
                 </div>
             </div>
@@ -104,17 +113,24 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
         <div class="card-body spread" style="padding:.85rem 1.25rem">
             <p id="live-check" aria-live="polite" style="margin:0" class="small"></p>
             <div class="cluster">
-                <a asp-action="Index" asp-route-roundId="@ctx.Round.Id" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary">@(verify ? "Submit verification" : "Save sheet")</button>
+                <a asp-action="Index" asp-route-roundId="@ctx.Round.Id" class="btn btn-ghost">@T["Cancel"]</a>
+                <button type="submit" class="btn btn-primary">@(verify ? T["Submit verification"] : T["Save sheet"])</button>
             </div>
         </div>
     </div>
 </form>
 
+<script type="application/json" id="live-texts">@Html.Raw(liveTexts)</script>
+
 @section Scripts {
     <script>
         // Live arithmetic check while typing (the server validates again on save).
         (function () {
+            var texts = JSON.parse(document.getElementById("live-texts").textContent);
+            function t(key) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                return texts[key].replace(/\{(\d+)\}/g, function (m, i) { return args[i]; });
+            }
             function n(el) { var v = parseInt(el && el.value, 10); return isNaN(v) ? null : v; }
             var out = document.getElementById("live-check");
             function check() {
@@ -123,11 +139,11 @@ else if (ctx.Validation != null && ctx.Validation.Issues.Count > 0)
                 var used = n(document.querySelector(".js-used")), recv = n(document.querySelector(".js-recv"));
                 var spoiled = n(document.querySelector(".js-spoiled")), unused = n(document.querySelector(".js-unused"));
                 var problems = [];
-                if (!missing && used !== null && votes !== used) problems.push("Votes add up to " + votes + ", but ballots used is " + used + ".");
+                if (!missing && used !== null && votes !== used) problems.push(t("sum", votes, used));
                 if (recv !== null && used !== null && spoiled !== null && unused !== null && recv !== used + spoiled + unused)
-                    problems.push("Ballots received (" + recv + ") is not used + spoiled + unused (" + (used + spoiled + unused) + ").");
+                    problems.push(t("ballots", recv, used + spoiled + unused));
                 out.style.color = problems.length ? "var(--bad-text)" : "var(--ok-text)";
-                out.textContent = problems.length ? problems.join(" ") : (missing || used === null ? "Enter every figure from the sheet." : "Figures add up.");
+                out.textContent = problems.length ? problems.join(" ") : (missing || used === null ? t("missing") : t("ok"));
                 if (missing || used === null) out.style.color = "var(--muted)";
             }
             document.querySelectorAll("input[type=number]").forEach(function (el) { el.addEventListener("input", check); });

@@ -5,7 +5,7 @@
 @{
     var round = (ElectionRound)ViewData["Round"];
     var summary = (RoundSummary)ViewData["Summary"];
-    ViewData["Title"] = $"Result sheets · {round.Election.Name}";
+    ViewData["Title"] = T["Result sheets"] + " · " + round.Election.Name;
     var canEnter = (await Authz.AuthorizeAsync(User, Permissions.EnterResults)).Succeeded;
     var canVerify = (await Authz.AuthorizeAsync(User, Permissions.VerifyResults)).Succeeded;
     var canApprove = (await Authz.AuthorizeAsync(User, Permissions.ApproveResults)).Succeeded;
@@ -23,89 +23,91 @@
         "problems" => Model.Where(s => s.ErrorCount > 0 || !string.IsNullOrEmpty(s.LastMismatchFields)).ToList(),
         _ => Model,
     };
+    // Mismatched fields are stored in English (field names and contestant names); translate the field names.
+    string Fields(string list) => string.Join(", ", list.Split(", ").Select(f => T[f]));
     string Tab(string key) => filter == key || (key == "" && string.IsNullOrEmpty(filter)) ? "page" : null;
     (string Css, string Text) Stage(ResultSheetStatus? st) => st switch
     {
-        null => ("", "Not received"),
-        ResultSheetStatus.Entered => ("badge-info", "Awaiting verification"),
-        ResultSheetStatus.Verified => ("badge-warn", "Awaiting approval"),
-        ResultSheetStatus.Approved => ("badge-ok", "Approved"),
-        ResultSheetStatus.Locked => ("badge-ok", "Locked"),
+        null => ("", T["Not received"]),
+        ResultSheetStatus.Entered => ("badge-info", T["Awaiting verification"]),
+        ResultSheetStatus.Verified => ("badge-warn", T["Awaiting approval"]),
+        ResultSheetStatus.Approved => ("badge-ok", T["Approved"]),
+        ResultSheetStatus.Locked => ("badge-ok", T["Locked"]),
         _ => ("", st.ToString()),
     };
 }
 
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a asp-controller="Elections" asp-action="Index">Elections</a><span aria-hidden="true">/</span><span>@round.Election.Name</span>
+<nav class="breadcrumbs" aria-label="@T["Breadcrumb"]">
+    <a asp-controller="Elections" asp-action="Index">@T["Elections"]</a><span aria-hidden="true">/</span><span>@round.Election.Name</span>
 </nav>
 <div class="page-header spread">
     <div>
-        <div class="eyebrow">Result sheets@(round.Number > 1 ? " · Runoff" : "")</div>
+        <div class="eyebrow">@T["Result sheets"]@(round.Number > 1 ? " · " + T["Runoff"] : "")</div>
         <h1>@round.Election.Name</h1>
         <div class="cluster small">
-            <span class="badge @(entryOpen ? "badge-ok" : "")">@(entryOpen ? "Entry open" : "Entry closed") · @round.Status</span>
+            <span class="badge @(entryOpen ? "badge-ok" : "")">@(entryOpen ? T["Entry open"] : T["Entry closed"]) · @T[round.Status.ToString()]</span>
             @if (!entryOpen)
             {
-                <span class="muted">Entry opens when the election is moved to Counting.</span>
+                <span class="muted">@T["Entry opens when the election is moved to Counting."]</span>
             }
         </div>
     </div>
     <div class="cluster">
         @if (entryOpen && (canEnter || canVerify))
         {
-            <a class="btn btn-secondary" asp-controller="OfflineEntry" asp-action="Index" asp-route-roundId="@round.Id" title="Keeps working without a connection">@Icon.Render("download") Offline entry</a>
+            <a class="btn btn-secondary" asp-controller="OfflineEntry" asp-action="Index" asp-route-roundId="@round.Id" title="@T["Keeps working without a connection"]">@Icon.Render("download") @T["Offline entry"]</a>
         }
-        <a class="btn btn-secondary" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") Public results</a>
+        <a class="btn btn-secondary" asp-controller="Results" asp-action="Round" asp-route-id="@round.Id">@Icon.Render("chart") @T["Public results"]</a>
         @if (canLock)
         {
-            <form asp-action="Lock" method="post" class="inline" data-confirm="Lock every approved sheet in this round? Locked sheets are final for national tabulation.">
+            <form asp-action="Lock" method="post" class="inline" data-confirm="@T["Lock every approved sheet in this round? Locked sheets are final for national tabulation."]">
                 <input type="hidden" name="roundId" value="@round.Id" />
-                <button type="submit" class="btn btn-secondary">@Icon.Render("lock") Lock approved sheets</button>
+                <button type="submit" class="btn btn-secondary">@Icon.Render("lock") @T["Lock approved sheets"]</button>
             </form>
         }
     </div>
 </div>
 
-<section class="grid grid-4" aria-label="Progress in your municipalities" style="margin-bottom:1.5rem">
-    <div class="card stat"><div class="label">Not received</div><div class="value">@Count(null)</div><div class="sub">of @Model.Count stations</div></div>
-    <div class="card stat"><div class="label">Awaiting verification</div><div class="value">@Count(ResultSheetStatus.Entered)</div></div>
-    <div class="card stat"><div class="label">Awaiting approval</div><div class="value">@Count(ResultSheetStatus.Verified)</div></div>
-    <div class="card stat"><div class="label">Approved or locked</div><div class="value">@(Count(ResultSheetStatus.Approved) + Count(ResultSheetStatus.Locked))</div>
+<section class="grid grid-4" aria-label="@T["Progress in your municipalities"]" style="margin-bottom:1.5rem">
+    <div class="card stat"><div class="label">@T["Not received"]</div><div class="value">@Count(null)</div><div class="sub">@T["of {0} stations", Model.Count]</div></div>
+    <div class="card stat"><div class="label">@T["Awaiting verification"]</div><div class="value">@Count(ResultSheetStatus.Entered)</div></div>
+    <div class="card stat"><div class="label">@T["Awaiting approval"]</div><div class="value">@Count(ResultSheetStatus.Verified)</div></div>
+    <div class="card stat"><div class="label">@T["Approved or locked"]</div><div class="value">@(Count(ResultSheetStatus.Approved) + Count(ResultSheetStatus.Locked))</div>
         @if (Model.Any(s => s.ErrorCount > 0))
         {
-            <div class="sub" style="color:var(--bad-text)">@Icon.Render("alert") @Model.Count(s => s.ErrorCount > 0) with arithmetic errors</div>
+            <div class="sub" style="color:var(--bad-text)">@Icon.Render("alert") @T["{0} with arithmetic errors", Model.Count(s => s.ErrorCount > 0)]</div>
         }
     </div>
 </section>
 
 <section class="card">
     <div class="card-header">
-        <nav class="tabs" aria-label="Filter stations" style="border:0;margin:0">
-            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality" aria-current="@Tab("")">All</a>
-            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=todo" aria-current="@Tab("todo")">To enter (@Count(null))</a>
-            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=verify" aria-current="@Tab("verify")">To verify (@Count(ResultSheetStatus.Entered))</a>
-            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=approve" aria-current="@Tab("approve")">To approve (@Count(ResultSheetStatus.Verified))</a>
-            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=problems" aria-current="@Tab("problems")">Problems (@Model.Count(s => s.ErrorCount > 0 || !string.IsNullOrEmpty(s.LastMismatchFields)))</a>
+        <nav class="tabs" aria-label="@T["Filter stations"]" style="border:0;margin:0">
+            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality" aria-current="@Tab("")">@T["All"]</a>
+            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=todo" aria-current="@Tab("todo")">@T["To enter ({0})", Count(null)]</a>
+            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=verify" aria-current="@Tab("verify")">@T["To verify ({0})", Count(ResultSheetStatus.Entered)]</a>
+            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=approve" aria-current="@Tab("approve")">@T["To approve ({0})", Count(ResultSheetStatus.Verified)]</a>
+            <a href="?roundId=@round.Id&municipalityId=@selectedMunicipality&show=problems" aria-current="@Tab("problems")">@T["Problems ({0})", Model.Count(s => s.ErrorCount > 0 || !string.IsNullOrEmpty(s.LastMismatchFields))]</a>
         </nav>
         <form method="get" class="cluster">
             <input type="hidden" name="roundId" value="@round.Id" />
             <input type="hidden" name="show" value="@filter" />
-            <label for="muni" class="visually-hidden">Municipality</label>
+            <label for="muni" class="visually-hidden">@T["Municipality"]</label>
             <select id="muni" name="municipalityId" onchange="this.form.submit()" style="width:auto;min-height:36px;padding:.25rem .5rem">
-                <option value="">All my municipalities</option>
+                <option value="">@T["All my municipalities"]</option>
                 @foreach (var m in municipalities)
                 {
                     <option value="@m.MunicipalityId" selected="@(m.MunicipalityId == selectedMunicipality)">@m.MunicipalityName</option>
                 }
             </select>
-            <noscript><button class="btn btn-secondary btn-sm">Filter</button></noscript>
+            <noscript><button class="btn btn-secondary btn-sm">@T["Filter"]</button></noscript>
         </form>
     </div>
     <div class="table-wrap">
         <table class="table">
-            <caption class="visually-hidden">Polling stations and the state of their result sheet</caption>
+            <caption class="visually-hidden">@T["Polling stations and the state of their result sheet"]</caption>
             <thead>
-                <tr><th scope="col">Polling station</th><th scope="col">Village</th><th scope="col">Stage</th><th scope="col">Checks</th><th scope="col" class="actions-cell">Next step</th></tr>
+                <tr><th scope="col">@T["Polling station"]</th><th scope="col">@T["Village"]</th><th scope="col">@T["Stage"]</th><th scope="col">@T["Checks"]</th><th scope="col" class="actions-cell">@T["Next step"]</th></tr>
             </thead>
             <tbody>
                 @foreach (var s in rows)
@@ -117,37 +119,37 @@
                         <td><span class="badge @stage.Css">@stage.Text</span></td>
                         <td>
                             <div class="cluster" style="gap:.3rem">
-                                @if (s.ErrorCount > 0) { <span class="badge badge-bad">@Icon.Render("x-circle") @s.ErrorCount error@(s.ErrorCount > 1 ? "s" : "")</span> }
-                                @if (s.WarningCount > 0) { <span class="badge badge-warn">@Icon.Render("alert") @s.WarningCount warning@(s.WarningCount > 1 ? "s" : "")</span> }
-                                @if (!string.IsNullOrEmpty(s.LastMismatchFields)) { <span class="badge badge-bad" title="Second entry differed in: @s.LastMismatchFields">@Icon.Render("alert") Entries differ: @s.LastMismatchFields</span> }
-                                @if (s.Status != null && s.ErrorCount == 0 && s.WarningCount == 0 && string.IsNullOrEmpty(s.LastMismatchFields)) { <span class="badge badge-ok">@Icon.Render("check") OK</span> }
+                                @if (s.ErrorCount > 0) { <span class="badge badge-bad">@Icon.Render("x-circle") @(s.ErrorCount == 1 ? T["1 error"] : T["{0} errors", s.ErrorCount])</span> }
+                                @if (s.WarningCount > 0) { <span class="badge badge-warn">@Icon.Render("alert") @(s.WarningCount == 1 ? T["1 warning"] : T["{0} warnings", s.WarningCount])</span> }
+                                @if (!string.IsNullOrEmpty(s.LastMismatchFields)) { <span class="badge badge-bad" title="@T["Second entry differed in: {0}", Fields(s.LastMismatchFields)]">@Icon.Render("alert") @T["Entries differ: {0}", Fields(s.LastMismatchFields)]</span> }
+                                @if (s.Status != null && s.ErrorCount == 0 && s.WarningCount == 0 && string.IsNullOrEmpty(s.LastMismatchFields)) { <span class="badge badge-ok">@Icon.Render("check") @T["OK"]</span> }
                             </div>
                         </td>
                         <td class="actions-cell">
                             <div class="cluster" style="justify-content:flex-end">
                                 @if (entryOpen && canEnter && (s.Status == null || s.Status == ResultSheetStatus.Entered))
                                 {
-                                    <a class="btn btn-sm @(s.Status == null ? "btn-primary" : "btn-ghost")" asp-action="Enter" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">@(s.Status == null ? "Enter" : "Correct")</a>
+                                    <a class="btn btn-sm @(s.Status == null ? "btn-primary" : "btn-ghost")" asp-action="Enter" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">@(s.Status == null ? T["Enter"] : T["Correct"])</a>
                                 }
                                 @if (entryOpen && canVerify && s.Status == ResultSheetStatus.Entered)
                                 {
-                                    <a class="btn btn-sm btn-secondary" asp-action="Verify" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">Verify</a>
+                                    <a class="btn btn-sm btn-secondary" asp-action="Verify" asp-route-roundId="@round.Id" asp-route-stationId="@s.PollingStationAreaId">@T["Verify"]</a>
                                 }
                                 @if (canApprove && s.Status == ResultSheetStatus.Verified && s.SheetId.HasValue)
                                 {
                                     <form asp-action="Approve" method="post" class="inline">
                                         <input type="hidden" name="roundId" value="@round.Id" />
                                         <input type="hidden" name="sheetId" value="@s.SheetId" />
-                                        <button type="submit" class="btn btn-sm btn-primary" disabled="@(s.ErrorCount > 0)" title="@(s.ErrorCount > 0 ? "Fix arithmetic errors first" : null)">Approve</button>
+                                        <button type="submit" class="btn btn-sm btn-primary" disabled="@(s.ErrorCount > 0)" title="@(s.ErrorCount > 0 ? T["Fix arithmetic errors first"] : null)">@T["Approve"]</button>
                                     </form>
                                 }
                                 @if (canApprove && (s.Status == ResultSheetStatus.Verified || s.Status == ResultSheetStatus.Approved) && s.SheetId.HasValue)
                                 {
-                                    <form asp-action="Reopen" method="post" class="inline" data-prompt="Why is this sheet being reopened? This is recorded in the sheet notes and the audit log.">
+                                    <form asp-action="Reopen" method="post" class="inline" data-prompt="@T["Why is this sheet being reopened? This is recorded in the sheet notes and the audit log."]">
                                         <input type="hidden" name="roundId" value="@round.Id" />
                                         <input type="hidden" name="sheetId" value="@s.SheetId" />
                                         <input type="hidden" name="reason" />
-                                        <button type="submit" class="btn btn-sm btn-ghost">Reopen</button>
+                                        <button type="submit" class="btn btn-sm btn-ghost">@T["Reopen"]</button>
                                     </form>
                                 }
                             </div>
@@ -156,11 +158,11 @@
                 }
                 @if (Model.Count == 0)
                 {
-                    <tr><td colspan="5" class="empty">No polling stations in your scope. Ask an administrator to assign your municipalities.</td></tr>
+                    <tr><td colspan="5" class="empty">@T["No polling stations in your scope. Ask an administrator to assign your municipalities."]</td></tr>
                 }
                 else if (rows.Count == 0)
                 {
-                    <tr><td colspan="5" class="empty">Nothing here.</td></tr>
+                    <tr><td colspan="5" class="empty">@T["Nothing here."]</td></tr>
                 }
             </tbody>
         </table>
@@ -169,5 +171,5 @@
 
 @if (summary != null)
 {
-    <p class="muted small" style="margin-top:1rem">Received so far (any stage): @summary.SheetsCounted of @summary.PollingStations stations, @summary.ValidVotes.ToString("N0") valid votes. Public results count approved sheets only.</p>
+    <p class="muted small" style="margin-top:1rem">@T["Received so far (any stage): {0} of {1} stations, {2} valid votes. Public results count approved sheets only.", summary.SheetsCounted, summary.PollingStations, summary.ValidVotes.ToString("N0")]</p>
 }

@@ -1,12 +1,12 @@
 ﻿@page
 @model LogoutModel
 @{
-    ViewData["Title"] = "Signed out";
+    ViewData["Title"] = T["Signed out"];
 }
 <div class="card" style="max-width:26rem;margin:2rem auto">
     <div class="card-body">
-        <h1 style="font-size:1.5rem">You are signed out</h1>
-        <p>Close the browser if this is a shared computer.</p>
-        <a class="btn btn-secondary" asp-area="" asp-controller="Home" asp-action="Index">Back to results</a>
+        <h1 style="font-size:1.5rem">@T["You are signed out"]</h1>
+        <p>@T["Close the browser if this is a shared computer."]</p>
+        <a class="btn btn-secondary" asp-area="" asp-controller="Home" asp-action="Index">@T["Back to results"]</a>
     </div>
 </div>

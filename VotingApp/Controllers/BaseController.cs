@@ -1,7 +1,9 @@
 ﻿using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using VotingApp.Application.Common;
+using VotingApp.Web.Localization;
 
 namespace VotingApp.Controllers
 {
@@ -18,15 +20,19 @@ namespace VotingApp.Controllers
             _ => BadRequest(new { success = false, message = result.Error }),
         };
 
-        /// <summary>Copies a failed command's messages into ModelState (for form posts).</summary>
+        /// <summary>Translator for the current request (messages from services are matched by template).</summary>
+        protected Texts T => HttpContext.RequestServices.GetRequiredService<Texts>();
+
+        /// <summary>Copies a failed command's messages into ModelState (for form posts), translated.</summary>
         protected void AddErrors(OperationResult result)
         {
             foreach (var error in result.Errors.DefaultIfEmpty("The operation failed."))
             {
-                ModelState.AddModelError(string.Empty, error);
+                ModelState.AddModelError(string.Empty, T.Message(error));
             }
         }
 
-        protected void Flash(string message, bool error = false) => TempData[error ? "Error" : "Success"] = message;
+        /// <summary>One-shot message for the next page, translated into the user's language.</summary>
+        protected void Flash(string message, bool error = false) => TempData[error ? "Error" : "Success"] = T.Message(message);
     }
 }

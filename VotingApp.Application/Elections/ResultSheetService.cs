@@ -43,7 +43,11 @@ namespace VotingApp.Application.Elections
         ResultSheet Sheet,
         ResultSheetValidation Validation);
 
-    public sealed record VerificationOutcome(bool Matched, IReadOnlyList<string> MismatchedFields);
+    public sealed record VerificationOutcome(bool Matched, IReadOnlyList<string> MismatchedFields)
+    {
+        /// <summary>The differing fields as one comma-separated list, for messages.</summary>
+        public string FieldList => string.Join(", ", MismatchedFields);
+    }
 
     /// <summary>
     /// Results-sheet workflow: Entered (first entry) → Verified (independent second entry by another

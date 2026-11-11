@@ -94,7 +94,8 @@ namespace VotingApp.Controllers
                     new OfflineSubmission(s.Id, kind.Value, s.RoundId, s.StationId, s.QueuedAt?.ToUniversalTime(), figures),
                     HttpContext.RequestAborted));
             }
-            return Json(outcomes);
+            // Stored outcomes stay in English; each reply is in the language of whoever syncs.
+            return Json(outcomes.Select(o => o with { Message = T.Message(o.Message) }));
         }
     }
 }

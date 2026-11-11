@@ -35,8 +35,12 @@ namespace VotingApp.Web
 
         public static IServiceCollection AddWeb(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
         {
-            services.AddControllersWithViews().AddNewtonsoftJson(o =>
-                o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+            // Labels and validation messages come from the same translation files as the views. Registered
+            // before MVC so its default resource-file localizer is not used.
+            services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, VotingApp.Web.Localization.CatalogLocalizerFactory>();
+            services.AddControllersWithViews(o => o.ModelMetadataDetailsProviders.Add(new VotingApp.Web.Localization.DefaultValidationMessages()))
+                .AddNewtonsoftJson(o => o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore)
+                .AddDataAnnotationsLocalization(o => o.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(object)));
             services.AddRazorPages();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, CurrentUser>();

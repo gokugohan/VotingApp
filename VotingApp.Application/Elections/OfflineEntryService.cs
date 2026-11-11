@@ -128,7 +128,7 @@ namespace VotingApp.Application.Elections
             if (!verification.Succeeded) return new SubmissionOutcome(s.Id, Rejected, verification.Error);
             return verification.Value.Matched
                 ? new SubmissionOutcome(s.Id, Verified, "Verified: both entries match.")
-                : new SubmissionOutcome(s.Id, Mismatch, "The entries differ in: " + string.Join(", ", verification.Value.MismatchedFields) + ".");
+                : new SubmissionOutcome(s.Id, Mismatch, $"The entries differ in: {verification.Value.FieldList}.");
         }
 
         private SubmissionOutcome Replay(SheetSubmission previous, Guid id)

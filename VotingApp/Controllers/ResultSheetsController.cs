@@ -64,7 +64,7 @@ namespace VotingApp.Controllers
             if (model.Scan != null)
             {
                 scanExtension = await SheetScanStorage.DetectAsync(model.Scan, HttpContext.RequestAborted);
-                if (scanExtension == null) ModelState.AddModelError("Form.Scan", "The scan must be a JPEG, PNG or PDF file under 8 MB.");
+                if (scanExtension == null) ModelState.AddModelError("Form.Scan", T.Message("The scan must be a JPEG, PNG or PDF file under 8 MB."));
             }
             if (ModelState.IsValid)
             {
@@ -112,7 +112,7 @@ namespace VotingApp.Controllers
                 {
                     Flash(result.Value.Matched
                         ? "Verified: both entries match."
-                        : "The entries differ in: " + string.Join(", ", result.Value.MismatchedFields) + ". A supervisor must check the paper sheet.",
+                        : $"The entries differ in: {result.Value.FieldList}. A supervisor must check the paper sheet.",
                         error: !result.Value.Matched);
                     return RedirectToAction(nameof(Index), new { roundId = model.RoundId });
                 }

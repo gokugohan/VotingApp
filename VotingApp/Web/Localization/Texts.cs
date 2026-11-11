@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Html;
@@ -29,6 +30,7 @@ namespace VotingApp.Web.Localization
         };
 
         private readonly Dictionary<string, IReadOnlyDictionary<string, string>> catalogs = new();
+        private readonly Dictionary<string, List<(Regex Pattern, string Text)>> templates = new();
 
         public TranslationCatalog(IWebHostEnvironment environment)
         {
@@ -36,7 +38,46 @@ namespace VotingApp.Web.Localization
             {
                 var file = Path.Combine(environment.ContentRootPath, "Resources", "i18n", language.Code + ".json");
                 catalogs[language.Code] = File.Exists(file) ? Load(file) : new Dictionary<string, string>();
+                templates[language.Code] = Templates(catalogs[language.Code]);
             }
+        }
+
+        /// <summary>
+        /// Keys with placeholders ("Votes add up to {0}, but ballots used is {1}.") turned into patterns,
+        /// so a finished English message from a service can be matched and translated with its values.
+        /// Keys with little fixed text are skipped: they would match almost anything.
+        /// </summary>
+        public static List<(Regex Pattern, string Text)> Templates(IReadOnlyDictionary<string, string> map) =>
+            map.Where(kv => kv.Key.Contains('{') && Regex.Replace(kv.Key, @"\{\d+\}", "").Trim().Length >= 8)
+               .OrderByDescending(kv => kv.Key.Length)
+               .Select(kv => (new Regex("^" + Regex.Replace(Regex.Escape(kv.Key), @"\\{(\d+)}", m => $"(?<p{m.Groups[1].Value}>.+?)") + "$",
+                   RegexOptions.CultureInvariant | RegexOptions.Singleline, TimeSpan.FromMilliseconds(50)), kv.Value))
+               .ToList();
+
+        /// <summary>
+        /// Translates a finished message: an exact key first, then a key with placeholders whose fixed
+        /// text matches (the values are carried over). Unknown messages stay in English.
+        /// </summary>
+        public string TranslateMessage(string language, string english)
+        {
+            if (string.IsNullOrEmpty(english) || language == Default || !catalogs.TryGetValue(language, out var map)) return english;
+            if (map.TryGetValue(english, out var exact)) return exact;
+            foreach (var (pattern, text) in templates[language])
+            {
+                Match m;
+                try { m = pattern.Match(english); } catch (RegexMatchTimeoutException) { continue; }
+                if (!m.Success) continue;
+                return Regex.Replace(text, @"\{(\d+)\}", p => m.Groups["p" + p.Groups[1].Value] is { Success: true } g ? Value(map, g.Value) : p.Value);
+            }
+            return english;
+        }
+
+        /// <summary>A value inside a message (a field name, a status, a list of fields) is translated when it is itself a known text.</summary>
+        private static string Value(IReadOnlyDictionary<string, string> map, string value)
+        {
+            if (map.TryGetValue(value, out var whole)) return whole;
+            if (!value.Contains(", ")) return value;
+            return string.Join(", ", value.Split(", ").Select(part => map.TryGetValue(part, out var t) ? t : part));
         }
 
         public static IReadOnlyDictionary<string, string> Load(string file)
@@ -72,6 +113,9 @@ namespace VotingApp.Web.Localization
         public string Lang { get; }
 
         public string this[string english] => catalog.Translate(Lang, english);
+
+        /// <summary>Translates a finished message from a service or validator (see <see cref="TranslationCatalog.TranslateMessage"/>).</summary>
+        public string Message(string english) => catalog.TranslateMessage(Lang, english);
 
         public string this[string english, params object[] args] =>
             string.Format(CultureInfo.CurrentCulture, catalog.Translate(Lang, english), args);

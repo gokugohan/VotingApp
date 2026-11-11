@@ -23,11 +23,19 @@
     var syncButton = document.getElementById("sync-now");
     var syncing = false;
 
+    // Texts in the user's language, provided by the page (English is the key and the fallback).
+    var texts = {};
+    try { texts = JSON.parse(document.getElementById("offline-texts").textContent); } catch (e) { /* English */ }
+    function t(key) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return (texts[key] || key).replace(/\{(\d+)\}/g, function (m, i) { return args[i] != null ? args[i] : m; });
+    }
+
     // ---------- storage ----------
     function load() { try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch (e) { return []; } }
     function store(queue) {
         try { localStorage.setItem(storageKey, JSON.stringify(queue)); return true; }
-        catch (e) { alert("This device could not save the sheet (storage full or blocked)."); return false; }
+        catch (e) { alert(t("This device could not save the sheet (storage full or blocked).")); return false; }
     }
     function uuid() {
         if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -50,17 +58,17 @@
         stations[s.id] = s;
         (byMunicipality[s.municipality] = byMunicipality[s.municipality] || []).push(s);
     });
-    stationSelect.appendChild(el("option", { value: "" }, "Choose a polling station…"));
+    stationSelect.appendChild(el("option", { value: "" }, t("Choose a polling station…")));
     Object.keys(byMunicipality).sort().forEach(function (m) {
         var group = el("optgroup", { label: m });
         byMunicipality[m].forEach(function (s) {
-            var stage = s.stage === "entered" ? " (awaiting verification)" : "";
-            group.appendChild(el("option", { value: s.id }, s.name + " · " + s.village + stage));
+            var label = s.name + " · " + s.village;
+            group.appendChild(el("option", { value: s.id }, s.stage === "entered" ? t("{0} (awaiting verification)", label) : label));
         });
         stationSelect.appendChild(group);
     });
     if (pack.stations.length === 0) {
-        stationSelect.appendChild(el("option", { value: "", disabled: "disabled" }, "No stations need entry in your municipalities"));
+        stationSelect.appendChild(el("option", { value: "", disabled: "disabled" }, t("No stations need entry in your municipalities")));
     }
 
     var kindInputs = form.querySelectorAll('input[name="kind"]');
@@ -82,20 +90,20 @@
         wrap.appendChild(input);
         return wrap;
     }
-    figuresBox.appendChild(el("h3", { style: "margin-top:1rem" }, "Ballots"));
-    figuresBox.appendChild(numberField("f-registered", "Registered voters (if on the sheet)", "", false));
-    figuresBox.appendChild(numberField("f-received", "Ballots received", "js-recv", true));
-    figuresBox.appendChild(numberField("f-used", "Ballots used (in the box)", "js-used", true));
-    figuresBox.appendChild(numberField("f-spoiled", "Spoiled ballots", "js-spoiled", true));
-    figuresBox.appendChild(numberField("f-unused", "Unused ballots", "js-unused", true));
-    figuresBox.appendChild(el("h3", { style: "margin-top:1rem" }, "Votes"));
+    figuresBox.appendChild(el("h3", { style: "margin-top:1rem" }, t("Ballots")));
+    figuresBox.appendChild(numberField("f-registered", t("Registered voters (if on the sheet)"), "", false));
+    figuresBox.appendChild(numberField("f-received", t("Ballots received"), "js-recv", true));
+    figuresBox.appendChild(numberField("f-used", t("Ballots used (in the box)"), "js-used", true));
+    figuresBox.appendChild(numberField("f-spoiled", t("Spoiled ballots"), "js-spoiled", true));
+    figuresBox.appendChild(numberField("f-unused", t("Unused ballots"), "js-unused", true));
+    figuresBox.appendChild(el("h3", { style: "margin-top:1rem" }, t("Votes")));
     pack.ballot.forEach(function (c) {
         var f = numberField("f-c-" + c.id, c.name + (c.acronym ? " (" + c.acronym + ")" : ""), "js-vote", true);
         f.querySelector("input").setAttribute("data-contestant", c.id);
         figuresBox.appendChild(f);
     });
-    figuresBox.appendChild(numberField("f-blank", "Blank votes", "js-vote", true));
-    figuresBox.appendChild(numberField("f-invalid", "Invalid votes", "js-vote", true));
+    figuresBox.appendChild(numberField("f-blank", t("Blank votes"), "js-vote", true));
+    figuresBox.appendChild(numberField("f-invalid", t("Invalid votes"), "js-vote", true));
 
     function n(id) { var v = parseInt(document.getElementById(id).value, 10); return isNaN(v) ? null : v; }
     function check() {
@@ -103,11 +111,11 @@
         form.querySelectorAll(".js-vote").forEach(function (i) { var v = parseInt(i.value, 10); if (isNaN(v)) missing = true; else votes += v; });
         var used = n("f-used"), recv = n("f-received"), spoiled = n("f-spoiled"), unused = n("f-unused");
         var problems = [];
-        if (!missing && used !== null && votes !== used) problems.push("Votes add up to " + votes + ", but ballots used is " + used + ".");
+        if (!missing && used !== null && votes !== used) problems.push(t("Votes add up to {0}, but ballots used is {1}.", votes, used));
         if (recv !== null && used !== null && spoiled !== null && unused !== null && recv !== used + spoiled + unused)
-            problems.push("Ballots received (" + recv + ") is not used + spoiled + unused (" + (used + spoiled + unused) + ").");
+            problems.push(t("Ballots received ({0}) is not used + spoiled + unused ({1}).", recv, used + spoiled + unused));
         liveCheck.style.color = problems.length ? "var(--bad-text)" : (missing || used === null ? "var(--muted)" : "var(--ok-text)");
-        liveCheck.textContent = problems.length ? problems.join(" ") : (missing || used === null ? "Enter every figure from the sheet." : "Figures add up.");
+        liveCheck.textContent = problems.length ? problems.join(" ") : (missing || used === null ? t("Enter every figure from the sheet.") : t("Figures add up."));
     }
     form.addEventListener("input", check);
     form.addEventListener("reset", function () { setTimeout(check, 0); });
@@ -122,7 +130,7 @@
         var empty = Array.prototype.filter.call(required, function (i) { return i.value === "" || parseInt(i.value, 10) < 0; });
         if (!station || !kind || empty.length) {
             liveCheck.style.color = "var(--bad-text)";
-            liveCheck.textContent = !station ? "Choose a polling station." : !kind ? "Choose first entry or verification." : "Every figure is required (enter 0 if none).";
+            liveCheck.textContent = !station ? t("Choose a polling station.") : !kind ? t("Choose first entry or verification.") : t("Every figure is required (enter 0 if none).");
             (empty[0] || stationSelect).focus();
             return;
         }
@@ -146,7 +154,7 @@
     });
 
     // ---------- queue list ----------
-    var labels = { pending: ["", "Waiting"], saved: ["badge-ok", "Saved"], verified: ["badge-ok", "Verified"], mismatch: ["badge-warn", "Entries differ"], rejected: ["badge-bad", "Rejected"] };
+    var labels = { pending: ["", t("Waiting")], saved: ["badge-ok", t("Saved")], verified: ["badge-ok", t("Verified")], mismatch: ["badge-warn", t("Entries differ")], rejected: ["badge-bad", t("Rejected")] };
     function render() {
         var queue = load();
         rows.textContent = "";
@@ -154,18 +162,18 @@
             var tr = el("tr");
             var who = el("td");
             who.appendChild(el("strong", null, item.stationLabel));
-            who.appendChild(el("div", { "class": "muted small" }, (item.kind === "verify" ? "Verification" : "First entry") + " · saved " + new Date(item.queuedAt).toLocaleString()));
+            who.appendChild(el("div", { "class": "muted small" }, t("{0} · saved {1}", item.kind === "verify" ? t("Verification") : t("First entry"), new Date(item.queuedAt).toLocaleString())));
             tr.appendChild(who);
             var st = el("td");
             var l = labels[item.status] || labels.pending;
             st.appendChild(el("span", { "class": "badge " + l[0] }, l[1]));
-            st.appendChild(el("div", { "class": "small" }, item.message || ""));
+            st.appendChild(el("div", { "class": "small" }, t(item.message || "")));
             tr.appendChild(st);
             var act = el("td", { "class": "actions-cell" });
             if (item.status === "pending" || item.status === "rejected") {
-                var rm = el("button", { type: "button", "class": "btn btn-ghost btn-sm" }, "Remove");
+                var rm = el("button", { type: "button", "class": "btn btn-ghost btn-sm" }, t("Remove"));
                 rm.addEventListener("click", function () {
-                    if (item.status === "pending" && !confirm("Remove this sheet before it is sent?")) return;
+                    if (item.status === "pending" && !confirm(t("Remove this sheet before it is sent?"))) return;
                     store(load().filter(function (x) { return x.id !== item.id; })); render();
                 });
                 act.appendChild(rm);
@@ -174,10 +182,10 @@
             rows.appendChild(tr);
         });
         if (!queue.length) {
-            var empty = el("tr"); empty.appendChild(el("td", { colspan: "3", "class": "empty" }, "No sheets saved on this device yet.")); rows.appendChild(empty);
+            var empty = el("tr"); empty.appendChild(el("td", { colspan: "3", "class": "empty" }, t("No sheets saved on this device yet."))); rows.appendChild(empty);
         }
         var pending = queue.filter(function (x) { return x.status === "pending"; }).length;
-        summary.textContent = pending ? pending + " sheet(s) waiting to be sent." : "Nothing waiting to be sent.";
+        summary.textContent = pending ? t("{0} sheet(s) waiting to be sent.", pending) : t("Nothing waiting to be sent.");
         syncButton.disabled = !pending || syncing;
     }
     document.getElementById("clear-done").addEventListener("click", function () {
@@ -187,13 +195,13 @@
     // ---------- sync ----------
     function setNet() {
         netDot.className = "badge " + (navigator.onLine ? "badge-ok" : "badge-warn");
-        netDot.textContent = navigator.onLine ? "Online" : "Offline: sheets are kept on this device";
+        netDot.textContent = navigator.onLine ? t("Online") : t("Offline: sheets are kept on this device");
     }
     function sync() {
         var pending = load().filter(function (x) { return x.status === "pending"; }).slice(0, 25);
         if (!pending.length || syncing || !navigator.onLine) { render(); return; }
         syncing = true; render();
-        summary.textContent = "Sending " + pending.length + " sheet(s)…";
+        summary.textContent = t("Sending {0} sheet(s)…", pending.length);
         fetch(syncUrl, {
             method: "POST", credentials: "same-origin",
             headers: { "Content-Type": "application/json", "RequestVerificationToken": token },
@@ -201,10 +209,10 @@
         }).then(function (res) {
             var json = (res.headers.get("content-type") || "").indexOf("application/json") >= 0;
             if (res.redirected || res.status === 401 || res.status === 403 || (res.ok && !json)) {
-                throw new Error("Your session has ended. Sign in again while online to send the waiting sheets; they stay saved here.");
+                throw new Error(t("Your session has ended. Sign in again while online to send the waiting sheets; they stay saved here."));
             }
-            if (res.status === 400) throw new Error("The server could not read the sheets. Please reload the page.");
-            if (!res.ok) throw new Error("The server is not available right now; sheets stay saved here and will be sent later.");
+            if (res.status === 400) throw new Error(t("The server could not read the sheets. Please reload the page."));
+            if (!res.ok) throw new Error(t("The server is not available right now; sheets stay saved here and will be sent later."));
             return res.json();
         }).then(function (outcomes) {
             var byId = {};
@@ -212,12 +220,12 @@
             var queue = load().map(function (x) {
                 var o = byId[x.id];
                 if (!o) return x;
-                x.status = o.outcome; x.message = (o.message || "") + (o.replayed ? " (already received earlier)" : "");
+                x.status = o.outcome; x.message = (o.message || "") + (o.replayed ? " " + t("(already received earlier)") : "");
                 return x;
             });
             store(queue);
         }).catch(function (err) {
-            summary.textContent = err.message || "Could not reach the server; will try again.";
+            summary.textContent = err.message || t("Could not reach the server; will try again.");
         }).then(function () {
             syncing = false; render();
             if (load().some(function (x) { return x.status === "pending"; }) && navigator.onLine) setTimeout(sync, 5000);
